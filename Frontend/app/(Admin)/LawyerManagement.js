@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  TextInput, SafeAreaView, StatusBar, StyleSheet, Dimensions,
+  TextInput, StatusBar, StyleSheet, Dimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 const { width } = Dimensions.get('window');

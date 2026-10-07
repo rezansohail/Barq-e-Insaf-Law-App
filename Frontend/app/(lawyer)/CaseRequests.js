@@ -1,5 +1,6 @@
 import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, StatusBar, Alert } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './CaseRequests.styles';
 import { useMockStore, caseRequests, declineRequest, acceptRequest } from './MockStore';

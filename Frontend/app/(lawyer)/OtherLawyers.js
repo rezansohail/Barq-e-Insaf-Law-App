@@ -4,10 +4,10 @@ import {
   Text, 
   ScrollView, 
   TouchableOpacity, 
-  SafeAreaView, 
   StatusBar,
   Modal 
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './OtherLawyers.styles';
 import { useMockStore, otherLawyers } from './MockStore';

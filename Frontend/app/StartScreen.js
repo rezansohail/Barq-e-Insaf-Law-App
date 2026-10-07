@@ -5,12 +5,12 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Animated,
   Easing,
   Image,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 import { useFonts, RacingSansOne_400Regular } from '@expo-google-fonts/racing-sans-one';

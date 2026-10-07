@@ -6,7 +6,8 @@ import React from 'react';
 // SafeAreaView: prevents content from rendering behind notches/camera holes on phones
 // TouchableOpacity: a clickable button that fades slightly when pressed
 // StatusBar: controls the top battery/network bar colors
-import { View, Text, StyleSheet, SafeAreaView, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router'; // Routing helper
 
 export default function VerificationPending() {

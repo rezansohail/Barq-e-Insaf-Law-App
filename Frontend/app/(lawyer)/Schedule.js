@@ -5,12 +5,12 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity, 
-  SafeAreaView, 
   StatusBar,
   TextInput,
   Modal,
   Alert 
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useMockStore, timingSlots, addTimingSlot, deleteTimingSlot, editTimingSlot } from './MockStore';
 

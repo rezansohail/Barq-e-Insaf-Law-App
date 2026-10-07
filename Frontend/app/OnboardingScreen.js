@@ -5,11 +5,11 @@ import {
   StyleSheet,
   Dimensions,
   TouchableOpacity,
-  SafeAreaView,
   StatusBar,
   Animated,
   FlatList,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 
 const { width, height } = Dimensions.get('window');
