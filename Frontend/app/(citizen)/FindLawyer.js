@@ -95,6 +95,9 @@ export default function FindLawyer() {
         </ScrollView>
 
         {/* LAWYER CARDS */}
+        {filtered.length === 0 && (
+          <Text style={styles.lawyerSpec}>No lawyers found</Text>
+        )}
         {filtered.map((l, i) => (
           <TouchableOpacity 
             key={i} 

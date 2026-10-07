@@ -4,18 +4,20 @@ import { useRouter } from 'expo-router';
 import styles from './NGOHome.styles';
 
 const caseTypes = [
-  { label: 'Property',    value: 681, pct: 68, color: '#5C1A1A' },
-  { label: 'Family',      value: 421, pct: 42, color: '#0F2744' },
-  { label: 'Inheritance', value: 280, pct: 28, color: '#1B4332' },
-  { label: 'Divorce',     value: 192, pct: 19, color: '#4a148c' },
+  { label: 'Property',    value: 0, pct: 0, color: '#5C1A1A' },
+  { label: 'Family',      value: 0, pct: 0, color: '#0F2744' },
+  { label: 'Inheritance', value: 0, pct: 0, color: '#1B4332' },
+  { label: 'Divorce',     value: 0, pct: 0, color: '#4a148c' },
 ];
 
 const insights = [
-  { num: '4.2 hrs', label: 'Avg. lawyer response' },
-  { num: '38%',     label: 'Rural access rate' },
-  { num: '8,441',   label: 'Evidence uploaded' },
-  { num: '21.3k',   label: 'Chatbot queries' },
+  { num: '—', label: 'Avg. lawyer response' },
+  { num: '—', label: 'Rural access rate' },
+  { num: '—', label: 'Evidence uploaded' },
+  { num: '—', label: 'Chatbot queries' },
 ];
+
+const heatmap = [];
 
 const navItems = [
   { id: 'home',      icon: '📊', label: 'Dashboard' },
@@ -51,18 +53,18 @@ export default function NGOHome() {
               <Text style={styles.notifIcon}>🔔</Text>
             </TouchableOpacity>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>LA</Text>
+              <Text style={styles.avatarText}>NGO</Text>
             </View>
           </View>
         </View>
 
-        <Text style={styles.orgName}>Legal Aid Sindh</Text>
-        <Text style={styles.orgSub}>Public data · Exportable · April 2025</Text>
+        <Text style={styles.orgName}>NGO Dashboard</Text>
+        <Text style={styles.orgSub}>Public data · Exportable</Text>
 
         <View style={styles.statsRow}>
-          <View style={styles.statChip}><Text style={styles.statNum}>2.4k</Text><Text style={styles.statLabel}>Cases / Month</Text></View>
-          <View style={styles.statChip}><Text style={styles.statNum}>14</Text><Text style={styles.statLabel}>Districts</Text></View>
-          <View style={styles.statChip}><Text style={styles.statNum}>↑18%</Text><Text style={styles.statLabel}>vs Last Month</Text></View>
+          <View style={styles.statChip}><Text style={styles.statNum}>0</Text><Text style={styles.statLabel}>Cases / Month</Text></View>
+          <View style={styles.statChip}><Text style={styles.statNum}>0</Text><Text style={styles.statLabel}>Districts</Text></View>
+          <View style={styles.statChip}><Text style={styles.statNum}>—</Text><Text style={styles.statLabel}>vs Last Month</Text></View>
         </View>
       </View>
 
@@ -77,7 +79,8 @@ export default function NGOHome() {
 
         <TouchableOpacity style={styles.mapCard} onPress={() => router.push('/(ngo)/CaseMap')}>
           <View style={styles.mapVisual}>
-            {[14,18,10,16,20,12,15,22,9,17,13,19,11,16].map((h, i) => (
+            {heatmap.length === 0 && <Text style={styles.mapSub}>No case data yet</Text>}
+            {heatmap.map((h, i) => (
               <View
                 key={i}
                 style={[

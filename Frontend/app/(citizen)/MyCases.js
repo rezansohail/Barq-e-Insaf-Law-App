@@ -80,6 +80,9 @@ export default function MyCases() {
         </ScrollView>
 
         {/* CASE CARDS */}
+        {filtered.length === 0 && (
+          <Text style={styles.caseMeta}>No cases yet</Text>
+        )}
         {filtered.map((c, i) => (
           <TouchableOpacity
             key={i}

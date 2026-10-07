@@ -3,13 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, StatusBar } fro
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styles from './AddEvidence.styles';
 
-const mockExplorerFiles = [
-  { name: 'property_deed_sindh.pdf', type: 'PDF', size: '2.5 MB' },
-  { name: 'house_boundary_photo.jpg', type: 'Photo', size: '1.8 MB' },
-  { name: 'incident_video_clip.mp4', type: 'Video', size: '15.4 MB' },
-  { name: 'witness_affidavit.pdf', type: 'PDF', size: '940 KB' },
-  { name: 'eviction_notice.pdf', type: 'PDF', size: '1.1 MB' },
-];
+const mockExplorerFiles = [];
 
 export default function AddEvidence() {
   const router = useRouter();
@@ -58,6 +52,9 @@ export default function AddEvidence() {
         <View style={styles.explorerBox}>
           <Text style={styles.explorerHeader}>Phone File Explorer</Text>
           
+          {mockExplorerFiles.length === 0 && (
+            <Text style={styles.subtitle}>No files available</Text>
+          )}
           {mockExplorerFiles.map((file, idx) => (
             <TouchableOpacity 
               key={idx} 

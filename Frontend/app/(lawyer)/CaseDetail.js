@@ -24,6 +24,25 @@ export default function CaseDetail() {
   
   const caseData = activeCase || requestCase;
 
+  if (!caseData) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Text style={styles.backText}>←</Text>
+          </TouchableOpacity>
+          <Text style={styles.headerTitle}>Case Details</Text>
+        </View>
+        <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+          <View style={styles.card}>
+            <Text style={styles.detailText}>Case not found</Text>
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   const handleContactClient = () => {
     if (caseData.contact) {
       Alert.alert('Contact Client', `Phone: ${caseData.contact}`);

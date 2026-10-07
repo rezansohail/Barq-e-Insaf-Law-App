@@ -13,8 +13,6 @@ import { useRouter } from 'expo-router';
 import styles from './Profile.styles';
 import { useMockStore, userData, updateProfile } from './MockStore';
 
-const mockAvatars = ['AK', 'ZK', 'BK', 'MK', 'SK'];
-
 export default function Profile() {
   useMockStore();
   const router = useRouter();
@@ -26,6 +24,14 @@ export default function Profile() {
   const [inputEmail, setInputEmail] = useState(userData.email);
   const [inputPhone, setInputPhone] = useState(userData.phone);
   const [inputDistrict, setInputDistrict] = useState(userData.district);
+
+  const nameInitials = (userData.name || '')
+    .split(' ')
+    .filter(Boolean)
+    .map(part => part[0].toUpperCase())
+    .join('')
+    .slice(0, 2);
+  const avatarOptions = nameInitials ? [nameInitials] : [];
 
   const handleNav = (id) => {
     if (id === 'home')    router.push('/(citizen)/CitizenHome');
@@ -216,7 +222,7 @@ export default function Profile() {
           <View style={styles.popupContainer}>
             <Text style={styles.popupTitle}>Select Profile Initials</Text>
             <View style={styles.avatarRow}>
-              {mockAvatars.map((av, index) => (
+              {avatarOptions.map((av, index) => (
                 <TouchableOpacity 
                   key={index} 
                   style={styles.avatarSelectBubble}

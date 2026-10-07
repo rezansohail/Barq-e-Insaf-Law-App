@@ -63,7 +63,7 @@ export default function LawyerHome() {
         </View>
 
         <View style={styles.nameRow}>
-          <Text style={styles.lawyerName}>{lawyerProfile.name} - Advocate</Text>
+          <Text style={styles.lawyerName}>{lawyerProfile.name ? `${lawyerProfile.name} - Advocate` : 'Advocate'}</Text>
           <Text style={styles.licenseNo}>Licence: {lawyerProfile.sbc}</Text>
           <View style={styles.verifiedPill}>
             <Text style={styles.verifiedText}>SBC Verified</Text>
@@ -99,6 +99,9 @@ export default function LawyerHome() {
           </TouchableOpacity>
         </View>
 
+        {caseRequests.length === 0 && (
+          <Text style={styles.reqDesc}>No case requests</Text>
+        )}
         {caseRequests.slice(0, 2).map((r, i) => (
           <TouchableOpacity
             key={i}

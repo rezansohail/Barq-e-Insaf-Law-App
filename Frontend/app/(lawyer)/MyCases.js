@@ -41,6 +41,9 @@ export default function MyCases() {
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {activeCases.length === 0 && (
+          <Text style={styles.caseMeta}>No active cases</Text>
+        )}
         {activeCases.map((c, i) => (
           <TouchableOpacity 
             key={i} 

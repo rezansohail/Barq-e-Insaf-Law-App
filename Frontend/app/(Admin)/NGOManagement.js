@@ -8,78 +8,7 @@ import { useRouter } from 'expo-router';
 const { width } = Dimensions.get('window');
 const PER_PAGE = 5;
 
-const NGOS = [
-  {
-    id: 'NGO-001', name: 'Justice For All', registrationNo: 'NGO-KHI-2019-441',
-    registeredOn: '12 Mar 2019', type: 'Legal Aid', website: 'www.justiceforall.pk',
-    email: 'info@justiceforall.pk', phone: '+92 21 3456789',
-    officeAddress: '14-A, Clifton', city: 'Karachi', country: 'Pakistan',
-    founder: 'Dr. Aamir Khan', contactPerson: 'Sana Raza',
-    mission: 'Providing free legal aid to underprivileged citizens across Pakistan.',
-    areasOfWork: 'Legal Aid, Human Rights, Women Rights',
-    operatingRegions: 'Karachi, Hyderabad, Sukkur',
-    documents: ['Registration Certificate ✅', 'Tax Certificate ✅'],
-    verificationStatus: 'Verified', totalCases: 340, totalBeneficiaries: 1200,
-    totalLawyers: 18, activePrograms: 5,
-    status: 'Active', lastLogin: '3 hours ago',
-  },
-  {
-    id: 'NGO-002', name: 'Haqooq Foundation', registrationNo: 'NGO-LHR-2021-889',
-    registeredOn: '5 Aug 2021', type: 'Human Rights', website: 'www.haqooq.org.pk',
-    email: 'contact@haqooq.org.pk', phone: '+92 42 9988776',
-    officeAddress: 'Model Town, Block C', city: 'Lahore', country: 'Pakistan',
-    founder: 'Asma Bibi', contactPerson: 'Raza Hussain',
-    mission: 'Empowering marginalized communities through legal education and advocacy.',
-    areasOfWork: 'Education, Legal Awareness, Youth Empowerment',
-    operatingRegions: 'Lahore, Multan, Rawalpindi',
-    documents: ['Registration Certificate ✅'],
-    verificationStatus: 'Pending', totalCases: 120, totalBeneficiaries: 450,
-    totalLawyers: 9, activePrograms: 3,
-    status: 'Pending', lastLogin: '1 day ago',
-  },
-  {
-    id: 'NGO-003', name: 'Awaaz-e-Insaf', registrationNo: 'NGO-ISB-2020-312',
-    registeredOn: '20 Jan 2020', type: 'Women Rights', website: 'www.awaaz-insaf.pk',
-    email: 'hello@awaaz-insaf.pk', phone: '+92 51 2233445',
-    officeAddress: 'F-7 Markaz', city: 'Islamabad', country: 'Pakistan',
-    founder: 'Zainab Mirza', contactPerson: 'Ali Nawaz',
-    mission: 'Defending women\'s rights and providing legal shelter to abuse survivors.',
-    areasOfWork: 'Gender Violence, Custody, Divorce Rights',
-    operatingRegions: 'Islamabad, Rawalpindi, Attock',
-    documents: ['Registration Certificate ✅', 'Tax Certificate ✅'],
-    verificationStatus: 'Verified', totalCases: 215, totalBeneficiaries: 780,
-    totalLawyers: 12, activePrograms: 4,
-    status: 'Active', lastLogin: '6 hours ago',
-  },
-  {
-    id: 'NGO-004', name: 'Legal Shield Pakistan', registrationNo: 'NGO-PES-2022-577',
-    registeredOn: '8 Jun 2022', type: 'Legal Aid', website: '',
-    email: 'legalshield@yahoo.com', phone: '+92 91 5544332',
-    officeAddress: 'Saddar Road, Phase 2', city: 'Peshawar', country: 'Pakistan',
-    founder: 'Hamid Afridi', contactPerson: 'Hamid Afridi',
-    mission: 'Providing affordable legal counsel to tribal and remote communities.',
-    areasOfWork: 'Tribal Law, Criminal Defense, Land Rights',
-    operatingRegions: 'Peshawar, Mardan, Kohat',
-    documents: ['Registration Certificate ✅'],
-    verificationStatus: 'Pending', totalCases: 55, totalBeneficiaries: 180,
-    totalLawyers: 4, activePrograms: 1,
-    status: 'Pending', lastLogin: '3 days ago',
-  },
-  {
-    id: 'NGO-005', name: 'Munsif Welfare Trust', registrationNo: 'NGO-QTA-2018-109',
-    registeredOn: '3 Feb 2018', type: 'Welfare', website: 'www.munsif.org',
-    email: 'admin@munsif.org', phone: '+92 81 2211330',
-    officeAddress: 'Jinnah Road, Quetta', city: 'Quetta', country: 'Pakistan',
-    founder: 'Noor Baloch', contactPerson: 'Fatima Shah',
-    mission: 'Welfare and rehabilitation of prison inmates and their families.',
-    areasOfWork: 'Prison Reform, Rehabilitation, Legal Assistance',
-    operatingRegions: 'Quetta, Turbat, Khuzdar',
-    documents: ['Registration Certificate ✅', 'Tax Certificate ✅'],
-    verificationStatus: 'Suspended', totalCases: 78, totalBeneficiaries: 320,
-    totalLawyers: 6, activePrograms: 0,
-    status: 'Suspended', lastLogin: '2 months ago',
-  },
-];
+const NGOS = [];
 
 const STATUSES      = ['All', 'Active', 'Pending', 'Suspended'];
 const VERIFY_STATUS = ['All', 'Verified', 'Pending', 'Suspended'];
@@ -99,7 +28,7 @@ const DETAIL_TABS = ['Organization', 'Verification', 'Statistics', 'Account'];
 function NGODetail({ ngo: n, onBack }) {
   const [tab, setTab] = useState('Organization');
   const sc = statusColors[n.status] || statusColors['Pending'];
-  const initials = n.name.split(' ').map(w => w[0]).join('').slice(0, 2);
+  const initials = (n.name || '').split(' ').map(w => w[0]).join('').slice(0, 2);
 
   return (
     <SafeAreaView style={s.safe}>
@@ -163,7 +92,7 @@ function NGODetail({ ngo: n, onBack }) {
           <DSec title="✅ Verification">
             {[['Verification Status', n.verificationStatus]].map(([l,v]) => <IR key={l} label={l} value={v} />)}
             <Text style={{ fontSize: 12, color: '#888', marginTop: 14, marginBottom: 8 }}>Documents</Text>
-            {n.documents.map((d,i) => (
+            {(n.documents || []).map((d,i) => (
               <View key={i} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f5f3f0' }}>
                 <Text style={{ fontSize: 13, fontWeight: '600' }}>{d}</Text>
               </View>
@@ -247,17 +176,17 @@ export default function NGOManagement() {
 
   let filtered = data.filter(n => {
     const q = search.toLowerCase();
-    const matchQ = n.name.toLowerCase().includes(q) ||
-      n.registrationNo.toLowerCase().includes(q) ||
-      n.city.toLowerCase().includes(q) || n.id.toLowerCase().includes(q);
+    const matchQ = (n.name || '').toLowerCase().includes(q) ||
+      (n.registrationNo || '').toLowerCase().includes(q) ||
+      (n.city || '').toLowerCase().includes(q) || String(n.id ?? '').toLowerCase().includes(q);
     return matchQ && (status === 'All' || n.status === status) && (type === 'All' || n.type === type);
   });
 
   filtered = [...filtered].sort((a, b) => {
-    if (sort === 'Name ↑') return a.name.localeCompare(b.name);
-    if (sort === 'Name ↓') return b.name.localeCompare(a.name);
-    if (sort === 'Cases ↓') return b.totalCases - a.totalCases;
-    if (sort === 'Beneficiaries ↓') return b.totalBeneficiaries - a.totalBeneficiaries;
+    if (sort === 'Name ↑') return (a.name || '').localeCompare(b.name || '');
+    if (sort === 'Name ↓') return (b.name || '').localeCompare(a.name || '');
+    if (sort === 'Cases ↓') return (b.totalCases || 0) - (a.totalCases || 0);
+    if (sort === 'Beneficiaries ↓') return (b.totalBeneficiaries || 0) - (a.totalBeneficiaries || 0);
     return 0;
   });
 
@@ -351,7 +280,7 @@ export default function NGOManagement() {
             const sc  = statusColors[n.status]             || { bg: '#f3f4f6', text: '#374151' };
             const vc  = statusColors[n.verificationStatus] || { bg: '#f3f4f6', text: '#374151' };
             const sel = selected.includes(n.id);
-            const ini = n.name.split(' ').map(w=>w[0]).join('').slice(0,2);
+            const ini = (n.name || '').split(' ').map(w=>w[0]).join('').slice(0,2);
             return (
               <View key={n.id} style={[s.card, sel && s.cardSel]}>
                 <View style={s.cardTop}>

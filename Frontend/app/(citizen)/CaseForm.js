@@ -43,17 +43,14 @@ export default function CaseForm() {
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
 
-  const [evidenceList, setEvidenceList] = useState([
-    { id: '1', type: 'PDF', name: 'Sindh Land Deed.pdf', size: '2.4 MB', date: '2026-08-10' },
-  ]);
+  const [evidenceList, setEvidenceList] = useState([]);
 
   useEffect(() => {
     if (params.newFileName && params.newFileType) {
       const newFile = {
-        id: String(evidenceList.length + 1),
+        id: String(Date.now()),
         type: params.newFileType,
         name: params.newFileName,
-        size: '1.2 MB',
         date: new Date().toISOString().split('T')[0]
       };
       setEvidenceList(prev => [...prev, newFile]);
@@ -258,7 +255,7 @@ export default function CaseForm() {
             <View key={index} style={styles.evidenceItem}>
               <View style={styles.evidenceInfo}>
                 <Text style={styles.evidenceName}>{item.name}</Text>
-                <Text style={styles.evidenceMeta}>{item.type} • {item.size}</Text>
+                <Text style={styles.evidenceMeta}>{item.size ? `${item.type} • ${item.size}` : item.type}</Text>
               </View>
               <View style={styles.evidenceActions}>
                 <TouchableOpacity onPress={() => handleDeleteEvidence(item.id)} style={styles.deleteBtn}>

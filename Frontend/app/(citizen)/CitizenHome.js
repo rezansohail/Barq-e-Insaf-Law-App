@@ -27,7 +27,7 @@ export default function CitizenHome() {
   const [showLawyerProfile, setShowLawyerProfile] = useState(false);
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [requestSent, setRequestSent] = useState(false);
+  const [requestSent] = useState(false);
 
   const handleNav = (id) => {
     setActiveNav(id);
@@ -52,14 +52,6 @@ export default function CitizenHome() {
   const handleLawyerPress = (lawyer) => {
     setSelectedLawyer(lawyer);
     setShowLawyerProfile(true);
-  };
-
-  const handleSendRequest = () => {
-    setRequestSent(true);
-    setTimeout(() => {
-      setRequestSent(false);
-      setShowLawyerProfile(false);
-    }, 2000);
   };
 
   const handleCasePress = (caseItem) => {
@@ -100,7 +92,7 @@ export default function CitizenHome() {
           </View>
         </View>
 
-        <Text style={styles.greeting}>Asalam-u-Alaikum, {userData.name}</Text>
+        <Text style={styles.greeting}>Asalam-u-Alaikum{userData.name ? `, ${userData.name}` : ''}</Text>
       </View>
 
       <ScrollView
@@ -114,7 +106,7 @@ export default function CitizenHome() {
         </TouchableOpacity>
 
         {/* VERIFIED LAWYERS NEAR YOU */}
-        <Text style={styles.sectionLabel}>Verified Lawyers Near You ({userData.district})</Text>
+        <Text style={styles.sectionLabel}>Verified Lawyers Near You{userData.district ? ` (${userData.district})` : ''}</Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -145,6 +137,9 @@ export default function CitizenHome() {
 
         {/* ACTIVE CASES */}
         <Text style={styles.sectionLabel}>My Active Cases</Text>
+        {activeCases.length === 0 && (
+          <Text style={styles.emptyText}>No active cases yet.</Text>
+        )}
         {activeCases.map((c, i) => (
           <TouchableOpacity
             key={i}

@@ -9,62 +9,7 @@ import { useRouter } from 'expo-router';
 const { width } = Dimensions.get('window');
 const PER_PAGE = 5;
 
-const CITIZENS = [
-  {
-    id: 'CIT-001', fullName: 'Muhammad Usman', email: 'usman@gmail.com',
-    phone: '+92 300 1112233', cnic: '42201-1234567-1', gender: 'Male', dob: '10 Apr 1990',
-    country: 'Pakistan', province: 'Sindh', city: 'Karachi', address: 'House 12, Block B, North Nazimabad',
-    registeredOn: '5 Jan 2024', lastLogin: '2 hours ago', status: 'Active',
-    totalComplaints: 5, activeComplaints: 2, resolvedComplaints: 3,
-    assignedLawyer: 'Ali Hassan', appointments: 4,
-    documents: ['CNIC ✅', 'Complaint Docs ✅'],
-  },
-  {
-    id: 'CIT-002', fullName: 'Fatima Zahra', email: 'fatima.z@gmail.com',
-    phone: '+92 321 4445566', cnic: '35202-9876543-2', gender: 'Female', dob: '22 Aug 1995',
-    country: 'Pakistan', province: 'Punjab', city: 'Lahore', address: 'Flat 5, Gulberg Residency',
-    registeredOn: '14 Feb 2024', lastLogin: '1 day ago', status: 'Active',
-    totalComplaints: 2, activeComplaints: 1, resolvedComplaints: 1,
-    assignedLawyer: 'Nadia Memon', appointments: 2,
-    documents: ['CNIC ✅'],
-  },
-  {
-    id: 'CIT-003', fullName: 'Rizwan Akhtar', email: 'rizwan.a@yahoo.com',
-    phone: '+92 333 7778899', cnic: '37405-5556677-3', gender: 'Male', dob: '3 Dec 1985',
-    country: 'Pakistan', province: 'KPK', city: 'Peshawar', address: '44 University Road',
-    registeredOn: '20 Mar 2024', lastLogin: '5 days ago', status: 'Suspended',
-    totalComplaints: 8, activeComplaints: 0, resolvedComplaints: 8,
-    assignedLawyer: 'Tariq Shah', appointments: 6,
-    documents: ['CNIC ✅', 'Complaint Docs ✅'],
-  },
-  {
-    id: 'CIT-004', fullName: 'Ayesha Siddiqui', email: 'ayesha.s@hotmail.com',
-    phone: '+92 311 2223344', cnic: '42301-3334455-4', gender: 'Female', dob: '18 May 1998',
-    country: 'Pakistan', province: 'Sindh', city: 'Hyderabad', address: '9-C, Latifabad',
-    registeredOn: '2 Apr 2024', lastLogin: '3 hours ago', status: 'Active',
-    totalComplaints: 1, activeComplaints: 1, resolvedComplaints: 0,
-    assignedLawyer: 'Unassigned', appointments: 1,
-    documents: ['CNIC ✅'],
-  },
-  {
-    id: 'CIT-005', fullName: 'Kamran Mirza', email: 'kamran.m@gmail.com',
-    phone: '+92 345 6667788', cnic: '35101-6667788-5', gender: 'Male', dob: '7 Jan 1980',
-    country: 'Pakistan', province: 'Punjab', city: 'Faisalabad', address: 'Plot 33, D-Ground',
-    registeredOn: '9 Nov 2023', lastLogin: '2 weeks ago', status: 'Inactive',
-    totalComplaints: 3, activeComplaints: 0, resolvedComplaints: 3,
-    assignedLawyer: 'Bilal Chaudhry', appointments: 3,
-    documents: ['CNIC ✅', 'Complaint Docs ✅'],
-  },
-  {
-    id: 'CIT-006', fullName: 'Sara Malik', email: 'sara.malik@gmail.com',
-    phone: '+92 300 9990011', cnic: '42201-9990011-6', gender: 'Female', dob: '30 Oct 1993',
-    country: 'Pakistan', province: 'Sindh', city: 'Karachi', address: 'Flat 8, Clifton Block 5',
-    registeredOn: '1 Jun 2024', lastLogin: 'Just now', status: 'Active',
-    totalComplaints: 0, activeComplaints: 0, resolvedComplaints: 0,
-    assignedLawyer: 'Unassigned', appointments: 0,
-    documents: ['CNIC ✅'],
-  },
-];
+const CITIZENS = [];
 
 const STATUSES   = ['All', 'Active', 'Inactive', 'Suspended'];
 const CITIES     = ['All', 'Karachi', 'Lahore', 'Islamabad', 'Peshawar', 'Hyderabad', 'Faisalabad'];
@@ -91,11 +36,11 @@ export default function CitizenManagement() {
   // Filter
   let filtered = data.filter(c => {
     const q = search.toLowerCase();
-    const matchQ = c.fullName.toLowerCase().includes(q) ||
-      c.email.toLowerCase().includes(q) ||
-      c.cnic.includes(q) ||
-      c.city.toLowerCase().includes(q) ||
-      c.id.toLowerCase().includes(q);
+    const matchQ = (c.fullName || '').toLowerCase().includes(q) ||
+      (c.email || '').toLowerCase().includes(q) ||
+      (c.cnic || '').includes(q) ||
+      (c.city || '').toLowerCase().includes(q) ||
+      String(c.id ?? '').toLowerCase().includes(q);
     return matchQ &&
       (status === 'All' || c.status === status) &&
       (city   === 'All' || c.city   === city);
@@ -103,9 +48,9 @@ export default function CitizenManagement() {
 
   // Sort
   filtered = [...filtered].sort((a, b) => {
-    if (sort === 'Name ↑') return a.fullName.localeCompare(b.fullName);
-    if (sort === 'Name ↓') return b.fullName.localeCompare(a.fullName);
-    if (sort === 'Complaints ↓') return b.totalComplaints - a.totalComplaints;
+    if (sort === 'Name ↑') return (a.fullName || '').localeCompare(b.fullName || '');
+    if (sort === 'Name ↓') return (b.fullName || '').localeCompare(a.fullName || '');
+    if (sort === 'Complaints ↓') return (b.totalComplaints || 0) - (a.totalComplaints || 0);
     if (sort === 'Date ↑') return new Date(a.registeredOn) - new Date(b.registeredOn);
     if (sort === 'Date ↓') return new Date(b.registeredOn) - new Date(a.registeredOn);
     return 0;
@@ -227,7 +172,7 @@ export default function CitizenManagement() {
                     <Text style={{ fontSize: 16 }}>{isSelected ? '☑' : '☐'}</Text>
                   </TouchableOpacity>
                   <View style={s.avatar}>
-                    <Text style={s.avatarTxt}>{c.fullName.split(' ').map(n=>n[0]).join('')}</Text>
+                    <Text style={s.avatarTxt}>{(c.fullName || '').split(' ').map(n=>n[0]).join('')}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={s.cardName}>{c.fullName}</Text>
@@ -301,7 +246,7 @@ const DETAIL_TABS = ['Personal', 'Legal', 'Documents', 'Account'];
 function CitizenDetail({ citizen: c, onBack }) {
   const [tab, setTab] = useState('Personal');
   const sc = statusColors[c.status] || statusColors['Inactive'];
-  const initials = c.fullName.split(' ').map(n=>n[0]).join('');
+  const initials = (c.fullName || '').split(' ').map(n=>n[0]).join('');
 
   return (
     <SafeAreaView style={s.safe}>

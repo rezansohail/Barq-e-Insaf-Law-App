@@ -17,13 +17,13 @@ export default function CaseDetail() {
   useMockStore();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const caseId = params.caseId || '1';
+  const caseId = params.caseId;
 
-  const caseData = activeCases.find(c => c.id === caseId) || activeCases[0];
+  const caseData = activeCases.find(c => c.id === caseId);
 
   const [editMode, setEditMode] = useState(false);
-  const [editedTitle, setEditedTitle] = useState(caseData.title);
-  const [editedDesc, setEditedDesc] = useState(caseData.description);
+  const [editedTitle, setEditedTitle] = useState(caseData ? caseData.title : '');
+  const [editedDesc, setEditedDesc] = useState(caseData ? caseData.description : '');
 
   const handleNav = (id) => {
     if (id === 'home')    router.push('/(citizen)/CitizenHome');
@@ -44,6 +44,22 @@ export default function CaseDetail() {
     setEditMode(false);
     Alert.alert('Success', 'Case updated successfully!');
   };
+
+  if (!caseData) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.scrollContent}>
+          <Text style={styles.descriptionText}>Case not found</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>

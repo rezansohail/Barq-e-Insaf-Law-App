@@ -8,50 +8,7 @@ import { useRouter } from 'expo-router';
 const { width } = Dimensions.get('window');
 const ITEMS_PER_PAGE = 5;
 
-const ALL_LAWYERS = [
-  {
-    id: 'L-001', name: 'Ali Hassan', gender: 'Male', dob: '15 Mar 1985',
-    cnic: '42201-1234567-1', email: 'ali.hassan@law.pk', phone: '+92 300 1234567',
-    city: 'Karachi', specialty: 'Criminal', experience: 12, license: 'SBC-8821',
-    barCouncil: 'BC-2210', status: 'Pending', rating: 4.5, cases: 148,
-    activeCases: 12, completedCases: 136, fee: 'PKR 5,000', registeredOn: '12 Jan 2024',
-  },
-  {
-    id: 'L-002', name: 'Nadia Memon', gender: 'Female', dob: '22 Jun 1990',
-    cnic: '42301-9876543-2', email: 'nadia.memon@law.pk', phone: '+92 321 9876543',
-    city: 'Lahore', specialty: 'Family', experience: 8, license: 'SBC-9043',
-    barCouncil: 'BC-3301', status: 'Active', rating: 4.8, cases: 95,
-    activeCases: 8, completedCases: 87, fee: 'PKR 3,500', registeredOn: '5 Mar 2024',
-  },
-  {
-    id: 'L-003', name: 'Tariq Shah', gender: 'Male', dob: '3 Sep 1978',
-    cnic: '42101-5556677-3', email: 'tariq.shah@law.pk', phone: '+92 333 5556677',
-    city: 'Islamabad', specialty: 'Civil', experience: 18, license: 'SBC-7711',
-    barCouncil: 'BC-1102', status: 'Active', rating: 4.2, cases: 220,
-    activeCases: 20, completedCases: 200, fee: 'PKR 8,000', registeredOn: '18 Feb 2024',
-  },
-  {
-    id: 'L-004', name: 'Sara Qureshi', gender: 'Female', dob: '10 Dec 1992',
-    cnic: '35202-7778899-4', email: 'sara.q@law.pk', phone: '+92 311 7778899',
-    city: 'Karachi', specialty: 'Corporate', experience: 6, license: 'SBC-6620',
-    barCouncil: 'BC-4410', status: 'Pending', rating: 0, cases: 0,
-    activeCases: 0, completedCases: 0, fee: 'PKR 4,000', registeredOn: '1 Apr 2024',
-  },
-  {
-    id: 'L-005', name: 'Bilal Chaudhry', gender: 'Male', dob: '28 Aug 1982',
-    cnic: '35101-3334455-5', email: 'bilal.c@law.pk', phone: '+92 345 3334455',
-    city: 'Faisalabad', specialty: 'Tax', experience: 14, license: 'SBC-5530',
-    barCouncil: 'BC-5520', status: 'Suspended', rating: 3.1, cases: 110,
-    activeCases: 0, completedCases: 110, fee: 'PKR 6,000', registeredOn: '22 Dec 2023',
-  },
-  {
-    id: 'L-006', name: 'Hina Baig', gender: 'Female', dob: '5 Feb 1988',
-    cnic: '42201-6667788-6', email: 'hina.baig@law.pk', phone: '+92 300 6667788',
-    city: 'Karachi', specialty: 'Property', experience: 10, license: 'SBC-4411',
-    barCouncil: 'BC-6630', status: 'Active', rating: 4.6, cases: 75,
-    activeCases: 5, completedCases: 70, fee: 'PKR 4,500', registeredOn: '10 Nov 2023',
-  },
-];
+const ALL_LAWYERS = [];
 
 const SPECIALTIES = ['All', 'Criminal', 'Family', 'Civil', 'Corporate', 'Tax', 'Property', 'Intellectual Property'];
 const STATUSES = ['All', 'Active', 'Pending', 'Suspended'];
@@ -73,9 +30,9 @@ export default function LawyerManagement() {
   // Filter logic
   const filtered = lawyers.filter(l => {
     const matchSearch =
-      l.name.toLowerCase().includes(search.toLowerCase()) ||
-      l.license.toLowerCase().includes(search.toLowerCase()) ||
-      l.city.toLowerCase().includes(search.toLowerCase());
+      (l.name || '').toLowerCase().includes(search.toLowerCase()) ||
+      (l.license || '').toLowerCase().includes(search.toLowerCase()) ||
+      (l.city || '').toLowerCase().includes(search.toLowerCase());
     const matchSpecialty = selectedSpecialty === 'All' || l.specialty === selectedSpecialty;
     const matchStatus    = selectedStatus    === 'All' || l.status    === selectedStatus;
     return matchSearch && matchSpecialty && matchStatus;
@@ -180,7 +137,7 @@ export default function LawyerManagement() {
               <View style={styles.cardTop}>
                 <View style={styles.avatar}>
                   <Text style={styles.avatarText}>
-                    {lawyer.name.split(' ').map(n => n[0]).join('')}
+                    {(lawyer.name || '').split(' ').map(n => n[0]).join('')}
                   </Text>
                 </View>
                 <View style={styles.cardInfo}>

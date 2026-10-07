@@ -15,42 +15,6 @@ const statusColors = {
   Suspended: { bg: '#fee2e2', text: '#991b1b' },
 };
 
-// Mock full detail — in real app this comes from API using lawyer id
-const FULL_DETAIL = {
-  'L-001': {
-    fullName: 'Ali Hassan', gender: 'Male', dob: '15 Mar 1985',
-    cnic: '42201-1234567-1', email: 'ali.hassan@law.pk', phone: '+92 300 1234567',
-    officeAddress: '204, Justice Plaza, M.A. Jinnah Road', city: 'Karachi', country: 'Pakistan',
-    licenseNumber: 'SBC-8821', barCouncil: 'BC-2210', specialty: 'Criminal',
-    experience: 12, qualifications: 'LLB, LLM', university: 'University of Karachi',
-    lawFirm: 'Hassan & Associates', languages: 'Urdu, English, Sindhi',
-    fee: 'PKR 5,000', availableDays: 'Mon – Fri', availableTime: '10am – 5pm',
-    onlineConsultation: 'Yes', courts: 'High Court Karachi, Supreme Court',
-    bio: 'Experienced criminal lawyer with over 12 years of courtroom experience. Specializing in high-profile criminal defense and constitutional matters.',
-    documents: ['Bar Council License ✅', 'LLM Degree ✅', 'Profile Photo ✅', 'Verification Docs ✅'],
-    totalCases: 148, activeCases: 12, completedCases: 136, rating: 4.5, totalReviews: 89,
-    username: 'ali.hassan', passwordHash: '***hashed***',
-    accountStatus: 'Active', registeredOn: '12 Jan 2024', lastLogin: '2 hours ago',
-    status: 'Active',
-  },
-  'L-002': {
-    fullName: 'Nadia Memon', gender: 'Female', dob: '22 Jun 1990',
-    cnic: '42301-9876543-2', email: 'nadia.memon@law.pk', phone: '+92 321 9876543',
-    officeAddress: '88-B, Gulberg III', city: 'Lahore', country: 'Pakistan',
-    licenseNumber: 'SBC-9043', barCouncil: 'BC-3301', specialty: 'Family',
-    experience: 8, qualifications: 'LLB', university: 'Punjab University',
-    lawFirm: 'Memon Legal', languages: 'Urdu, English, Punjabi',
-    fee: 'PKR 3,500', availableDays: 'Mon – Sat', availableTime: '9am – 4pm',
-    onlineConsultation: 'Yes', courts: 'Family Courts Lahore',
-    bio: 'Dedicated family lawyer focusing on divorce, child custody, and inheritance matters with empathy and professionalism.',
-    documents: ['Bar Council License ✅', 'LLB Degree ✅', 'Profile Photo ✅', 'Verification Docs ✅'],
-    totalCases: 95, activeCases: 8, completedCases: 87, rating: 4.8, totalReviews: 62,
-    username: 'nadia.memon', passwordHash: '***hashed***',
-    accountStatus: 'Active', registeredOn: '5 Mar 2024', lastLogin: '1 day ago',
-    status: 'Active',
-  },
-};
-
 function InfoRow({ label, value, highlight }) {
   return (
     <View style={styles.infoRow}>
@@ -74,15 +38,13 @@ export default function LawyerDetail() {
   const params = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState('Personal');
 
-  // Get data passed from LawyerManagement or fallback to mock
+  // Get data passed from LawyerManagement
   let lawyer = null;
   try {
     lawyer = params.data ? JSON.parse(params.data) : null;
   } catch (_) {}
 
-  // Merge with full detail if available
-  const fullData = FULL_DETAIL[params.id] || {};
-  const data = { ...lawyer, ...fullData };
+  const data = lawyer || {};
 
   if (!data.fullName && !data.name) {
     return (
@@ -123,13 +85,13 @@ export default function LawyerDetail() {
         </View>
         <View style={styles.profileInfo}>
           <Text style={styles.profileName}>{displayName}</Text>
-          <Text style={styles.profileSub}>{data.licenseNumber || data.license} · {data.specialty}</Text>
-          <Text style={styles.profileSub}>📍 {data.city} · {data.experience} yrs</Text>
+          <Text style={styles.profileSub}>{data.licenseNumber || data.license || '—'} · {data.specialty || '—'}</Text>
+          <Text style={styles.profileSub}>📍 {data.city || '—'} · {data.experience ?? '—'} yrs</Text>
         </View>
         {data.rating > 0 && (
           <View style={styles.ratingBox}>
             <Text style={styles.ratingVal}>⭐ {data.rating}</Text>
-            <Text style={styles.ratingCount}>{data.totalReviews} reviews</Text>
+            <Text style={styles.ratingCount}>{data.totalReviews || 0} reviews</Text>
           </View>
         )}
       </View>
@@ -176,7 +138,7 @@ export default function LawyerDetail() {
               <InfoRow label="License Number"          value={data.licenseNumber || data.license} />
               <InfoRow label="Bar Council Reg. No."   value={data.barCouncil} />
               <InfoRow label="Specialization"          value={data.specialty} />
-              <InfoRow label="Years of Experience"     value={`${data.experience} years`} />
+              <InfoRow label="Years of Experience"     value={data.experience != null ? `${data.experience} years` : ''} />
               <InfoRow label="Qualifications"          value={data.qualifications} />
               <InfoRow label="University"              value={data.university} />
               <InfoRow label="Current Law Firm"        value={data.lawFirm || 'Independent'} />

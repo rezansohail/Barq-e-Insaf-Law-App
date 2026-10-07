@@ -3,13 +3,7 @@ import { View, Text, ScrollView, TouchableOpacity, SafeAreaView, StatusBar } fro
 import { useRouter } from 'expo-router';
 import styles from './CaseMap.styles';
 
-const districts = [
-  { name: 'Larkana District',  cases: 342, lawyers: 2,  sev: 'Critical', style: 'sevCritical' },
-  { name: 'Sukkur District',   cases: 218, lawyers: 5,  sev: 'High',     style: 'sevHigh' },
-  { name: 'Shikarpur District',cases: 165, lawyers: 4,  sev: 'High',     style: 'sevHigh' },
-  { name: 'Karachi Central',   cases: 901, lawyers: 48, sev: 'Covered',  style: 'sevCovered' },
-  { name: 'Hyderabad District',cases: 510, lawyers: 22, sev: 'Covered',  style: 'sevCovered' },
-];
+const districts = [];
 
 export default function CaseMap() {
   const router = useRouter();
@@ -31,6 +25,7 @@ export default function CaseMap() {
           <View style={styles.legendItem}><View style={[styles.legendDot, { backgroundColor: '#4ade80' }]} /><Text style={styles.legendText}>Covered</Text></View>
         </View>
 
+        {districts.length === 0 && <Text style={styles.districtMeta}>No district data yet</Text>}
         {districts.map((d, i) => (
           <View key={i} style={styles.districtCard}>
             <Text style={styles.districtIcon}>📍</Text>

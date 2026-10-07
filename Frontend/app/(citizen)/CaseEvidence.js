@@ -8,9 +8,9 @@ export default function CaseEvidence() {
   useMockStore();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const caseId = params.caseId || '1';
+  const caseId = params.caseId;
 
-  const caseData = activeCases.find(c => c.id === caseId) || activeCases[0];
+  const caseData = activeCases.find(c => c.id === caseId);
 
   const handleNav = (id) => {
     if (id === 'home')    router.push('/(citizen)/CitizenHome');
@@ -18,6 +18,22 @@ export default function CaseEvidence() {
     if (id === 'lawyers') router.push('/(citizen)/FindLawyer');
     if (id === 'profile') router.push('/(citizen)/Profile');
   };
+
+  if (!caseData) {
+    return (
+      <SafeAreaView style={styles.safe}>
+        <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Text style={styles.backBtnText}>Back</Text>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.content}>
+          <Text style={styles.emptyText}>Case not found</Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safe}>

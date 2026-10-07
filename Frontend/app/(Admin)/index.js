@@ -8,44 +8,25 @@ import { useRouter } from 'expo-router';
 const { width } = Dimensions.get('window');
 
 const STATS = [
-  { label: 'Total Lawyers',       value: '284',   delta: '+12 pending',    color: '#5C1A1A', icon: '⚖️' },
-  { label: 'Verified Lawyers',    value: '217',   delta: '76% verified',   color: '#0F2744', icon: '✅' },
-  { label: 'Pending Verifications', value: '12', delta: 'Needs review',    color: '#92400e', icon: '⏳' },
-  { label: 'Total Citizens',      value: '2,841', delta: '+142 this week', color: '#1B4332', icon: '👥' },
-  { label: 'Total NGOs',          value: '38',    delta: '5 pending',      color: '#1e40af', icon: '🏢' },
-  { label: 'Active Cases',        value: '1,094', delta: '+88 this month', color: '#166534', icon: '📁' },
-  { label: 'Resolved Cases',      value: '3,220', delta: 'All time',       color: '#1A0533', icon: '✔️' },
-  { label: 'Pending Cases',       value: '204',   delta: 'Needs action',   color: '#7c3aed', icon: '🕐' },
-  { label: 'Total Appointments',  value: '540',   delta: '+32 this week',  color: '#0e7490', icon: '📅' },
-  { label: 'Monthly Registrations', value: '142', delta: 'June 2025',      color: '#065f46', icon: '📈' },
+  { label: 'Total Lawyers',       value: '0', delta: '',             color: '#5C1A1A', icon: '⚖️' },
+  { label: 'Verified Lawyers',    value: '0', delta: '',             color: '#0F2744', icon: '✅' },
+  { label: 'Pending Verifications', value: '0', delta: 'Needs review', color: '#92400e', icon: '⏳' },
+  { label: 'Total Citizens',      value: '0', delta: '',             color: '#1B4332', icon: '👥' },
+  { label: 'Total NGOs',          value: '0', delta: '',             color: '#1e40af', icon: '🏢' },
+  { label: 'Active Cases',        value: '0', delta: '',             color: '#166534', icon: '📁' },
+  { label: 'Resolved Cases',      value: '0', delta: 'All time',     color: '#1A0533', icon: '✔️' },
+  { label: 'Pending Cases',       value: '0', delta: 'Needs action', color: '#7c3aed', icon: '🕐' },
+  { label: 'Total Appointments',  value: '0', delta: '',             color: '#0e7490', icon: '📅' },
+  { label: 'Monthly Registrations', value: '0', delta: '',           color: '#065f46', icon: '📈' },
 ];
 
-const RECENT_ACTIVITIES = [
-  { color: '#4ade80', title: 'Lawyer #L-0218 Verified',      sub: '10 mins ago · Auto-matched SBC',     icon: '✅' },
-  { color: '#ef4444', title: 'User Report Filed',            sub: '32 mins ago · Awaiting review',       icon: '🚩' },
-  { color: '#3b82f6', title: 'New Case Filed — Karachi',     sub: '1 hour ago · Property dispute',       icon: '📁' },
-  { color: '#f59e0b', title: 'NGO "Justice For All" Applied', sub: '2 hours ago · Verification pending', icon: '🏢' },
-  { color: '#a78bfa', title: 'Citizen Sara Malik Registered', sub: '3 hours ago · Karachi',              icon: '👤' },
-];
+const RECENT_ACTIVITIES = [];
 
-const LATEST_COMPLAINTS = [
-  { id: 'CMP-201', citizen: 'Muhammad Usman', type: 'Property Dispute',  status: 'Active',   time: '1h ago' },
-  { id: 'CMP-202', citizen: 'Fatima Zahra',  type: 'Family Matter',      status: 'Pending',  time: '3h ago' },
-  { id: 'CMP-203', citizen: 'Rizwan Akhtar', type: 'Criminal Defense',   status: 'Resolved', time: '5h ago' },
-];
+const LATEST_COMPLAINTS = [];
 
-const LATEST_APPOINTMENTS = [
-  { id: 'APT-101', citizen: 'Ayesha Siddiqui', lawyer: 'Ali Hassan',    date: 'Today 3:00 PM',    status: 'Confirmed' },
-  { id: 'APT-102', citizen: 'Kamran Mirza',     lawyer: 'Nadia Memon',   date: 'Today 5:30 PM',    status: 'Pending'   },
-  { id: 'APT-103', citizen: 'Sara Malik',        lawyer: 'Tariq Shah',    date: 'Tomorrow 11:00 AM', status: 'Confirmed' },
-];
+const LATEST_APPOINTMENTS = [];
 
-const NOTIFICATIONS = [
-  { type: 'red',    text: '5 flagged reports need immediate review',     time: '5m ago'  },
-  { type: 'amber',  text: '3 NGO applications pending verification',     time: '1h ago'  },
-  { type: 'blue',   text: 'System uptime 98.2% — last 30 days',         time: '2h ago'  },
-  { type: 'green',  text: '12 lawyers approved this week',               time: '3h ago'  },
-];
+const NOTIFICATIONS = [];
 
 const BOTTOM_NAV = [
   { id: 'dashboard', icon: '📊', label: 'Dashboard' },
@@ -101,13 +82,13 @@ export default function AdminHome() {
         {/* ALERT BADGES */}
         <View style={s.alertRow}>
           <View style={[s.alertBadge, { backgroundColor: '#fee2e2' }]}>
-            <Text style={[s.alertText, { color: '#991b1b' }]}>5 Flagged</Text>
+            <Text style={[s.alertText, { color: '#991b1b' }]}>0 Flagged</Text>
           </View>
           <View style={[s.alertBadge, { backgroundColor: '#fef3c7' }]}>
-            <Text style={[s.alertText, { color: '#92400e' }]}>12 Pending</Text>
+            <Text style={[s.alertText, { color: '#92400e' }]}>0 Pending</Text>
           </View>
           <View style={[s.alertBadge, { backgroundColor: '#dbeafe' }]}>
-            <Text style={[s.alertText, { color: '#1e40af' }]}>3 NGOs</Text>
+            <Text style={[s.alertText, { color: '#1e40af' }]}>0 NGOs</Text>
           </View>
         </View>
 
@@ -153,6 +134,7 @@ export default function AdminHome() {
         {/* ── NOTIFICATIONS ── */}
         <View style={s.section}>
           <Text style={s.sectionTitle}>🔔 Notifications</Text>
+          {NOTIFICATIONS.length === 0 && <Text style={s.emptyText}>No notifications</Text>}
           {NOTIFICATIONS.map((n, i) => {
             const c = notifColors[n.type];
             return (
@@ -171,6 +153,7 @@ export default function AdminHome() {
             <Text style={s.sectionTitle}>📋 Latest Complaints</Text>
             <TouchableOpacity><Text style={s.seeAll}>See All →</Text></TouchableOpacity>
           </View>
+          {LATEST_COMPLAINTS.length === 0 && <Text style={s.emptyText}>No complaints yet</Text>}
           {LATEST_COMPLAINTS.map((c, i) => {
             const sc = cmpColors[c.status];
             return (
@@ -194,6 +177,7 @@ export default function AdminHome() {
             <Text style={s.sectionTitle}>📅 Latest Appointments</Text>
             <TouchableOpacity><Text style={s.seeAll}>See All →</Text></TouchableOpacity>
           </View>
+          {LATEST_APPOINTMENTS.length === 0 && <Text style={s.emptyText}>No appointments yet</Text>}
           {LATEST_APPOINTMENTS.map((a, i) => {
             const sc = aptColors[a.status];
             return (
@@ -214,6 +198,7 @@ export default function AdminHome() {
         {/* ── RECENT ACTIVITY ── */}
         <View style={[s.section, { marginBottom: 100 }]}>
           <Text style={s.sectionTitle}>🕐 Recent Activity</Text>
+          {RECENT_ACTIVITIES.length === 0 && <Text style={s.emptyText}>No recent activity</Text>}
           {RECENT_ACTIVITIES.map((item, i) => (
             <View key={i} style={s.activityItem}>
               <View style={[s.activityDot, { backgroundColor: item.color }]} />
@@ -297,6 +282,7 @@ const s = StyleSheet.create({
   activityDot:   { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
   activityTitle: { fontSize: 13, fontWeight: '600', color: '#1a1a1a' },
   activitySub:   { fontSize: 11, color: '#999', marginTop: 2 },
+  emptyText:     { fontSize: 12, color: '#999', textAlign: 'center', paddingVertical: 12 },
   bottomNav:     { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#ece9e4', flexDirection: 'row', height: 68, paddingBottom: 8 },
   navItem:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
   navIcon:       { fontSize: 20 },

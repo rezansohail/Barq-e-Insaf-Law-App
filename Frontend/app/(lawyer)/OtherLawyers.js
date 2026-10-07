@@ -48,6 +48,9 @@ export default function OtherLawyers() {
       </View>
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+        {otherLawyers.length === 0 && (
+          <Text style={styles.lawyerSpec}>No other lawyers found</Text>
+        )}
         {otherLawyers.map((lawyer, index) => (
           <TouchableOpacity 
             key={index} 

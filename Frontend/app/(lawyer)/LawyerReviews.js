@@ -2,36 +2,16 @@ import React from 'react';
 import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, StatusBar } from 'react-native';
 import { useRouter } from 'expo-router';
 
-// Sample reviews left by citizens
-const reviewsList = [
-  {
-    clientName: 'Ahmed Raza',
-    rating: '★★★★★',
-    score: '5.0',
-    caseType: 'Property Dispute · Hyderabad',
-    date: '2 weeks ago',
-    comment: 'Advocate Sara handled our boundary wall land dispute with great professionalism. She explained Sindh property laws clearly and reached a quick settlement.'
-  },
-  {
-    clientName: 'Zara Memon',
-    rating: '★★★★★',
-    score: '5.0',
-    caseType: 'Child Custody · Karachi Family Court',
-    date: '1 month ago',
-    comment: 'Very empathetic and knowledgeable regarding family court procedures in Karachi. Strongly recommended for family matters.'
-  },
-  {
-    clientName: 'Bilal Khan',
-    rating: '★★★★☆',
-    score: '4.0',
-    caseType: 'Inheritance Distribution · Sukkur',
-    date: '2 months ago',
-    comment: 'Good communication throughout our inheritance division proceedings. Provided honest legal guidance.'
-  }
-];
+// Reviews left by citizens (to be loaded from the backend API)
+const reviewsList = [];
 
 export default function LawyerReviews() {
   const router = useRouter();
+  const reviewCount = reviewsList.length;
+  const averageScore = reviewCount > 0
+    ? reviewsList.reduce((sum, r) => sum + Number(r.score || 0), 0) / reviewCount
+    : 0;
+  const filledStars = Math.round(averageScore);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -49,9 +29,9 @@ export default function LawyerReviews() {
         
         {/* Rating Summary Card */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryScore}>4.9</Text>
-          <Text style={styles.summaryStars}>★★★★★</Text>
-          <Text style={styles.summarySub}>Based on 28 verified client reviews</Text>
+          <Text style={styles.summaryScore}>{averageScore.toFixed(1)}</Text>
+          <Text style={styles.summaryStars}>{'★'.repeat(filledStars)}{'☆'.repeat(5 - filledStars)}</Text>
+          <Text style={styles.summarySub}>Based on {reviewCount} verified client review{reviewCount === 1 ? '' : 's'}</Text>
           <View style={styles.verifiedBadge}>
             <Text style={styles.verifiedText}>✓ Verified by Barq-e-Insaf</Text>
           </View>
@@ -61,6 +41,9 @@ export default function LawyerReviews() {
         <Text style={styles.sectionTitle}>Recent Client Feedback</Text>
 
         {/* Render Review Cards */}
+        {reviewCount === 0 && (
+          <Text style={styles.emptyText}>No reviews yet</Text>
+        )}
         {reviewsList.map((item, index) => (
           <View key={index} style={styles.reviewCard}>
             <View style={styles.cardTop}>
@@ -108,4 +91,5 @@ const styles = StyleSheet.create({
   stars: { color: '#fbbf24', fontSize: 14, marginBottom: 8 },
   comment: { fontSize: 13, color: '#444', lineHeight: 18, marginBottom: 10 },
   dateText: { fontSize: 10, color: '#aaa', fontStyle: 'italic' },
+  emptyText: { fontSize: 14, color: '#888', textAlign: 'center', marginTop: 20 },
 });
