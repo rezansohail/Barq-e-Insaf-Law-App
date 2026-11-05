@@ -61,10 +61,11 @@ export default function CitizenHome() {
     });
   };
 
-  // Filter lawyers by citizen's current district
+  // Filter lawyers by citizen's current district (fallback to all verified lawyers)
   const localLawyers = lawyers.filter(
-    l => l.district.toLowerCase() === userData.district.toLowerCase()
+    l => userData.district && l.district && l.district.toLowerCase() === userData.district.toLowerCase()
   );
+  const displayLawyers = localLawyers.length > 0 ? localLawyers : lawyers;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -106,14 +107,16 @@ export default function CitizenHome() {
         </TouchableOpacity>
 
         {/* VERIFIED LAWYERS NEAR YOU */}
-        <Text style={styles.sectionLabel}>Verified Lawyers Near You{userData.district ? ` (${userData.district})` : ''}</Text>
+        <Text style={styles.sectionLabel}>
+          Verified Advocates Near You {localLawyers.length > 0 ? `(${userData.district})` : '(Sindh High Court)'}
+        </Text>
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.lawyerRow}
         >
-          {localLawyers.length > 0 ? (
-            localLawyers.map((l, i) => (
+          {displayLawyers.length > 0 ? (
+            displayLawyers.map((l, i) => (
               <TouchableOpacity 
                 key={i} 
                 style={styles.lawyerBubble}
@@ -194,9 +197,9 @@ export default function CitizenHome() {
               onPress={() => handleCaseTypeSelect('property')}
             >
               <View style={styles.caseTypeInfo}>
-                <Text style={styles.caseTypeTitle}>Property Dispute</Text>
+                <Text style={styles.caseTypeTitle}>🏠 Property & Land Dispute</Text>
                 <Text style={styles.caseTypeDesc}>
-                  For issues related to property ownership, inheritance, tenant disputes, and land matters.
+                  Ownership, inheritance, illegal possession, tenancy disputes, and KMC/LDA registry matters.
                 </Text>
               </View>
             </TouchableOpacity>
@@ -206,9 +209,33 @@ export default function CitizenHome() {
               onPress={() => handleCaseTypeSelect('family')}
             >
               <View style={styles.caseTypeInfo}>
-                <Text style={styles.caseTypeTitle}>Family Case</Text>
+                <Text style={styles.caseTypeTitle}>👨‍👩‍👦 Family & Custody Case</Text>
                 <Text style={styles.caseTypeDesc}>
-                  For divorce proceedings, child custody, maintenance, and other family law matters.
+                  Khula/Divorce, child custody, monthly maintenance, and dowry restitution under Family Courts Act.
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.caseTypeOption}
+              onPress={() => handleCaseTypeSelect('inheritance')}
+            >
+              <View style={styles.caseTypeInfo}>
+                <Text style={styles.caseTypeTitle}>📜 Inheritance & Succession</Text>
+                <Text style={styles.caseTypeDesc}>
+                  Legal heirship certificates, succession certificates under Act 1925, and Shariat distribution.
+                </Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity 
+              style={styles.caseTypeOption}
+              onPress={() => handleCaseTypeSelect('civil')}
+            >
+              <View style={styles.caseTypeInfo}>
+                <Text style={styles.caseTypeTitle}>⚖️ Civil & Contract Breach</Text>
+                <Text style={styles.caseTypeDesc}>
+                  Breach of agreement, financial recovery, cheque bounce (PPC 489-F), and civil injunctions.
                 </Text>
               </View>
             </TouchableOpacity>

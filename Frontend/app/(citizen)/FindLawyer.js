@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import styles from './FindLawyer.styles';
 import { useMockStore, lawyers } from './MockStore';
 
-const specialties = ['All', 'Property Law', 'Family Law'];
+const specialties = ['All', 'Property', 'Family', 'Civil', 'Criminal'];
 
 export default function FindLawyer() {
   useMockStore();
@@ -25,8 +25,8 @@ export default function FindLawyer() {
   const [showScheduleModal, setShowScheduleModal] = useState(false);
 
   const filtered = lawyers.filter(l => {
-    const matchSpec = activeFilter === 'All' || l.spec === activeFilter;
-    const matchSearch = l.name.toLowerCase().includes(search.toLowerCase());
+    const matchSpec = activeFilter === 'All' || (l.spec && l.spec.toLowerCase().includes(activeFilter.toLowerCase()));
+    const matchSearch = l.name.toLowerCase().includes(search.toLowerCase()) || (l.district && l.district.toLowerCase().includes(search.toLowerCase()));
     return matchSpec && matchSearch;
   });
 

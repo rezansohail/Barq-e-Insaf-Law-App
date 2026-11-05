@@ -149,7 +149,9 @@ export default function CaseDetail() {
             params: { caseId: caseData.id }
           })}
         >
-          <Text style={styles.evidenceVaultBtnText}>Open Evidence Vault</Text>
+          <Text style={styles.evidenceVaultBtnText}>
+            Open Evidence Vault ({Array.isArray(caseData.evidence) ? caseData.evidence.length : 0} {Array.isArray(caseData.evidence) && caseData.evidence.length === 1 ? 'file' : 'files'})
+          </Text>
         </TouchableOpacity>
 
         {/* EDIT TOGGLE CONTROLS */}

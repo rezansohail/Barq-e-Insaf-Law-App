@@ -187,7 +187,8 @@ const DistrictPicker = ({ value, onSelect, color }) => {
 export default function LoginScreen() {
   const { role } = useLocalSearchParams();
   const router   = useRouter();
-  const config   = roleConfig[role] || roleConfig.citizen;
+  const [selectedRole, setSelectedRole] = useState(role || 'citizen');
+  const config   = roleConfig[selectedRole] || roleConfig.citizen;
 
   const [activeTab,   setActiveTab]   = useState('login');
   const [email,       setEmail]       = useState('');
@@ -206,108 +207,24 @@ export default function LoginScreen() {
 
   const clearErrors = () => setErrors({});
 
-  // -- LOGIN -----------------------------------------------------------------
-  const handleLogin = async () => {
-    if (!email || !password) {
-      Alert.alert('Error', 'Please enter email and password');
-      return;
-    }
-    try {
-      setLoading(true);
-      const res  = await api.post('/auth/login', { email, password });
-      const user = res.data;
-
-      if (user.role !== role) {
-        Alert.alert('Wrong Portal', `This account is a ${user.role} account. Please go back and select the correct portal.`);
-        return;
-      }
-
-      if (user.role === 'citizen') router.replace('/(citizen)/CitizenHome');
-      if (user.role === 'lawyer')  router.replace('/(lawyer)/LawyerHome');
-      if (user.role === 'admin')   router.replace('/AdminHome');
-      if (user.role === 'ngo')     router.replace('/(ngo)/NGOHome');
-
-    } catch (error) {
-      const msg = error.response?.data?.message || 'Login failed. Incorrect email or password.';
-      Alert.alert('Login Failed', msg);
-    } finally {
-      setLoading(false);
-    }
+  // -- INSTANT LOGIN WITHOUT CREDENTIALS --
+  const handleLogin = () => {
+    const currentRole = selectedRole || role || 'citizen';
+    if (currentRole === 'citizen') router.replace('/(citizen)/CitizenHome');
+    else if (currentRole === 'lawyer') router.replace('/(lawyer)/LawyerHome');
+    else if (currentRole === 'admin') router.replace('/(Admin)');
+    else if (currentRole === 'ngo') router.replace('/(ngo)/NGOHome');
+    else router.replace('/(citizen)/CitizenHome');
   };
 
-  // -- SIGNUP ---------------------------------------------------------------
-  const handleSignup = async () => {
-    const newErrors = {};
-
-    // Common validations
-    const nameErr = validateName(name);
-    const emailErr = validateEmail(email);
-    const passErr = validatePassword(password);
-    
-    if (nameErr) newErrors.name = nameErr;
-    if (emailErr) newErrors.email = emailErr;
-    if (passErr) newErrors.password = passErr;
-    if (!retypePass) newErrors.retypePass = 'Re-type password';
-    if (password !== retypePass) newErrors.retypePass = 'Passwords do not match';
-
-    // Citizen-specific validations
-    if (role === 'citizen') {
-      const cnicErr  = validateCNIC(cnic);
-      const phoneErr = validatePhone(phone);
-      if (cnicErr)  newErrors.cnic     = cnicErr;
-      if (phoneErr) newErrors.phone    = phoneErr;
-      if (!district) newErrors.district = 'Please select your district';
-    }
-
-    // Lawyer-specific
-    if (role === 'lawyer') {
-      const cnicErr = validateCNIC(cnic);
-      const phoneErr = validatePhone(phone);
-      if (cnicErr) newErrors.cnic = cnicErr;
-      if (phoneErr) newErrors.phone = phoneErr;
-      if (!district) newErrors.district = 'Please select your district';
-      if (!sbcNumber) newErrors.sbcNumber = 'SBC number is required';
-      if (!specialty) newErrors.specialty = 'Specialty is required';
-    }
-
-    // NGO-specific
-    if (role === 'ngo') {
-      const cnicErr = validateCNIC(cnic);
-      const phoneErr = validatePhone(phone);
-      if (cnicErr) newErrors.cnic = cnicErr;
-      if (phoneErr) newErrors.phone = phoneErr;
-      if (!district) newErrors.district = 'Please select your district';
-    }
-
-    if (Object.keys(newErrors).length > 0) {
-      setErrors(newErrors);
-      return;
-    }
-
-    try {
-      setLoading(true);
-      const body = { name, email, password, role, phone, district, cnic };
-      if (role === 'lawyer') {
-        body.sbcNumber = sbcNumber;
-        body.specialty = specialty;
-      }
-      const res  = await api.post('/auth/register', body);
-      const user = res.data;
-
-      Alert.alert('Success', 'Account created successfully!', [{
-        text: 'OK',
-        onPress: () => {
-          if (user.role === 'citizen') router.replace('/(citizen)/CitizenHome');
-          if (user.role === 'lawyer')  router.replace('/(lawyer)/LawyerHome');
-          if (user.role === 'admin')   router.replace('/AdminHome');
-        },
-      }]);
-    } catch (error) {
-      const msg = error.response?.data?.message || 'Signup failed. Try again.';
-      Alert.alert('Signup Failed', msg);
-    } finally {
-      setLoading(false);
-    }
+  // -- INSTANT SIGNUP / ENTRY --
+  const handleSignup = () => {
+    const currentRole = selectedRole || role || 'citizen';
+    if (currentRole === 'citizen') router.replace('/(citizen)/CitizenHome');
+    else if (currentRole === 'lawyer') router.replace('/(lawyer)/LawyerHome');
+    else if (currentRole === 'admin') router.replace('/(Admin)');
+    else if (currentRole === 'ngo') router.replace('/(ngo)/NGOHome');
+    else router.replace('/(citizen)/CitizenHome');
   };
 
   // -- RENDER ---------------------------------------------------------------
@@ -342,6 +259,44 @@ export default function LoginScreen() {
           style={styles.formScroll}
           keyboardShouldPersistTaps="handled"
         >
+          {/* QUICK PORTAL SELECTOR */}
+          <View style={{ marginBottom: 14 }}>
+            <Text style={{ fontSize: 11, fontWeight: '700', color: '#666', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>
+              Active Portal (Tap to Switch)
+            </Text>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              {[
+                { id: 'citizen', label: 'Citizen', icon: '👤' },
+                { id: 'lawyer',  label: 'Lawyer',  icon: '⚖️' },
+                { id: 'ngo',     label: 'NGO',     icon: '🏢' },
+                { id: 'admin',   label: 'Admin',   icon: '🛡️' },
+              ].map((item) => (
+                <TouchableOpacity
+                  key={item.id}
+                  onPress={() => setSelectedRole(item.id)}
+                  style={{
+                    flex: 1,
+                    paddingVertical: 8,
+                    borderRadius: 8,
+                    backgroundColor: selectedRole === item.id ? config.color : '#f3f4f6',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: selectedRole === item.id ? 1 : 0,
+                    borderColor: '#fff',
+                  }}
+                >
+                  <Text style={{
+                    fontSize: 11,
+                    fontWeight: '700',
+                    color: selectedRole === item.id ? '#fff' : '#4b5563',
+                  }}>
+                    {item.icon} {item.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
           {/* TABS - Hide signup tab for admin */}
           <View style={styles.tabRow}>
             <TouchableOpacity
@@ -532,10 +487,14 @@ export default function LoginScreen() {
             {loading
               ? <ActivityIndicator color="#fff" />
               : <Text style={styles.loginBtnText}>
-                  {activeTab === 'login' ? 'LOGIN' : 'CREATE ACCOUNT'}
+                  {activeTab === 'login' ? 'LOGIN (INSTANT ACCESS)' : 'CONTINUE (INSTANT ACCESS)'}
                 </Text>
             }
           </TouchableOpacity>
+
+          <Text style={{ textAlign: 'center', fontSize: 11, color: '#888', marginTop: 10, fontWeight: '500' }}>
+            ⚡ Fast Mode Active: Tap above to enter without credentials
+          </Text>
 
         </ScrollView>
       </View>
