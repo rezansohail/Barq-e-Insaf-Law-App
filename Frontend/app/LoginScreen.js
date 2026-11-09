@@ -5,24 +5,25 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Dimensions,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
   ActivityIndicator,
-  Alert,
+  StatusBar,
+  useWindowDimensions,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
 import api from '../constants/api';
 
-const { width, height } = Dimensions.get('window');
-
 const roleConfig = {
-  citizen: { label: 'Citizen Portal',     color: '#5C1A1A', topColor: '#7B2020' },
-  lawyer:  { label: 'Lawyer Portal',      color: '#0F2744', topColor: '#1A3A5C' },
-  ngo:     { label: 'NGO / Media Portal', color: '#1B4332', topColor: '#245C42' },
-  admin:   { label: 'Admin Panel',        color: '#1A0533', topColor: '#2D0D52' },
+  citizen: { label: 'Citizen Portal',     color: '#FF9800', topGlow: 'rgba(255, 152, 0, 0.22)' },
+  lawyer:  { label: 'Lawyer Portal',      color: '#F59E0B', topGlow: 'rgba(245, 158, 11, 0.22)' },
+  ngo:     { label: 'NGO / Media Portal', color: '#FB923C', topGlow: 'rgba(251, 146, 60, 0.22)' },
+  admin:   { label: 'Admin Panel',        color: '#EA580C', topGlow: 'rgba(234, 88, 12, 0.22)' },
 };
 
 const SINDH_DISTRICTS = [
@@ -35,7 +36,7 @@ const SINDH_DISTRICTS = [
   'Tharparkar', 'Thatta', 'Umerkot',
 ];
 
-// -- VALIDATION HELPERS -----------------------------------------------------
+// ── VALIDATION HELPERS ─────────────────────────────────────────────────────
 
 const validateName = (val) => {
   if (!val) return 'Name is required';
@@ -66,7 +67,8 @@ const validatePassword = (val) => {
   if (val.length < 8) return 'Password must be at least 8 characters';
   if (!/[a-z]/.test(val)) return 'Must contain at least one lowercase letter';
   if (!/[0-9]/.test(val)) return 'Must contain at least one number';
-  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val)) return 'Must contain at least one special character';
+  if (!/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val))
+    return 'Must contain at least one special character';
   return null;
 };
 
@@ -78,26 +80,26 @@ const validateEmail = (val) => {
 };
 
 const getPasswordStrength = (val) => {
-  if (!val) return { label: '', color: '#ccc', width: '0%' };
+  if (!val) return { label: '', color: '#555', width: '0%' };
   let score = 0;
   if (val.length >= 8) score++;
   if (/[a-z]/.test(val)) score++;
   if (/[0-9]/.test(val)) score++;
   if (/[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(val)) score++;
-  if (score <= 2) return { label: 'Weak',   color: '#e70b0b', width: '33%' };
+  if (score <= 2) return { label: 'Weak',   color: '#ef4444', width: '33%' };
   if (score <= 3) return { label: 'Fair',   color: '#f59e0b', width: '60%' };
-  if (score <= 4) return { label: 'Good',   color: '#412dfa', width: '80%' };
-  return           { label: 'Strong', color: '#09ff00', width: '100%' };
+  if (score <= 4) return { label: 'Good',   color: '#38bdf8', width: '80%' };
+  return           { label: 'Strong', color: '#22c55e', width: '100%' };
 };
 
 const formatCNIC = (val) => {
   const digits = val.replace(/[^\d]/g, '');
   if (digits.length <= 5) return digits;
-  if (digits.length <= 12) return `${digits.slice(0,5)}-${digits.slice(5)}`;
-  return `${digits.slice(0,5)}-${digits.slice(5,12)}-${digits.slice(12,13)}`;
+  if (digits.length <= 12) return `${digits.slice(0, 5)}-${digits.slice(5)}`;
+  return `${digits.slice(0, 5)}-${digits.slice(5, 12)}-${digits.slice(12, 13)}`;
 };
 
-// -- REUSABLE COMPONENTS ----------------------------------------------------
+// ── REUSABLE SUB-COMPONENTS ────────────────────────────────────────────────
 
 const PasswordInput = ({ label, value, onChangeText, color }) => {
   const [show, setShow] = useState(false);
@@ -107,32 +109,20 @@ const PasswordInput = ({ label, value, onChangeText, color }) => {
       <View style={styles.passwordRow}>
         <TextInput
           style={[styles.input, { flex: 1, borderBottomWidth: 0 }]}
-          placeholder="Password"
-          placeholderTextColor="#bbb"
+          placeholder="Enter password"
+          placeholderTextColor="rgba(255, 220, 180, 0.35)"
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={!show}
           autoCapitalize="none"
         />
-        <TouchableOpacity
-          onPress={() => setShow(!show)}
-          style={styles.eyeBtn}
-        >
-          <View style={styles.eyeIcon}>
-            {show ? (
-              <View>
-                <View style={[styles.eyeOutline, styles.eyeOpen]} />
-                <View style={styles.eyePupil} />
-              </View>
-            ) : (
-              <View style={styles.eyeOutline}>
-                <View style={styles.eyeLine} />
-              </View>
-            )}
-          </View>
+        <TouchableOpacity onPress={() => setShow(!show)} style={styles.eyeBtn}>
+          <Text style={{ fontSize: 16, color: color || '#FFB800' }}>
+            {show ? '👁️' : '🔒'}
+          </Text>
         </TouchableOpacity>
       </View>
-      <View style={[styles.inputUnderline, { backgroundColor: color || '#e8e4e0' }]} />
+      <View style={[styles.inputUnderline, { backgroundColor: color || 'rgba(255, 210, 140, 0.3)' }]} />
     </>
   );
 };
@@ -144,13 +134,19 @@ const DistrictPicker = ({ value, onSelect, color }) => {
       <TouchableOpacity
         style={styles.dropdownBtn}
         onPress={() => setOpen(!open)}
+        activeOpacity={0.8}
       >
-        <Text style={[styles.dropdownValue, !value && { color: '#bbb' }]}>
-          {value || 'Select District'}
+        <Text
+          style={[
+            styles.dropdownValue,
+            !value && { color: 'rgba(255, 220, 180, 0.35)' },
+          ]}
+        >
+          {value || 'Select Sindh District'}
         </Text>
         <Text style={styles.dropdownArrow}>{open ? '▲' : '▼'}</Text>
       </TouchableOpacity>
-      <View style={[styles.inputUnderline, { backgroundColor: '#e8e4e0' }]} />
+      <View style={[styles.inputUnderline, { backgroundColor: 'rgba(255, 210, 140, 0.3)' }]} />
       {open && (
         <View style={styles.dropdownList}>
           <ScrollView
@@ -163,14 +159,19 @@ const DistrictPicker = ({ value, onSelect, color }) => {
                 key={d}
                 style={[
                   styles.dropdownItem,
-                  value === d && { backgroundColor: '#f5e8e8' },
+                  value === d && { backgroundColor: 'rgba(255, 152, 0, 0.18)' },
                 ]}
-                onPress={() => { onSelect(d); setOpen(false); }}
+                onPress={() => {
+                  onSelect(d);
+                  setOpen(false);
+                }}
               >
-                <Text style={[
-                  styles.dropdownItemText,
-                  value === d && { color: '#5C1A1A', fontWeight: '700' },
-                ]}>
+                <Text
+                  style={[
+                    styles.dropdownItemText,
+                    value === d && { color: '#FFB800', fontWeight: '700' },
+                  ]}
+                >
                   {d}
                 </Text>
               </TouchableOpacity>
@@ -182,13 +183,15 @@ const DistrictPicker = ({ value, onSelect, color }) => {
   );
 };
 
-// -- MAIN COMPONENT ---------------------------------------------------------
+// ── MAIN COMPONENT ─────────────────────────────────────────────────────────
 
 export default function LoginScreen() {
   const { role } = useLocalSearchParams();
-  const router   = useRouter();
+  const router = useRouter();
+  const { width, height } = useWindowDimensions();
+
   const [selectedRole, setSelectedRole] = useState(role || 'citizen');
-  const config   = roleConfig[selectedRole] || roleConfig.citizen;
+  const config = roleConfig[selectedRole] || roleConfig.citizen;
 
   const [activeTab,   setActiveTab]   = useState('login');
   const [email,       setEmail]       = useState('');
@@ -204,10 +207,9 @@ export default function LoginScreen() {
   const [errors,      setErrors]      = useState({});
 
   const strength = getPasswordStrength(password);
-
   const clearErrors = () => setErrors({});
 
-  // -- INSTANT LOGIN WITHOUT CREDENTIALS --
+  // ── INSTANT ACCESS ROUTING ──
   const handleLogin = () => {
     const currentRole = selectedRole || role || 'citizen';
     if (currentRole === 'citizen') router.replace('/(citizen)/CitizenHome');
@@ -217,7 +219,6 @@ export default function LoginScreen() {
     else router.replace('/(citizen)/CitizenHome');
   };
 
-  // -- INSTANT SIGNUP / ENTRY --
   const handleSignup = () => {
     const currentRole = selectedRole || role || 'citizen';
     if (currentRole === 'citizen') router.replace('/(citizen)/CitizenHome');
@@ -227,379 +228,662 @@ export default function LoginScreen() {
     else router.replace('/(citizen)/CitizenHome');
   };
 
-  // -- RENDER ---------------------------------------------------------------
   return (
     <KeyboardAvoidingView
       style={{ flex: 1 }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <View style={styles.container}>
+        <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+
+        {/* Deep Obsidian Background */}
         <LinearGradient
-          colors={[config.topColor, config.color, '#0d0d0d']}
-          style={styles.topGradient}
+          colors={['#0C0502', '#060201', '#010101']}
+          style={StyleSheet.absoluteFill}
+          start={{ x: 0.5, y: 0 }}
+          end={{ x: 0.5, y: 1 }}
         />
-        <View style={styles.circle1} />
-        <View style={styles.circle2} />
 
-        {/* TOP SECTION */}
-        <View style={styles.topSection}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backText}>← Back</Text>
-          </TouchableOpacity>
-          <View style={styles.logoCircle}>
-            <Text style={styles.logoEmoji}>⚡</Text>
-          </View>
-          <Text style={styles.appName}>Barq-e-Insaf</Text>
-          <Text style={styles.portalName}>{config.label}</Text>
-        </View>
+        {/* Ambient warm glow halos */}
+        <View
+          pointerEvents="none"
+          style={[
+            styles.ambientHalo,
+            {
+              top: -height * 0.05,
+              left: -width * 0.15,
+              width: width * 0.8,
+              height: width * 0.8,
+              backgroundColor: config.topGlow,
+            },
+          ]}
+        />
+        <View
+          pointerEvents="none"
+          style={[
+            styles.ambientHalo,
+            {
+              bottom: height * 0.05,
+              right: -width * 0.2,
+              width: width * 0.85,
+              height: width * 0.85,
+              backgroundColor: 'rgba(234, 88, 12, 0.06)',
+            },
+          ]}
+        />
 
-        {/* FORM */}
-        <ScrollView
-          contentContainerStyle={styles.formWrapper}
-          style={styles.formScroll}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* QUICK PORTAL SELECTOR */}
-          <View style={{ marginBottom: 14 }}>
-            <Text style={{ fontSize: 11, fontWeight: '700', color: '#666', textTransform: 'uppercase', marginBottom: 8, letterSpacing: 0.5 }}>
-              Active Portal (Tap to Switch)
-            </Text>
-            <View style={{ flexDirection: 'row', gap: 6 }}>
-              {[
-                { id: 'citizen', label: 'Citizen', icon: '👤' },
-                { id: 'lawyer',  label: 'Lawyer',  icon: '⚖️' },
-                { id: 'ngo',     label: 'NGO',     icon: '🏢' },
-                { id: 'admin',   label: 'Admin',   icon: '🛡️' },
-              ].map((item) => (
-                <TouchableOpacity
-                  key={item.id}
-                  onPress={() => setSelectedRole(item.id)}
-                  style={{
-                    flex: 1,
-                    paddingVertical: 8,
-                    borderRadius: 8,
-                    backgroundColor: selectedRole === item.id ? config.color : '#f3f4f6',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderWidth: selectedRole === item.id ? 1 : 0,
-                    borderColor: '#fff',
-                  }}
-                >
-                  <Text style={{
-                    fontSize: 11,
-                    fontWeight: '700',
-                    color: selectedRole === item.id ? '#fff' : '#4b5563',
-                  }}>
-                    {item.icon} {item.label}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-
-          {/* TABS - Hide signup tab for admin */}
-          <View style={styles.tabRow}>
+        <SafeAreaView style={styles.safeArea}>
+          {/* ── TOP SECTION ── */}
+          <View style={styles.topSection}>
             <TouchableOpacity
-              style={[styles.tabBtn, activeTab === 'login' && styles.tabActive]}
-              onPress={() => { setActiveTab('login'); clearErrors(); }}
+              style={styles.backBtn}
+              onPress={() => router.back()}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <Text style={[styles.tabText, activeTab === 'login' && styles.tabTextActive]}>
-                Login
-              </Text>
+              <Text style={styles.backText}>← Back</Text>
             </TouchableOpacity>
-            {role !== 'admin' && (
-              <TouchableOpacity
-                style={[styles.tabBtn, activeTab === 'signup' && styles.tabActive]}
-                onPress={() => { setActiveTab('signup'); clearErrors(); }}
+
+            {/* Glowing Liquid Glass Brand Orb */}
+            <View style={styles.logoOrbWrapper}>
+              <View style={styles.logoCoronaGlow} pointerEvents="none" />
+              <BlurView
+                intensity={Platform.OS === 'ios' ? 40 : 65}
+                tint="dark"
+                style={styles.logoBlur}
               >
-                <Text style={[styles.tabText, activeTab === 'signup' && styles.tabTextActive]}>
-                  Sign Up
-                </Text>
-              </TouchableOpacity>
-            )}
+                <LinearGradient
+                  colors={[
+                    'rgba(255, 255, 255, 0.28)',
+                    'rgba(255, 170, 50, 0.15)',
+                    'rgba(20, 10, 4, 0.5)',
+                  ]}
+                  start={{ x: 0.2, y: 0 }}
+                  end={{ x: 0.8, y: 1 }}
+                  style={styles.logoGradient}
+                >
+                  <Svg width={30} height={30} viewBox="0 0 24 24" fill="none">
+                    <Path
+                      d="M13 2L4 14h6l-1 8 9-12h-6z"
+                      stroke="#FFE8C5"
+                      strokeWidth={1.5}
+                      strokeLinejoin="round"
+                    />
+                  </Svg>
+                </LinearGradient>
+              </BlurView>
+            </View>
+
+            <Text style={styles.appName}>BARQ-E-INSAF</Text>
+            <View style={styles.portalBadge}>
+              <Text style={[styles.portalName, { color: config.color }]}>
+                {config.label.toUpperCase()}
+              </Text>
+            </View>
           </View>
 
-          {/* -- SIGNUP FIELDS -- */}
-          {activeTab === 'signup' && role !== 'admin' && (
-            <>
-              {/* NAME */}
-              <Text style={styles.inputLabel}>Full Name</Text>
-              <TextInput
-                style={styles.input}
-                value={name}
-                onChangeText={(v) => {
-                  if (/^[a-zA-Z\s]*$/.test(v)) setName(v);
-                }}
-              />
-              {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+          {/* ── FORM CONTAINER (FROSTED GLASS CARD) ── */}
+          <View style={styles.formCardContainer}>
+            <BlurView
+              intensity={Platform.OS === 'ios' ? 40 : 65}
+              tint="dark"
+              style={styles.cardBlur}
+            >
+              <LinearGradient
+                colors={[
+                  'rgba(255, 160, 40, 0.08)',
+                  'rgba(255, 255, 255, 0.02)',
+                  'rgba(16, 8, 3, 0.55)',
+                ]}
+                style={styles.cardGradient}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 0, y: 1 }}
+              >
+                <View style={styles.cardSheen} pointerEvents="none" />
 
-              {/* PHONE */}
-              <Text style={styles.inputLabel}>Phone Number</Text>
-              <TextInput
-                style={styles.input}
-                value={phone}
-                onChangeText={(v) => {
-                  if (/^\d*$/.test(v) && v.length <= 11) setPhone(v);
-                }}
-                keyboardType="number-pad"
-                maxLength={11}
-              />
-              {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
+                <ScrollView
+                  contentContainerStyle={styles.formWrapper}
+                  showsVerticalScrollIndicator={false}
+                  keyboardShouldPersistTaps="handled"
+                >
+                  {/* QUICK PORTAL SELECTOR */}
+                  <View style={{ marginBottom: 16 }}>
+                    <Text style={styles.sectionHeaderLabel}>Active Portal</Text>
+                    <View style={styles.roleGrid}>
+                      {[
+                        { id: 'citizen', label: 'Citizen' },
+                        { id: 'lawyer',  label: 'Lawyer' },
+                        { id: 'ngo',     label: 'NGO' },
+                        { id: 'admin',   label: 'Admin' },
+                      ].map((item) => {
+                        const isSelected = selectedRole === item.id;
+                        return (
+                          <TouchableOpacity
+                            key={item.id}
+                            onPress={() => setSelectedRole(item.id)}
+                            activeOpacity={0.8}
+                            style={[
+                              styles.roleTabItem,
+                              isSelected && {
+                                borderColor: config.color,
+                                backgroundColor: 'rgba(255, 152, 0, 0.16)',
+                              },
+                            ]}
+                          >
+                            <Text
+                              style={[
+                                styles.roleTabText,
+                                isSelected && { color: '#FFF5E8', fontWeight: '800' },
+                              ]}
+                            >
+                              {item.icon} {item.label}
+                            </Text>
+                          </TouchableOpacity>
+                        );
+                      })}
+                    </View>
+                  </View>
 
-              {/* CNIC - for all roles */}
-              <Text style={styles.inputLabel}>CNIC</Text>
-              <TextInput
-                style={styles.input}
-                value={cnic}
-                onChangeText={(v) => {
-                  const formatted = formatCNIC(v);
-                  if (formatted.length <= 15) setCnic(formatted);
-                }}
-                keyboardType="number-pad"
-                maxLength={15}
-              />
-              {errors.cnic && <Text style={styles.errorText}>{errors.cnic}</Text>}
+                  {/* TABS - LOGIN / SIGNUP */}
+                  <View style={styles.tabRow}>
+                    <TouchableOpacity
+                      style={[styles.tabBtn, activeTab === 'login' && styles.tabActive]}
+                      onPress={() => {
+                        setActiveTab('login');
+                        clearErrors();
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.tabText,
+                          activeTab === 'login' && styles.tabTextActive,
+                        ]}
+                      >
+                        LOGIN
+                      </Text>
+                      {activeTab === 'login' && (
+                        <View style={[styles.activeTabIndicator, { backgroundColor: config.color }]} />
+                      )}
+                    </TouchableOpacity>
 
-              {/* DISTRICT - dropdown for all roles */}
-              <Text style={styles.inputLabel}>District</Text>
-              <DistrictPicker
-                value={district}
-                onSelect={setDistrict}
-                color={config.color}
-              />
-              {errors.district && <Text style={styles.errorText}>{errors.district}</Text>}
+                    {selectedRole !== 'admin' && (
+                      <TouchableOpacity
+                        style={[styles.tabBtn, activeTab === 'signup' && styles.tabActive]}
+                        onPress={() => {
+                          setActiveTab('signup');
+                          clearErrors();
+                        }}
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          style={[
+                            styles.tabText,
+                            activeTab === 'signup' && styles.tabTextActive,
+                          ]}
+                        >
+                          SIGN UP
+                        </Text>
+                        {activeTab === 'signup' && (
+                          <View style={[styles.activeTabIndicator, { backgroundColor: config.color }]} />
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
 
-              {/* LAWYER FIELDS */}
-              {role === 'lawyer' && (
-                <>
-                  <Text style={styles.inputLabel}>SBC Number</Text>
+                  {/* ── SIGNUP FIELDS ── */}
+                  {activeTab === 'signup' && selectedRole !== 'admin' && (
+                    <>
+                      {/* NAME */}
+                      <Text style={styles.inputLabel}>Full Name</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="e.g. Ali Khan"
+                        placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                        value={name}
+                        onChangeText={(v) => {
+                          if (/^[a-zA-Z\s]*$/.test(v)) setName(v);
+                        }}
+                      />
+                      {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
+
+                      {/* PHONE */}
+                      <Text style={styles.inputLabel}>Phone Number</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="03001234567"
+                        placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                        value={phone}
+                        onChangeText={(v) => {
+                          if (/^\d*$/.test(v) && v.length <= 11) setPhone(v);
+                        }}
+                        keyboardType="number-pad"
+                        maxLength={11}
+                      />
+                      {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
+
+                      {/* CNIC */}
+                      <Text style={styles.inputLabel}>CNIC (Sindh Only)</Text>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="42101-1234567-1"
+                        placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                        value={cnic}
+                        onChangeText={(v) => {
+                          const formatted = formatCNIC(v);
+                          if (formatted.length <= 15) setCnic(formatted);
+                        }}
+                        keyboardType="number-pad"
+                        maxLength={15}
+                      />
+                      {errors.cnic && <Text style={styles.errorText}>{errors.cnic}</Text>}
+
+                      {/* DISTRICT */}
+                      <Text style={styles.inputLabel}>District</Text>
+                      <DistrictPicker
+                        value={district}
+                        onSelect={setDistrict}
+                        color={config.color}
+                      />
+                      {errors.district && <Text style={styles.errorText}>{errors.district}</Text>}
+
+                      {/* LAWYER FIELDS */}
+                      {selectedRole === 'lawyer' && (
+                        <>
+                          <Text style={styles.inputLabel}>SBC Bar License Number</Text>
+                          <TextInput
+                            style={styles.input}
+                            placeholder="SBC-4421"
+                            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                            value={sbcNumber}
+                            onChangeText={setSbcNumber}
+                          />
+                          {errors.sbcNumber && (
+                            <Text style={styles.errorText}>{errors.sbcNumber}</Text>
+                          )}
+
+                          <Text style={styles.inputLabel}>Legal Specialty</Text>
+                          <TextInput
+                            style={styles.input}
+                            placeholder="Criminal / Property / Family"
+                            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                            value={specialty}
+                            onChangeText={setSpecialty}
+                          />
+                          {errors.specialty && (
+                            <Text style={styles.errorText}>{errors.specialty}</Text>
+                          )}
+                        </>
+                      )}
+                    </>
+                  )}
+
+                  {/* ── COMMON FIELDS ── */}
+                  <Text style={styles.inputLabel}>Email Address</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="SBC-4421"
-                    placeholderTextColor="#bbb"
-                    value={sbcNumber}
-                    onChangeText={setSbcNumber}
+                    placeholder="user@barqeinsaf.pk"
+                    placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                    value={email}
+                    onChangeText={setEmail}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
                   />
-                  {errors.sbcNumber && <Text style={styles.errorText}>{errors.sbcNumber}</Text>}
+                  {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
 
-                  <Text style={styles.inputLabel}>Specialty</Text>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Property / Family"
-                    placeholderTextColor="#bbb"
-                    value={specialty}
-                    onChangeText={setSpecialty}
+                  {/* PASSWORD */}
+                  <PasswordInput
+                    label="Password"
+                    value={password}
+                    onChangeText={setPassword}
+                    color={config.color}
                   />
-                  {errors.specialty && <Text style={styles.errorText}>{errors.specialty}</Text>}
-                </>
-              )}
-            </>
-          )}
 
-          {/* -- COMMON FIELDS -- */}
-          <Text style={styles.inputLabel}>Email Address</Text>
-          <TextInput
-            style={styles.input}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-          {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+                  {/* PASSWORD STRENGTH */}
+                  {activeTab === 'signup' && password.length > 0 && selectedRole !== 'admin' && (
+                    <View style={styles.strengthWrap}>
+                      <View style={styles.strengthTrack}>
+                        <View
+                          style={[
+                            styles.strengthFill,
+                            {
+                              width: strength.width,
+                              backgroundColor: strength.color,
+                            },
+                          ]}
+                        />
+                      </View>
+                      <Text style={[styles.strengthLabel, { color: strength.color }]}>
+                        {strength.label}
+                      </Text>
+                    </View>
+                  )}
 
-          {/* PASSWORD */}
-          <PasswordInput
-            label="Password"
-            value={password}
-            onChangeText={setPassword}
-            color={config.color}
-          />
+                  {/* PASSWORD REQUIREMENTS */}
+                  {activeTab === 'signup' && selectedRole !== 'admin' && (
+                    <View style={styles.requirementsBox}>
+                      <Text style={styles.requirementsTitle}>Password criteria:</Text>
+                      {[
+                        { label: 'At least 8 characters',        pass: password.length >= 8 },
+                        { label: 'One lowercase letter (a-z)',    pass: /[a-z]/.test(password) },
+                        { label: 'One number (0-9)',              pass: /[0-9]/.test(password) },
+                        { label: 'One special symbol (!@#...)',   pass: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
+                      ].map((req, i) => (
+                        <Text
+                          key={i}
+                          style={[
+                            styles.requirementItem,
+                            { color: req.pass ? '#22c55e' : 'rgba(255, 230, 205, 0.45)' },
+                          ]}
+                        >
+                          {req.pass ? '✓' : '○'} {req.label}
+                        </Text>
+                      ))}
+                    </View>
+                  )}
 
-          {/* PASSWORD STRENGTH - signup only */}
-          {activeTab === 'signup' && password.length > 0 && role !== 'admin' && (
-            <View style={styles.strengthWrap}>
-              <View style={styles.strengthTrack}>
-                <View style={[styles.strengthFill, {
-                  width: strength.width,
-                  backgroundColor: strength.color,
-                }]} />
-              </View>
-              <Text style={[styles.strengthLabel, { color: strength.color }]}>
-                {strength.label}
-              </Text>
-            </View>
-          )}
+                  {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
 
-          {/* PASSWORD REQUIREMENTS - signup only */}
-          {activeTab === 'signup' && role !== 'admin' && (
-            <View style={styles.requirementsBox}>
-              <Text style={styles.requirementsTitle}>Password must have:</Text>
-              {[
-                { label: 'At least 8 characters',        pass: password.length >= 8 },
-                { label: 'One lowercase letter (a-z)',    pass: /[a-z]/.test(password) },
-                { label: 'One number (0-9)',              pass: /[0-9]/.test(password) },
-                { label: 'One special character (!@#...)',pass: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
-              ].map((req, i) => (
-                <Text key={i} style={[styles.requirementItem, { color: req.pass ? '#22c55e' : '#aaa' }]}>
-                  {req.pass ? '✓' : '○'} {req.label}
-                </Text>
-              ))}
-            </View>
-          )}
+                  {/* RETYPE PASSWORD */}
+                  {activeTab === 'signup' && selectedRole !== 'admin' && (
+                    <>
+                      <PasswordInput
+                        label="Confirm Password"
+                        value={retypePass}
+                        onChangeText={setRetypePass}
+                        color={config.color}
+                      />
+                      {retypePass.length > 0 && (
+                        <Text
+                          style={{
+                            fontSize: 11,
+                            marginTop: 6,
+                            fontWeight: '600',
+                            color: password === retypePass ? '#22c55e' : '#ef4444',
+                          }}
+                        >
+                          {password === retypePass ? '✓ Passwords match' : '✗ Passwords do not match'}
+                        </Text>
+                      )}
+                      {errors.retypePass && (
+                        <Text style={styles.errorText}>{errors.retypePass}</Text>
+                      )}
+                    </>
+                  )}
 
-          {errors.password && <Text style={styles.errorText}>{errors.password}</Text>}
+                  {/* FORGOT PASSWORD */}
+                  {activeTab === 'login' && (
+                    <TouchableOpacity activeOpacity={0.8}>
+                      <Text style={[styles.forgotText, { color: config.color }]}>
+                        Forgot password?
+                      </Text>
+                    </TouchableOpacity>
+                  )}
 
-          {/* RETYPE PASSWORD - signup only */}
-          {activeTab === 'signup' && role !== 'admin' && (
-            <>
-              <PasswordInput
-                label="Re-enter Password"
-                value={retypePass}
-                onChangeText={setRetypePass}
-                color={config.color}
-              />
-              {retypePass.length > 0 && (
-                <Text style={{
-                  fontSize: 11, marginTop: 4, fontWeight: '600',
-                  color: password === retypePass ? '#22c55e' : '#ef4444',
-                }}>
-                  {password === retypePass ? '✓ Passwords match' : '✗ Passwords do not match'}
-                </Text>
-              )}
-              {errors.retypePass && <Text style={styles.errorText}>{errors.retypePass}</Text>}
-            </>
-          )}
+                  {/* ── LIQUID GLASS SUBMIT BUTTON ── */}
+                  <View style={styles.submitBtnWrapper}>
+                    <TouchableOpacity
+                      style={styles.submitTouch}
+                      activeOpacity={0.82}
+                      onPress={activeTab === 'login' ? handleLogin : handleSignup}
+                      disabled={loading}
+                      accessibilityRole="button"
+                    >
+                      <View style={styles.submitCoronaGlow} pointerEvents="none" />
+                      <BlurView
+                        intensity={Platform.OS === 'ios' ? 40 : 65}
+                        tint="dark"
+                        style={styles.submitBlur}
+                        pointerEvents="none"
+                      >
+                        <LinearGradient
+                          colors={[
+                            'rgba(255, 255, 255, 0.25)',
+                            'rgba(255, 170, 50, 0.14)',
+                            'rgba(22, 11, 4, 0.55)',
+                          ]}
+                          start={{ x: 0.5, y: 0 }}
+                          end={{ x: 0.5, y: 1 }}
+                          style={styles.submitGradient}
+                        >
+                          <View style={styles.submitSheen} />
+                          {loading ? (
+                            <ActivityIndicator color="#FFEED6" />
+                          ) : (
+                            <Text style={styles.submitBtnText}>
+                              {activeTab === 'login'
+                                ? 'LOGIN (INSTANT ACCESS)'
+                                : 'CREATE ACCOUNT (INSTANT ACCESS)'}
+                            </Text>
+                          )}
+                        </LinearGradient>
+                      </BlurView>
+                    </TouchableOpacity>
+                  </View>
 
-          {/* FORGOT PASSWORD */}
-          {activeTab === 'login' && (
-            <TouchableOpacity>
-              <Text style={styles.forgotText}>Forgot password?</Text>
-            </TouchableOpacity>
-          )}
-
-          {/* SUBMIT */}
-          <TouchableOpacity
-            style={[styles.loginBtn, { backgroundColor: config.color }]}
-            activeOpacity={0.85}
-            onPress={activeTab === 'login' ? handleLogin : handleSignup}
-            disabled={loading}
-          >
-            {loading
-              ? <ActivityIndicator color="#fff" />
-              : <Text style={styles.loginBtnText}>
-                  {activeTab === 'login' ? 'LOGIN (INSTANT ACCESS)' : 'CONTINUE (INSTANT ACCESS)'}
-                </Text>
-            }
-          </TouchableOpacity>
-
-          <Text style={{ textAlign: 'center', fontSize: 11, color: '#888', marginTop: 10, fontWeight: '500' }}>
-            ⚡ Fast Mode Active: Tap above to enter without credentials
-          </Text>
-
-        </ScrollView>
+                  <Text style={styles.fastModeHint}>
+                    ⚡ Instant Test Mode Active: Tap above to enter immediately
+                  </Text>
+                </ScrollView>
+              </LinearGradient>
+            </BlurView>
+          </View>
+        </SafeAreaView>
       </View>
     </KeyboardAvoidingView>
   );
 }
 
-// -- STYLES -----------------------------------------------------------------
+// ── STYLES ─────────────────────────────────────────────────────────────────
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#140505',
+    backgroundColor: '#060201',
   },
-  topGradient: {
+  safeArea: {
+    flex: 1,
+    justifyContent: 'space-between',
+  },
+  ambientHalo: {
     position: 'absolute',
-    width: width,
-    height: height * 0.52,
-    top: 0,
+    borderRadius: 999,
   },
-  circle1: {
-    position: 'absolute',
-    width: 300, height: 300, borderRadius: 150,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-    top: -80, right: -80,
-  },
-  circle2: {
-    position: 'absolute',
-    width: 200, height: 200, borderRadius: 100,
-    borderWidth: 1, borderColor: 'rgba(255,255,255,0.05)',
-    top: 40, left: -60,
-  },
+
+  // ── TOP SECTION ──
   topSection: {
     alignItems: 'center',
-    paddingTop: 64,
-    paddingBottom: 24,
-    height: height * 0.38,
-    justifyContent: 'center',
+    paddingTop: 12,
+    paddingBottom: 16,
+    position: 'relative',
   },
   backBtn: {
     position: 'absolute',
-    top: 52, left: 24,
+    top: 14,
+    left: 24,
+    zIndex: 10,
   },
   backText: {
-    color: 'rgba(255,255,255,0.75)',
-    fontSize: 14, fontWeight: '600',
+    color: 'rgba(255, 225, 190, 0.8)',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1,
   },
-  logoCircle: {
-    width: 72, height: 72, borderRadius: 36,
-    backgroundColor: 'rgba(255,255,255,0.15)',
-    borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.25)',
-    justifyContent: 'center', alignItems: 'center',
-    marginBottom: 14,
+  logoOrbWrapper: {
+    width: 60,
+    height: 60,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    marginBottom: 8,
   },
-  logoEmoji: { fontSize: 30 },
+  logoCoronaGlow: {
+    position: 'absolute',
+    width: 84,
+    height: 84,
+    borderRadius: 42,
+    backgroundColor: 'rgba(255, 130, 20, 0.25)',
+    ...(Platform.OS === 'web' ? { filter: 'blur(16px)' } : {}),
+  },
+  logoBlur: {
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    overflow: 'hidden',
+    borderWidth: 1.4,
+    borderColor: 'rgba(255, 225, 160, 0.65)',
+  },
+  logoGradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(25, 12, 4, 0.45)',
+  },
   appName: {
-    fontSize: 22, fontWeight: '800', color: '#fff', letterSpacing: -0.3,
+    fontSize: 20,
+    fontWeight: '900',
+    color: '#FFF5E8',
+    letterSpacing: 2.2,
+    textTransform: 'uppercase',
+  },
+  portalBadge: {
+    marginTop: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 152, 0, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 170, 60, 0.28)',
   },
   portalName: {
-    fontSize: 12, color: 'rgba(255,255,255,0.5)',
-    marginTop: 4, fontWeight: '500', letterSpacing: 0.5,
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 1.4,
   },
-  formScroll: {
+
+  // ── FORM CARD (FROSTED GLASS) ──
+  formCardContainer: {
     flex: 1,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    backgroundColor: '#fff',
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    overflow: 'hidden',
+    borderWidth: 1.2,
+    borderBottomWidth: 0,
+    borderColor: 'rgba(255, 210, 140, 0.24)',
+    shadowColor: '#FF7A00',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.18,
+    shadowRadius: 18,
+    elevation: 8,
+    maxWidth: 520,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  cardBlur: {
+    flex: 1,
+  },
+  cardGradient: {
+    flex: 1,
+    position: 'relative',
+    backgroundColor: 'rgba(18, 9, 3, 0.52)',
+  },
+  cardSheen: {
+    position: 'absolute',
+    top: 1,
+    left: '12%',
+    right: '12%',
+    height: 1.2,
+    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    borderRadius: 1,
   },
   formWrapper: {
-    padding: 28,
+    padding: 26,
     paddingBottom: 48,
   },
+
+  // ── ROLE TABS ──
+  sectionHeaderLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: 'rgba(255, 210, 150, 0.7)',
+    textTransform: 'uppercase',
+    letterSpacing: 1.4,
+    marginBottom: 8,
+  },
+  roleGrid: {
+    flexDirection: 'row',
+    gap: 6,
+  },
+  roleTabItem: {
+    flex: 1,
+    paddingVertical: 8,
+    borderRadius: 10,
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 210, 140, 0.14)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  roleTabText: {
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: 'rgba(255, 225, 200, 0.65)',
+  },
+
+  // ── TABS ──
   tabRow: {
     flexDirection: 'row',
-    marginBottom: 20,
+    marginBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0ece8',
+    borderBottomColor: 'rgba(255, 210, 140, 0.14)',
   },
   tabBtn: {
-    flex: 1, paddingBottom: 12, alignItems: 'center',
+    flex: 1,
+    paddingBottom: 10,
+    alignItems: 'center',
+    position: 'relative',
   },
-  tabActive: {
-    borderBottomWidth: 2,
-    borderBottomColor: '#5C1A1A',
-  },
+  tabActive: {},
   tabText: {
-    fontSize: 15, fontWeight: '600', color: '#ccc',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 1.8,
+    color: 'rgba(255, 220, 185, 0.45)',
   },
   tabTextActive: {
-    color: '#1a1a1a',
+    color: '#FFF5E8',
   },
+  activeTabIndicator: {
+    position: 'absolute',
+    bottom: -1,
+    height: 2.5,
+    left: '20%',
+    right: '20%',
+    borderRadius: 2,
+    shadowColor: '#FF7A00',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.9,
+    shadowRadius: 6,
+  },
+
+  // ── INPUTS ──
   inputLabel: {
-    fontSize: 11, fontWeight: '700', color: '#aaa',
-    letterSpacing: 0.5, textTransform: 'uppercase',
-    marginBottom: 6, marginTop: 16,
+    fontSize: 10.5,
+    fontWeight: '800',
+    color: 'rgba(255, 210, 150, 0.75)',
+    letterSpacing: 1.2,
+    textTransform: 'uppercase',
+    marginBottom: 4,
+    marginTop: 14,
   },
   input: {
     borderBottomWidth: 1,
-    borderBottomColor: '#e8e4e0',
-    paddingVertical: 10,
-    fontSize: 14, color: '#1a1a1a',
+    borderBottomColor: 'rgba(255, 210, 140, 0.2)',
+    paddingVertical: 9,
+    fontSize: 14,
+    color: '#FFF5E8',
   },
   passwordRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    borderBottomWidth: 0,
   },
   inputUnderline: {
     height: 1,
@@ -607,66 +891,90 @@ const styles = StyleSheet.create({
   },
   eyeBtn: {
     paddingHorizontal: 8,
-    paddingVertical: 10,
-  },
-  eyeIcon: {
-    width: 24,
-    height: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  eyeOutline: {
-    width: 20,
-    height: 14,
-    borderWidth: 1.5,
-    borderColor: '#888',
-    borderRadius: 10,
-    position: 'relative',
-  },
-  eyeOpen: {
-    backgroundColor: 'transparent',
-  },
-  eyePupil: {
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: '#888',
-    position: 'absolute',
-    top: 4,
-    left: 7,
-  },
-  eyeLine: {
-    width: '100%',
-    height: 1.5,
-    backgroundColor: '#888',
-    position: 'absolute',
-    top: 6,
-    transform: [{ rotate: '45deg' }],
+    paddingVertical: 8,
   },
   forgotText: {
-    color: '#5C1A1A', fontSize: 13, fontWeight: '600',
-    marginTop: 14, textAlign: 'right',
+    fontSize: 12,
+    fontWeight: '700',
+    marginTop: 12,
+    textAlign: 'right',
+    letterSpacing: 0.5,
   },
-  loginBtn: {
-    marginTop: 28, borderRadius: 14,
-    paddingVertical: 16, alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.2, shadowRadius: 8,
-    elevation: 4,
+
+  // ── SUBMIT BUTTON (LIQUID GLASS) ──
+  submitBtnWrapper: {
+    marginTop: 26,
+    width: '100%',
   },
-  loginBtnText: {
-    color: '#fff', fontSize: 14,
-    fontWeight: '800', letterSpacing: 1.5,
+  submitTouch: {
+    width: '100%',
+    borderRadius: 999,
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#FF7A00',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.65,
+    shadowRadius: 18,
+    elevation: 8,
   },
+  submitCoronaGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 120, 20, 0.15)',
+    ...(Platform.OS === 'web' ? { filter: 'blur(16px)' } : {}),
+  },
+  submitBlur: {
+    width: '100%',
+    borderRadius: 999,
+    overflow: 'hidden',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 220, 160, 0.55)',
+  },
+  submitGradient: {
+    borderRadius: 999,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    backgroundColor: 'rgba(22, 11, 4, 0.45)',
+  },
+  submitSheen: {
+    position: 'absolute',
+    top: 1,
+    left: '15%',
+    right: '15%',
+    height: 1.2,
+    borderRadius: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+  },
+  submitBtnText: {
+    color: '#FFEED6',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 1.8,
+    textTransform: 'uppercase',
+  },
+  fastModeHint: {
+    textAlign: 'center',
+    fontSize: 10.5,
+    color: 'rgba(255, 180, 70, 0.72)',
+    marginTop: 12,
+    fontWeight: '600',
+    letterSpacing: 0.4,
+  },
+
   errorText: {
-    fontSize: 11, color: '#ef4444',
-    marginTop: 4, fontWeight: '600',
+    fontSize: 10.5,
+    color: '#ef4444',
+    marginTop: 3,
+    fontWeight: '600',
   },
-  hintText: {
-    fontSize: 11, color: '#aaa',
-    marginTop: 4, fontWeight: '500',
-  },
+
+  // ── PASSWORD HELPERS ──
   strengthWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -674,64 +982,80 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   strengthTrack: {
-    flex: 1, height: 5,
-    backgroundColor: '#f0ece8',
-    borderRadius: 3, overflow: 'hidden',
+    flex: 1,
+    height: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 2,
+    overflow: 'hidden',
   },
   strengthFill: {
-    height: '100%', borderRadius: 3,
+    height: '100%',
+    borderRadius: 2,
   },
   strengthLabel: {
-    fontSize: 11, fontWeight: '700', width: 50,
+    fontSize: 10.5,
+    fontWeight: '700',
+    width: 50,
   },
   requirementsBox: {
-    backgroundColor: '#f9f8f6',
+    backgroundColor: 'rgba(255, 255, 255, 0.03)',
     borderRadius: 10,
-    padding: 12,
+    padding: 10,
     marginTop: 10,
     borderWidth: 1,
-    borderColor: '#ece9e4',
+    borderColor: 'rgba(255, 210, 140, 0.15)',
   },
   requirementsTitle: {
-    fontSize: 11, fontWeight: '700',
-    color: '#666', marginBottom: 6,
+    fontSize: 10.5,
+    fontWeight: '700',
+    color: 'rgba(255, 210, 150, 0.8)',
+    marginBottom: 4,
   },
   requirementItem: {
-    fontSize: 11, fontWeight: '500',
-    marginBottom: 3, lineHeight: 16,
+    fontSize: 10.5,
+    fontWeight: '500',
+    marginBottom: 2,
+    lineHeight: 15,
   },
+
+  // ── DISTRICT DROPDOWN ──
   dropdownBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingVertical: 10,
+    paddingVertical: 9,
   },
   dropdownValue: {
-    fontSize: 14, color: '#1a1a1a', flex: 1,
+    fontSize: 14,
+    color: '#FFF5E8',
+    flex: 1,
   },
   dropdownArrow: {
-    fontSize: 11, color: '#aaa',
+    fontSize: 10,
+    color: 'rgba(255, 210, 140, 0.6)',
   },
   dropdownList: {
-    backgroundColor: '#fff',
+    backgroundColor: '#160B05',
     borderWidth: 1,
-    borderColor: '#ece9e4',
+    borderColor: 'rgba(255, 200, 120, 0.3)',
     borderRadius: 12,
     marginTop: 4,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 4,
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 8,
     zIndex: 999,
   },
   dropdownItem: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 11,
     borderBottomWidth: 1,
-    borderBottomColor: '#f5f3f0',
+    borderBottomColor: 'rgba(255, 210, 140, 0.1)',
   },
   dropdownItemText: {
-    fontSize: 13, color: '#333', fontWeight: '500',
+    fontSize: 13,
+    color: '#FFF5E8',
+    fontWeight: '500',
   },
 });

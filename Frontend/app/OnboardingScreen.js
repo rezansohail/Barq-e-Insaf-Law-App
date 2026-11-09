@@ -3,46 +3,82 @@ import {
   View,
   Text,
   StyleSheet,
-  Dimensions,
   TouchableOpacity,
   StatusBar,
   Animated,
   FlatList,
+  Platform,
+  useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { LinearGradient } from 'expo-linear-gradient';
+import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
-
-const { width, height } = Dimensions.get('window');
+import Svg, { Path } from 'react-native-svg';
 
 const slides = [
   {
     id: '1',
     badge: 'LEGAL EMPOWERMENT',
     title: 'Your Justice.\nYour Control.',
-    subtitle: 'Bridging the legal access gap across Pakistan with instant AI assistance and certified advocate connection.',
-    accentColor: '#3b82f6',
-    bgColor: '#EFF6FF',
+    subtitle:
+      'Bridging the legal access gap across Pakistan with instant AI assistance and certified advocate connection.',
+    renderIcon: () => (
+      <Svg width={30} height={30} viewBox="0 0 24 24" fill="none">
+        {/* Scales of Justice */}
+        <Path
+          d="M12 3v18M6 8l6-3 6 3M3 13c0 2 1.3 3.5 3 3.5s3-1.5 3-3.5L6 8 3 13zM15 13c0 2 1.3 3.5 3 3.5s3-1.5 3-3.5L18 8l-3 5zM9 21h6"
+          stroke="#FFE2BF"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    ),
   },
   {
     id: '2',
     badge: 'MULTILINGUAL AI CHATBOT',
-    title: 'Instant Legal Answers\nin Urdu & Sindhi.',
-    subtitle: 'Ask legal questions regarding Pakistan Penal Code, Family Laws, and Property rights 24/7.',
-    accentColor: '#10b981',
-    bgColor: '#ECFDF5',
+    title: 'Instant Legal Guidance\nin Urdu & Sindhi.',
+    subtitle:
+      'Ask legal questions regarding Pakistan Penal Code, Family Laws, and Property rights 24/7.',
+    renderIcon: () => (
+      <Svg width={30} height={30} viewBox="0 0 24 24" fill="none">
+        {/* AI Lightning / Intellect */}
+        <Path
+          d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+          stroke="#FFE2BF"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    ),
   },
   {
     id: '3',
     badge: 'SBC VERIFIED ADVOCATES',
     title: 'Verified Lawyers &\nBiometric Security.',
-    subtitle: 'Connect directly with Sindh Bar Council advocates and sign representation agreements digitally.',
-    accentColor: '#6366f1',
-    bgColor: '#EEF2FF',
+    subtitle:
+      'Connect directly with Sindh Bar Council advocates and sign representation agreements digitally.',
+    renderIcon: () => (
+      <Svg width={30} height={30} viewBox="0 0 24 24" fill="none">
+        {/* Verified Shield */}
+        <Path
+          d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4"
+          stroke="#FFE2BF"
+          strokeWidth={1.5}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </Svg>
+    ),
   },
 ];
 
 export default function OnboardingScreen() {
   const router = useRouter();
+  const { width, height } = useWindowDimensions();
   const [currentIndex, setCurrentIndex] = useState(0);
   const scrollX = useRef(new Animated.Value(0)).current;
   const slidesRef = useRef(null);
@@ -55,114 +91,477 @@ export default function OnboardingScreen() {
 
   const viewConfig = useRef({ viewAreaCoveragePercentThreshold: 50 }).current;
 
+  const getItemLayout = (_, index) => ({
+    length: width,
+    offset: width * index,
+    index,
+  });
+
   const handleNext = () => {
     if (currentIndex < slides.length - 1) {
-      slidesRef.current.scrollToIndex({ index: currentIndex + 1 });
+      const nextIndex = currentIndex + 1;
+      setCurrentIndex(nextIndex);
+      try {
+        slidesRef.current?.scrollToOffset({
+          offset: nextIndex * width,
+          animated: true,
+        });
+      } catch (e) {
+        console.warn(e);
+      }
     } else {
-      router.replace('/RoleSelectScreen');
+      router.push('/RoleSelectScreen');
     }
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" backgroundColor="#fff" />
+    <View style={styles.container}>
+      {/* Translucent status bar */}
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
 
-      <View style={styles.topRow}>
-        <Text style={styles.brandTitle}>Barq-e-Insaf ⚡</Text>
-        {currentIndex < slides.length - 1 && (
-          <TouchableOpacity onPress={() => router.replace('/RoleSelectScreen')}>
-            <Text style={styles.skipText}>Skip</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-
-      <FlatList
-        data={slides}
-        keyExtractor={(item) => item.id}
-        horizontal
-        showsHorizontalScrollIndicator={false}
-        pagingEnabled
-        bounces={false}
-        onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
-          useNativeDriver: false,
-        })}
-        onViewableItemsChanged={viewableItemsChanged}
-        viewabilityConfig={viewConfig}
-        ref={slidesRef}
-        renderItem={({ item }) => (
-          <View style={styles.slide}>
-            <View style={[styles.illustrationCard, { backgroundColor: item.bgColor }]}>
-              <View style={[styles.iconCircle, { backgroundColor: item.accentColor }]}>
-                <Text style={styles.badgeLetter}>{item.badge.substring(0, 1)}</Text>
-              </View>
-            </View>
-
-            <View style={styles.textContainer}>
-              <Text style={[styles.badgeText, { color: item.accentColor }]}>{item.badge}</Text>
-              <Text style={styles.titleText}>{item.title}</Text>
-              <Text style={styles.subText}>{item.subtitle}</Text>
-            </View>
-          </View>
-        )}
+      {/* Deep Obsidian Background */}
+      <LinearGradient
+        colors={['#0A0402', '#060201', '#020101']}
+        style={StyleSheet.absoluteFill}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
       />
 
-      <View style={styles.bottomSection}>
-        <View style={styles.paginationRow}>
-          {slides.map((_, i) => {
-            const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
-            const dotWidth = scrollX.interpolate({
-              inputRange,
-              outputRange: [8, 24, 8],
-              extrapolate: 'clamp',
-            });
-            const opacity = scrollX.interpolate({
-              inputRange,
-              outputRange: [0.3, 1, 0.3],
-              extrapolate: 'clamp',
-            });
+      {/* Ambient warm glow halos */}
+      <View
+        pointerEvents="none"
+        style={[
+          styles.ambientHalo,
+          {
+            top: -height * 0.05,
+            left: -width * 0.1,
+            width: width * 0.7,
+            height: width * 0.7,
+            backgroundColor: 'rgba(255, 120, 20, 0.07)',
+          },
+        ]}
+      />
+      <View
+        pointerEvents="none"
+        style={[
+          styles.ambientHalo,
+          {
+            bottom: height * 0.1,
+            right: -width * 0.15,
+            width: width * 0.75,
+            height: width * 0.75,
+            backgroundColor: 'rgba(234, 88, 12, 0.06)',
+          },
+        ]}
+      />
 
-            return (
-              <Animated.View
-                key={i}
-                style={[
-                  styles.dot,
-                  { width: dotWidth, opacity, backgroundColor: slides[currentIndex].accentColor },
-                ]}
-              />
-            );
-          })}
+      <SafeAreaView style={styles.safeArea}>
+        {/* Top Header */}
+        <View style={styles.topRow}>
+          <Text style={styles.brandTitle}>
+            BARQ-E-INSAF <Text style={styles.boltSymbol}>⚡</Text>
+          </Text>
+          {currentIndex < slides.length - 1 ? (
+            <TouchableOpacity
+              onPress={() => router.push('/RoleSelectScreen')}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            >
+              <Text style={styles.skipText}>SKIP</Text>
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 44 }} />
+          )}
         </View>
 
-        <TouchableOpacity
-          style={[styles.actionBtn, { backgroundColor: slides[currentIndex].accentColor }]}
-          activeOpacity={0.88}
-          onPress={handleNext}
-        >
-          <Text style={styles.actionBtnText}>
-            {currentIndex === slides.length - 1 ? 'Get Started' : 'Continue'}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </SafeAreaView>
+        {/* Carousel Slides */}
+        <FlatList
+          data={slides}
+          keyExtractor={(item) => item.id}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          pagingEnabled
+          bounces={false}
+          getItemLayout={getItemLayout}
+          onScrollToIndexFailed={(info) => {
+            slidesRef.current?.scrollToOffset({
+              offset: info.index * width,
+              animated: true,
+            });
+          }}
+          onScroll={Animated.event([{ nativeEvent: { contentOffset: { x: scrollX } } }], {
+            useNativeDriver: false,
+          })}
+          onViewableItemsChanged={viewableItemsChanged}
+          viewabilityConfig={viewConfig}
+          ref={slidesRef}
+          renderItem={({ item }) => (
+            <View style={[styles.slide, { width }]}>
+              {/* Sleek Frosted Glass Illustration Card */}
+              <View
+                style={[
+                  styles.cardWrapper,
+                  { width: Math.min(width - 56, 380), height: Math.min(height * 0.32, 240) },
+                ]}
+              >
+                <BlurView
+                  intensity={Platform.OS === 'ios' ? 35 : 55}
+                  tint="dark"
+                  style={styles.cardBlur}
+                >
+                  <LinearGradient
+                    colors={[
+                      'rgba(255, 150, 40, 0.1)',
+                      'rgba(255, 255, 255, 0.02)',
+                      'rgba(15, 7, 2, 0.45)',
+                    ]}
+                    style={styles.cardGradient}
+                    start={{ x: 0, y: 0 }}
+                    end={{ x: 1, y: 1 }}
+                  >
+                    <View style={styles.cardSheen} pointerEvents="none" />
+
+                    {/* Compact glowing liquid glass orb */}
+                    <View style={styles.iconOrbWrapper}>
+                      <View style={styles.iconHaloGlow} pointerEvents="none" />
+                      <BlurView
+                        intensity={Platform.OS === 'ios' ? 40 : 65}
+                        tint="dark"
+                        style={styles.iconBlur}
+                      >
+                        <LinearGradient
+                          colors={[
+                            'rgba(255, 255, 255, 0.28)',
+                            'rgba(255, 160, 40, 0.15)',
+                            'rgba(25, 12, 4, 0.55)',
+                          ]}
+                          start={{ x: 0.2, y: 0 }}
+                          end={{ x: 0.8, y: 1 }}
+                          style={styles.iconGradient}
+                        >
+                          {item.renderIcon()}
+                        </LinearGradient>
+                      </BlurView>
+                    </View>
+                  </LinearGradient>
+                </BlurView>
+              </View>
+
+              {/* Text Information */}
+              <View style={[styles.textWrapper, { maxWidth: 380 }]}>
+                <View style={styles.badgePill}>
+                  <Text style={styles.badgeText}>{item.badge}</Text>
+                </View>
+                <Text style={styles.titleText}>{item.title}</Text>
+                <Text style={styles.subtitleText}>{item.subtitle}</Text>
+              </View>
+            </View>
+          )}
+        />
+
+        {/* Bottom Section */}
+        <View style={styles.bottomSection}>
+          {/* Pagination Indicator */}
+          <View style={styles.paginationRow}>
+            {slides.map((_, i) => {
+              const inputRange = [(i - 1) * width, i * width, (i + 1) * width];
+              const dotWidth = scrollX.interpolate({
+                inputRange,
+                outputRange: [6, 22, 6],
+                extrapolate: 'clamp',
+              });
+              const opacity = scrollX.interpolate({
+                inputRange,
+                outputRange: [0.3, 1, 0.3],
+                extrapolate: 'clamp',
+              });
+
+              return (
+                <Animated.View
+                  key={i}
+                  style={[
+                    styles.dot,
+                    {
+                      width: dotWidth,
+                      opacity,
+                      backgroundColor: i === currentIndex ? '#FF9800' : 'rgba(255, 170, 60, 0.3)',
+                    },
+                  ]}
+                />
+              );
+            })}
+          </View>
+
+          {/* Liquid Glass Pill Action Button (Outer Touchable for 100% click reliability) */}
+          <View style={styles.actionPillWrapper}>
+            <TouchableOpacity
+              style={styles.actionTouch}
+              activeOpacity={0.8}
+              onPress={handleNext}
+              accessibilityRole="button"
+            >
+              <View style={styles.actionCoronaGlow} pointerEvents="none" />
+              <BlurView
+                intensity={Platform.OS === 'ios' ? 40 : 65}
+                tint="dark"
+                style={styles.actionBlur}
+                pointerEvents="none"
+              >
+                <LinearGradient
+                  colors={[
+                    'rgba(255, 255, 255, 0.24)',
+                    'rgba(255, 170, 50, 0.12)',
+                    'rgba(20, 10, 4, 0.52)',
+                  ]}
+                  start={{ x: 0.5, y: 0 }}
+                  end={{ x: 0.5, y: 1 }}
+                  style={styles.actionGradient}
+                >
+                  <View style={styles.actionSheen} />
+                  <Text style={styles.actionBtnText}>
+                    {currentIndex === slides.length - 1 ? 'GET STARTED' : 'CONTINUE'}
+                  </Text>
+                </LinearGradient>
+              </BlurView>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  topRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 24, paddingTop: 16, paddingBottom: 8 },
-  brandTitle: { fontSize: 18, fontWeight: '900', color: '#0F2744', letterSpacing: -0.3 },
-  skipText: { fontSize: 14, fontWeight: '700', color: '#888' },
-  slide: { width: width, paddingHorizontal: 24, alignItems: 'center' },
-  illustrationCard: { width: width - 48, height: height * 0.38, borderRadius: 32, justifyContent: 'center', alignItems: 'center', marginTop: 16, marginBottom: 28 },
-  iconCircle: { width: 80, height: 80, borderRadius: 40, justifyContent: 'center', alignItems: 'center', elevation: 6 },
-  badgeLetter: { color: '#fff', fontSize: 32, fontWeight: '900' },
-  textContainer: { width: '100%', paddingHorizontal: 8 },
-  badgeText: { fontSize: 11, fontWeight: '800', letterSpacing: 1.2, marginBottom: 8 },
-  titleText: { fontSize: 28, fontWeight: '900', color: '#0F2744', lineHeight: 34, letterSpacing: -0.5 },
-  subText: { fontSize: 14, color: '#666', marginTop: 10, lineHeight: 20, fontWeight: '500' },
-  bottomSection: { paddingHorizontal: 24, paddingBottom: 32 },
-  paginationRow: { flexDirection: 'row', height: 8, marginBottom: 20, alignItems: 'center' },
-  dot: { height: 8, borderRadius: 4, marginRight: 6 },
-  actionBtn: { paddingVertical: 18, borderRadius: 16, alignItems: 'center', elevation: 4 },
-  actionBtnText: { color: '#fff', fontSize: 16, fontWeight: '900', letterSpacing: 0.5 },
+  container: {
+    flex: 1,
+    backgroundColor: '#060201',
+  },
+  safeArea: {
+    flex: 1,
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+  },
+  ambientHalo: {
+    position: 'absolute',
+    borderRadius: 999,
+  },
+  topRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: 28,
+    paddingTop: 12,
+    paddingBottom: 4,
+    zIndex: 10,
+  },
+  brandTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFF2DF',
+    letterSpacing: 2,
+    textTransform: 'uppercase',
+  },
+  boltSymbol: {
+    color: '#FF9800',
+  },
+  skipText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: 'rgba(255, 180, 70, 0.75)',
+    letterSpacing: 1.8,
+  },
+  slide: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+  },
+  cardWrapper: {
+    borderRadius: 24,
+    overflow: 'hidden',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 210, 140, 0.24)',
+    marginTop: 8,
+    marginBottom: 20,
+    shadowColor: '#FF7A00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 16,
+    elevation: 6,
+    ...(Platform.OS === 'web'
+      ? {
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          boxShadow:
+            '0 0 20px rgba(255, 120, 20, 0.12), inset 0 1px 1px rgba(255, 255, 255, 0.25)',
+        }
+      : {}),
+  },
+  cardBlur: {
+    flex: 1,
+  },
+  cardGradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    backgroundColor: 'rgba(18, 9, 3, 0.4)',
+  },
+  cardSheen: {
+    position: 'absolute',
+    top: 1,
+    left: '12%',
+    right: '12%',
+    height: 1.2,
+    backgroundColor: 'rgba(255, 255, 255, 0.35)',
+    borderRadius: 1,
+  },
+  iconOrbWrapper: {
+    width: 68,
+    height: 68,
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  iconHaloGlow: {
+    position: 'absolute',
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: 'rgba(255, 130, 20, 0.22)',
+    ...(Platform.OS === 'web' ? { filter: 'blur(16px)' } : {}),
+  },
+  iconBlur: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    overflow: 'hidden',
+    borderWidth: 1.4,
+    borderColor: 'rgba(255, 220, 160, 0.6)',
+  },
+  iconGradient: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(28, 14, 5, 0.45)',
+  },
+  textWrapper: {
+    width: '100%',
+    paddingHorizontal: 6,
+  },
+  badgePill: {
+    alignSelf: 'flex-start',
+    backgroundColor: 'rgba(255, 152, 0, 0.12)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 170, 60, 0.32)',
+    marginBottom: 10,
+  },
+  badgeText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 1.6,
+    color: '#FFB74D',
+    textTransform: 'uppercase',
+  },
+  titleText: {
+    fontSize: 25,
+    fontWeight: '800',
+    color: '#FFF5E8',
+    lineHeight: 32,
+    letterSpacing: -0.3,
+  },
+  subtitleText: {
+    fontSize: 13,
+    color: 'rgba(255, 225, 200, 0.68)',
+    marginTop: 8,
+    lineHeight: 20,
+    fontWeight: '400',
+  },
+  bottomSection: {
+    paddingHorizontal: 28,
+    paddingBottom: 20,
+    maxWidth: 440,
+    width: '100%',
+    alignSelf: 'center',
+  },
+  paginationRow: {
+    flexDirection: 'row',
+    height: 6,
+    marginBottom: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  dot: {
+    height: 5,
+    borderRadius: 3,
+    marginHorizontal: 3,
+  },
+  actionPillWrapper: {
+    position: 'relative',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  actionTouch: {
+    width: '100%',
+    borderRadius: 999,
+    overflow: 'hidden',
+    position: 'relative',
+    shadowColor: '#FF7A00',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.65,
+    shadowRadius: 18,
+    elevation: 10,
+  },
+  actionCoronaGlow: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 999,
+    backgroundColor: 'rgba(255, 120, 20, 0.15)',
+    ...(Platform.OS === 'web' ? { filter: 'blur(16px)' } : {}),
+  },
+  actionBlur: {
+    width: '100%',
+    borderRadius: 999,
+    overflow: 'hidden',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 220, 160, 0.52)',
+    ...(Platform.OS === 'web'
+      ? {
+          backdropFilter: 'blur(16px)',
+          WebkitBackdropFilter: 'blur(16px)',
+          boxShadow:
+            '0 0 20px rgba(255, 122, 0, 0.32), inset 0 1px 1px rgba(255, 255, 255, 0.45), inset 0 -1px 2px rgba(0, 0, 0, 0.5)',
+        }
+      : {}),
+  },
+  actionGradient: {
+    borderRadius: 999,
+    paddingVertical: 14,
+    paddingHorizontal: 28,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+    backgroundColor: 'rgba(20, 10, 4, 0.42)',
+  },
+  actionSheen: {
+    position: 'absolute',
+    top: 1,
+    left: '15%',
+    right: '15%',
+    height: 1.2,
+    borderRadius: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.6)',
+  },
+  actionBtnText: {
+    color: '#FFEED6',
+    fontSize: 12,
+    fontWeight: '700',
+    letterSpacing: 2.2,
+    textTransform: 'uppercase',
+  },
 });
