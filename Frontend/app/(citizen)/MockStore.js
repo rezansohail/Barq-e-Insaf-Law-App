@@ -169,3 +169,8 @@ export const removeEvidenceFromCase = (caseId, index) => {
     notify();
   }
 };
+
+
+export default function MockStore() {
+  return null;
+}

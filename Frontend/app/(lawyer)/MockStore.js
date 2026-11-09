@@ -162,3 +162,8 @@ export const acceptRequest = (id) => {
     declineRequest(id);
   }
 };
+
+
+export default function MockStore() {
+  return null;
+}
