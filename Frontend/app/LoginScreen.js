@@ -11,6 +11,7 @@ import {
   ActivityIndicator,
   StatusBar,
   useWindowDimensions,
+  Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -209,23 +210,172 @@ export default function LoginScreen() {
   const strength = getPasswordStrength(password);
   const clearErrors = () => setErrors({});
 
-  // ── INSTANT ACCESS ROUTING ──
-  const handleLogin = () => {
+  // ── AUTHENTICATED LOGIN ──
+  const handleLogin = async () => {
+    clearErrors();
     const currentRole = selectedRole || role || 'citizen';
-    if (currentRole === 'citizen') router.replace('/(citizen)/CitizenHome');
-    else if (currentRole === 'lawyer') router.replace('/(lawyer)/LawyerHome');
-    else if (currentRole === 'admin') router.replace('/(Admin)');
-    else if (currentRole === 'ngo') router.replace('/(ngo)/NGOHome');
-    else router.replace('/(citizen)/CitizenHome');
+    const newErrors = {};
+
+    if (!email.trim()) newErrors.email = 'Email address is required.';
+    if (!password) newErrors.password = 'Password is required.';
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      let endpoint = '';
+      let targetRoute = '';
+
+      if (currentRole === 'citizen') {
+        endpoint = '/citizens/login';
+        targetRoute = '/(citizen)/CitizenHome';
+      } else if (currentRole === 'lawyer') {
+        endpoint = '/lawyers/login';
+        targetRoute = '/(lawyer)/LawyerHome';
+      } else if (currentRole === 'admin') {
+        endpoint = '/admin/login';
+        targetRoute = '/(Admin)';
+      } else if (currentRole === 'ngo') {
+        endpoint = '/ngo/login';
+        targetRoute = '/(ngo)/NGOHome';
+      }
+
+      console.log(`[AUTH] Logging in to ${endpoint} with ${email.trim()}`);
+      const response = await api.post(endpoint, {
+        email: email.trim(),
+        password: password,
+      });
+
+      console.log('[AUTH] Login response:', response.data);
+
+      if (response.data && (response.data.token || response.data.success !== false)) {
+        Alert.alert(
+          'Login Successful',
+          `Welcome back to the ${config.label}!`,
+          [
+            {
+              text: 'Continue',
+              onPress: () => router.replace(targetRoute),
+            },
+          ]
+        );
+      }
+    } catch (err) {
+      console.error('[AUTH] Login error:', err.response?.data || err.message);
+      const serverMessage =
+        err.response?.data?.message ||
+        err.response?.data?.error ||
+        err.message ||
+        'Unable to connect to server. Please check your credentials.';
+
+      Alert.alert('Login Failed', serverMessage);
+      setErrors((prev) => ({ ...prev, general: serverMessage }));
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSignup = () => {
+  // ── AUTHENTICATED SIGNUP / REGISTER ──
+  const handleSignup = async () => {
+    clearErrors();
     const currentRole = selectedRole || role || 'citizen';
-    if (currentRole === 'citizen') router.replace('/(citizen)/CitizenHome');
-    else if (currentRole === 'lawyer') router.replace('/(lawyer)/LawyerHome');
-    else if (currentRole === 'admin') router.replace('/(Admin)');
-    else if (currentRole === 'ngo') router.replace('/(ngo)/NGOHome');
-    else router.replace('/(citizen)/CitizenHome');
+    const newErrors = {};
+
+    if (!name.trim()) newErrors.name = 'Full Name is required.';
+    if (!phone.trim()) newErrors.phone = 'Phone number is required.';
+    if (!district.trim()) newErrors.district = 'District is required.';
+    if (!email.trim()) newErrors.email = 'Email address is required.';
+    if (!password) newErrors.password = 'Password is required.';
+    if (password.length < 8) newErrors.password = 'Password must be at least 8 characters.';
+    if (retypePass && password !== retypePass) newErrors.retypePass = 'Passwords do not match.';
+
+    if (currentRole === 'lawyer') {
+      if (!sbcNumber.trim()) newErrors.sbcNumber = 'SBC Bar License Number is required.';
+      if (!cnic.trim()) newErrors.cnic = 'CNIC is required for lawyer verification.';
+    }
+
+    if (Object.keys(newErrors).length > 0) {
+      setErrors(newErrors);
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      let endpoint = '';
+      let targetRoute = '';
+      let payload = {};
+
+      if (currentRole === 'citizen') {
+        endpoint = '/citizens/register';
+        targetRoute = '/(citizen)/CitizenHome';
+        payload = {
+          fullName: name.trim(),
+          phone: phone.trim(),
+          district: district.trim(),
+          email: email.trim(),
+          password: password,
+          confirmPassword: retypePass,
+        };
+      } else if (currentRole === 'lawyer') {
+        endpoint = '/lawyers/register';
+        targetRoute = '/(lawyer)/LawyerHome';
+        payload = {
+          name: name.trim(),
+          phone: phone.trim(),
+          cnic: cnic.trim(),
+          district: district.trim(),
+          sbcNumber: sbcNumber.trim(),
+          specialty: specialty.trim() || 'General Law',
+          email: email.trim(),
+          password: password,
+          confirmPassword: retypePass,
+        };
+      } else if (currentRole === 'ngo') {
+        endpoint = '/ngo/register';
+        targetRoute = '/(ngo)/NGOHome';
+        payload = {
+          fullName: name.trim(),
+          phone: phone.trim(),
+          cnic: cnic.trim() || null,
+          district: district.trim(),
+          email: email.trim(),
+          password: password,
+          confirmPassword: retypePass,
+          organizationType: 'NGO / Media',
+        };
+      }
+
+      console.log(`[AUTH] Registering via ${endpoint}`, payload);
+      const response = await api.post(endpoint, payload);
+      console.log('[AUTH] Register response:', response.data);
+
+      if (response.data && (response.data.token || response.data.success !== false)) {
+        const successMsg = response.data.message || 'Registration successful! Welcome to Barq-e-Insaf.';
+        Alert.alert('Registration Successful', successMsg, [
+          {
+            text: 'Proceed to Dashboard',
+            onPress: () => router.replace(targetRoute),
+          },
+        ]);
+      }
+    } catch (err) {
+      console.error('[AUTH] Registration error:', err.response?.data || err.message);
+      const serverMessage =
+        err.response?.data?.message ||
+        (Array.isArray(err.response?.data?.errors) ? err.response.data.errors.join(' ') : null) ||
+        err.message ||
+        'Registration failed. Please try again.';
+
+      Alert.alert('Registration Failed', serverMessage);
+      setErrors((prev) => ({ ...prev, general: serverMessage }));
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -359,7 +509,7 @@ export default function LoginScreen() {
                         return (
                           <TouchableOpacity
                             key={item.id}
-                            onPress={() => setSelectedRole(item.id)}
+                            onPress={() => { setSelectedRole(item.id); clearErrors(); if (item.id === 'admin') setActiveTab('login'); }}
                             activeOpacity={0.8}
                             style={[
                               styles.roleTabItem,
@@ -461,21 +611,25 @@ export default function LoginScreen() {
                       />
                       {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
 
-                      {/* CNIC */}
-                      <Text style={styles.inputLabel}>CNIC (Sindh Only)</Text>
-                      <TextInput
-                        style={styles.input}
-                        placeholder="42101-1234567-1"
-                        placeholderTextColor="rgba(255, 220, 180, 0.35)"
-                        value={cnic}
-                        onChangeText={(v) => {
-                          const formatted = formatCNIC(v);
-                          if (formatted.length <= 15) setCnic(formatted);
-                        }}
-                        keyboardType="number-pad"
-                        maxLength={15}
-                      />
-                      {errors.cnic && <Text style={styles.errorText}>{errors.cnic}</Text>}
+                      {/* CNIC - For Lawyer & NGO only */}
+                      {selectedRole !== 'citizen' && (
+                        <>
+                          <Text style={styles.inputLabel}>CNIC (Sindh Only)</Text>
+                          <TextInput
+                            style={styles.input}
+                            placeholder="42101-1234567-1"
+                            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                            value={cnic}
+                            onChangeText={(v) => {
+                              const formatted = formatCNIC(v);
+                              if (formatted.length <= 15) setCnic(formatted);
+                            }}
+                            keyboardType="number-pad"
+                            maxLength={15}
+                          />
+                          {errors.cnic && <Text style={styles.errorText}>{errors.cnic}</Text>}
+                        </>
+                      )}
 
                       {/* DISTRICT */}
                       <Text style={styles.inputLabel}>District</Text>
@@ -617,6 +771,13 @@ export default function LoginScreen() {
                         Forgot password?
                       </Text>
                     </TouchableOpacity>
+                  )}
+
+                  {/* GENERAL ERROR BANNER */}
+                  {errors.general && (
+                    <View style={styles.generalErrorBox}>
+                      <Text style={styles.generalErrorText}>⚠️ {errors.general}</Text>
+                    </View>
                   )}
 
                   {/* ── LIQUID GLASS SUBMIT BUTTON ── */}
@@ -964,6 +1125,22 @@ const styles = StyleSheet.create({
     letterSpacing: 0.4,
   },
 
+  generalErrorBox: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.45)',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    marginBottom: 14,
+  },
+  generalErrorText: {
+    color: '#fca5a5',
+    fontSize: 12,
+    fontWeight: '600',
+    textAlign: 'center',
+    lineHeight: 17,
+  },
   errorText: {
     fontSize: 10.5,
     color: '#ef4444',

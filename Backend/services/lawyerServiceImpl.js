@@ -21,6 +21,16 @@ class LawyerServiceImpl extends LawyerService {
     }
 
     // 2. Business Check: Unique Email check
+    const userRoleCheck = await db.query('SELECT role FROM users WHERE email = $1', [dto.email]);
+    if (userRoleCheck.rows.length > 0) {
+      const actualRole = userRoleCheck.rows[0].role;
+      const roleNames = { lawyer: 'Lawyer', citizen: 'Citizen', admin: 'Admin', ngo: 'NGO / Media' };
+      const displayName = roleNames[actualRole] || actualRole;
+      const error = new Error(`This email is already registered as a ${displayName}. You cannot register it as a Lawyer.`);
+      error.statusCode = 409;
+      throw error;
+    }
+
     const existingEmail = await db.query(
       'SELECT id FROM lawyers WHERE email = $1',
       [dto.email]
@@ -156,6 +166,17 @@ class LawyerServiceImpl extends LawyerService {
     );
 
     if (result.rows.length === 0) {
+      // Check if email belongs to another portal
+      const userCheck = await db.query('SELECT role FROM users WHERE email = $1', [dto.email]);
+      if (userCheck.rows.length > 0) {
+        const actualRole = userCheck.rows[0].role;
+        const roleNames = { lawyer: 'Lawyer', citizen: 'Citizen', admin: 'Admin', ngo: 'NGO / Media' };
+        const displayName = roleNames[actualRole] || actualRole;
+        const error = new Error(`This email belongs to a ${displayName} account. Please switch to the ${displayName} Portal to log in.`);
+        error.statusCode = 403;
+        throw error;
+      }
+
       const error = new Error('Invalid email or password.');
       error.statusCode = 401;
       throw error;
