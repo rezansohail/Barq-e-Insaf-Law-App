@@ -10,11 +10,11 @@ import {
   Platform,
   useWindowDimensions,
 } from 'react-native';
+import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 
 const slides = [
   {
@@ -23,18 +23,7 @@ const slides = [
     title: 'Your Justice.\nYour Control.',
     subtitle:
       'Bridging the legal access gap across Pakistan with instant AI assistance and certified advocate connection.',
-    renderIcon: () => (
-      <Svg width={30} height={30} viewBox="0 0 24 24" fill="none">
-        {/* Scales of Justice */}
-        <Path
-          d="M12 3v18M6 8l6-3 6 3M3 13c0 2 1.3 3.5 3 3.5s3-1.5 3-3.5L6 8 3 13zM15 13c0 2 1.3 3.5 3 3.5s3-1.5 3-3.5L18 8l-3 5zM9 21h6"
-          stroke="#FFE2BF"
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </Svg>
-    ),
+    image: require('../assets/images/onb1.jpg'),
   },
   {
     id: '2',
@@ -42,18 +31,7 @@ const slides = [
     title: 'Instant Legal Guidance\nin Urdu & Sindhi.',
     subtitle:
       'Ask legal questions regarding Pakistan Penal Code, Family Laws, and Property rights 24/7.',
-    renderIcon: () => (
-      <Svg width={30} height={30} viewBox="0 0 24 24" fill="none">
-        {/* AI Lightning / Intellect */}
-        <Path
-          d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
-          stroke="#FFE2BF"
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </Svg>
-    ),
+    image: require('../assets/images/onb2.png'),
   },
   {
     id: '3',
@@ -61,18 +39,7 @@ const slides = [
     title: 'Verified Lawyers &\nBiometric Security.',
     subtitle:
       'Connect directly with Sindh Bar Council advocates and sign representation agreements digitally.',
-    renderIcon: () => (
-      <Svg width={30} height={30} viewBox="0 0 24 24" fill="none">
-        {/* Verified Shield */}
-        <Path
-          d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10zM9 12l2 2 4-4"
-          stroke="#FFE2BF"
-          strokeWidth={1.5}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </Svg>
-    ),
+    image: require('../assets/images/onb3.png'),
   },
 ];
 
@@ -196,11 +163,11 @@ export default function OnboardingScreen() {
           ref={slidesRef}
           renderItem={({ item }) => (
             <View style={[styles.slide, { width }]}>
-              {/* Sleek Frosted Glass Illustration Card */}
+              {/* Frosted Glass Illustration Card with Image */}
               <View
                 style={[
                   styles.cardWrapper,
-                  { width: Math.min(width - 56, 380), height: Math.min(height * 0.32, 240) },
+                  { width: Math.min(width - 32, 480), height: Math.round(Math.min(width - 32, 480) / 1.78) },
                 ]}
               >
                 <BlurView
@@ -208,41 +175,22 @@ export default function OnboardingScreen() {
                   tint="dark"
                   style={styles.cardBlur}
                 >
+                  <Image
+                    source={item.image}
+                    style={styles.cardImage}
+                    contentFit="cover"
+                    transition={300}
+                  />
+                  {/* Subtle dark overlay at bottom for readability */}
                   <LinearGradient
-                    colors={[
-                      'rgba(255, 150, 40, 0.1)',
-                      'rgba(255, 255, 255, 0.02)',
-                      'rgba(15, 7, 2, 0.45)',
-                    ]}
-                    style={styles.cardGradient}
-                    start={{ x: 0, y: 0 }}
-                    end={{ x: 1, y: 1 }}
-                  >
-                    <View style={styles.cardSheen} pointerEvents="none" />
-
-                    {/* Compact glowing liquid glass orb */}
-                    <View style={styles.iconOrbWrapper}>
-                      <View style={styles.iconHaloGlow} pointerEvents="none" />
-                      <BlurView
-                        intensity={Platform.OS === 'ios' ? 40 : 65}
-                        tint="dark"
-                        style={styles.iconBlur}
-                      >
-                        <LinearGradient
-                          colors={[
-                            'rgba(255, 255, 255, 0.28)',
-                            'rgba(255, 160, 40, 0.15)',
-                            'rgba(25, 12, 4, 0.55)',
-                          ]}
-                          start={{ x: 0.2, y: 0 }}
-                          end={{ x: 0.8, y: 1 }}
-                          style={styles.iconGradient}
-                        >
-                          {item.renderIcon()}
-                        </LinearGradient>
-                      </BlurView>
-                    </View>
-                  </LinearGradient>
+                    colors={['transparent', 'rgba(6, 2, 1, 0.45)']}
+                    style={styles.cardImageOverlay}
+                    start={{ x: 0.5, y: 0.3 }}
+                    end={{ x: 0.5, y: 1 }}
+                    pointerEvents="none"
+                  />
+                  {/* Top specular sheen */}
+                  <View style={styles.cardSheen} pointerEvents="none" />
                 </BlurView>
               </View>
 
@@ -397,13 +345,23 @@ const styles = StyleSheet.create({
   },
   cardBlur: {
     flex: 1,
+    overflow: 'hidden',
   },
-  cardGradient: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-    backgroundColor: 'rgba(18, 9, 3, 0.4)',
+  cardImage: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    width: '100%',
+    height: '100%',
+  },
+  cardImageOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '55%',
   },
   cardSheen: {
     position: 'absolute',
@@ -413,35 +371,7 @@ const styles = StyleSheet.create({
     height: 1.2,
     backgroundColor: 'rgba(255, 255, 255, 0.35)',
     borderRadius: 1,
-  },
-  iconOrbWrapper: {
-    width: 68,
-    height: 68,
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  iconHaloGlow: {
-    position: 'absolute',
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: 'rgba(255, 130, 20, 0.22)',
-    ...(Platform.OS === 'web' ? { filter: 'blur(16px)' } : {}),
-  },
-  iconBlur: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    overflow: 'hidden',
-    borderWidth: 1.4,
-    borderColor: 'rgba(255, 220, 160, 0.6)',
-  },
-  iconGradient: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: 'rgba(28, 14, 5, 0.45)',
+    zIndex: 2,
   },
   textWrapper: {
     width: '100%',

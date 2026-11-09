@@ -2,14 +2,14 @@
 const { getDefaultConfig } = require('expo/metro-config');
 const defaultConfig = getDefaultConfig(__dirname);
 
-// Alias the missing modules to our shims
+// Alias the missing modules to our shims (outside of app/)
 defaultConfig.resolver.alias = {
   ...(defaultConfig.resolver.alias || {}),
   'react-native/setup-env': require.resolve('./shims/setup-env.js'),
   'react-native/asset-registry': require.resolve('./shims/asset-registry.js'),
 };
 
-// Also map via extraNodeModules for compatibility (optional)
+// Also map via extraNodeModules for compatibility
 defaultConfig.resolver.extraNodeModules = {
   ...(defaultConfig.resolver.extraNodeModules || {}),
   'react-native/setup-env': require.resolve('./shims/setup-env.js'),

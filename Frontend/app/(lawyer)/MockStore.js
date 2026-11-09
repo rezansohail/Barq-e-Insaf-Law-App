@@ -163,7 +163,6 @@ export const acceptRequest = (id) => {
   }
 };
 
-
-export default function MockStore() {
+export default function MockStoreRoute() {
   return null;
 }

@@ -42,7 +42,7 @@ export default function StartScreen() {
 
       {/* Responsive full‑screen background image */}
       <Image
-        source={require('../assets/images/bg3.jpg')}
+        source={require('../assets/images/bg5.jpg')}
         style={[styles.backgroundImage, { width, height }]}
         resizeMode="cover"
         pointerEvents="none"
@@ -62,7 +62,7 @@ export default function StartScreen() {
           </Text>
           {/* Tagline */}
           <Text style={[styles.tagline, playfairLoaded ? { fontFamily: 'PlayfairDisplay_400Regular' } : {}]}>
-            Step Beyond Red Tape Into Swift Justice
+            Your legal companion for swift justice
           </Text>
 
           {/* Buttons – Liquid Glass with amber glow */}
@@ -174,25 +174,25 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
   },
   title: {
-    fontSize: 36,
+    fontSize: 33,
     color: '#FFF',
     letterSpacing: 4,
     textAlign: 'center',
     textShadowColor: 'rgba(255,255,255,0.9)',
     textShadowOffset: { width: 0, height: 0 },
     textShadowRadius: 12,
-    marginBottom: 8,
+    marginBottom: 1,
   },
   tagline: {
     fontSize: 13,
     color: 'rgba(255,225,150,0.9)',
     fontStyle: 'italic',
     textAlign: 'center',
-    marginBottom: 28,
+    marginBottom: 60,
   },
   buttonStack: {
-    width: '100%',
-    gap: 16,
+    width: '85%',
+    gap: 20,
   },
   touchWrapper: {
     width: '100%',

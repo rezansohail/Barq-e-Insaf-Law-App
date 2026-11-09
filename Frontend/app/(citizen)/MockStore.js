@@ -170,7 +170,6 @@ export const removeEvidenceFromCase = (caseId, index) => {
   }
 };
 
-
-export default function MockStore() {
+export default function MockStoreRoute() {
   return null;
 }
