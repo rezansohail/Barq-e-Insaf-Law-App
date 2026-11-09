@@ -20,10 +20,10 @@ import Svg, { Path } from 'react-native-svg';
 import api from '../constants/api';
 
 const roleConfig = {
-  citizen: { label: 'Citizen Portal',     color: '#FF9800', topGlow: 'rgba(255, 152, 0, 0.22)' },
-  lawyer:  { label: 'Lawyer Portal',      color: '#F59E0B', topGlow: 'rgba(245, 158, 11, 0.22)' },
-  ngo:     { label: 'NGO / Media Portal', color: '#FB923C', topGlow: 'rgba(251, 146, 60, 0.22)' },
-  admin:   { label: 'Admin Panel',        color: '#EA580C', topGlow: 'rgba(234, 88, 12, 0.22)' },
+  citizen: { label: 'Citizen Portal',     color: '#FF9800', topGlow: 'rgba(255, 94, 0, 0.4)' },
+  lawyer:  { label: 'Lawyer Portal',      color: '#FF9800', topGlow: 'rgba(255, 94, 0, 0.4)' },
+  ngo:     { label: 'NGO / Media Portal', color: '#FF9800', topGlow: 'rgba(255, 94, 0, 0.4)' },
+  admin:   { label: 'Admin Panel',        color: '#EA580C', topGlow: 'rgba(224, 17, 17, 0.36)' },
 };
 
 const SINDH_DISTRICTS = [
@@ -118,7 +118,7 @@ const PasswordInput = ({ label, value, onChangeText, color }) => {
         />
         <TouchableOpacity onPress={() => setShow(!show)} style={styles.eyeBtn}>
           <Text style={{ fontSize: 16, color: color || '#FFB800' }}>
-            {show ? '👁️' : '🔒'}
+            {show ? '👁️' : '🚫'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -651,8 +651,8 @@ export default function LoginScreen() {
                           ) : (
                             <Text style={styles.submitBtnText}>
                               {activeTab === 'login'
-                                ? 'LOGIN (INSTANT ACCESS)'
-                                : 'CREATE ACCOUNT (INSTANT ACCESS)'}
+                                ? 'LOGIN'
+                                : 'REGISTER'}
                             </Text>
                           )}
                         </LinearGradient>
@@ -660,9 +660,6 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                   </View>
 
-                  <Text style={styles.fastModeHint}>
-                    ⚡ Instant Test Mode Active: Tap above to enter immediately
-                  </Text>
                 </ScrollView>
               </LinearGradient>
             </BlurView>
