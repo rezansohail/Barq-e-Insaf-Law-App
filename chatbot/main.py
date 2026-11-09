@@ -4,19 +4,10 @@ import glob
 from flask import Flask, request, jsonify, send_from_directory
 from chatbot import ask_legal_question, collection
 from ingest import ingest_pdfs
-
 from dotenv import load_dotenv
-from supabase import create_client, Client
 
 load_dotenv()
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
-
-try:
-    supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
-except Exception as e:
-    print(f"Failed to initialize Supabase client: {e}")
-    supabase = None
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # Try importing flask_cors, add fallback if missing
 try:
@@ -57,7 +48,7 @@ def chat():
         
     print(f"Chat request: '{message}' | Model: {model} | Temp: {temperature} | Lang: {language}")
     
-    # 1. First, get the answer from the AI
+    # Get the answer from the legal AI
     response = ask_legal_question(
         question=message,
         model_name=model,
@@ -66,19 +57,7 @@ def chat():
         language=language
     )
     
-    # 2. Then, save the conversation to Supabase
-    if supabase:
-        try:
-            supabase.table("chat_history").insert({
-                "user_message": message,
-                "ai_response": response.get("answer", ""),
-                "language": language
-            }).execute()
-            print("Successfully saved chat to Supabase!")
-        except Exception as e:
-            print(f"Error saving to Supabase: {e}")
-            
-    # 3. Finally, send the answer back to the frontend
+    # Send the answer back to the frontend
     return jsonify(response)
 
 @app.route('/api/status', methods=['GET'])
@@ -138,5 +117,6 @@ def run_ingest():
         }), 500
 
 if __name__ == '__main__':
-    print("Starting Barq-e-Insaf Chatbot API server on http://127.0.0.1:5000 ...")
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    port = int(os.environ.get("PORT", 5001))
+    print(f"Starting Barq-e-Insaf Chatbot API server on http://127.0.0.1:{port} ...")
+    app.run(host='0.0.0.0', port=port, debug=True)

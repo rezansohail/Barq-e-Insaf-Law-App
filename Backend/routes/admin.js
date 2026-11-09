@@ -1,10 +1,22 @@
 const express = require('express');
 const router = express.Router();
 const {
-  getStats, getPendingLawyers, verifyLawyer, getFlaggedCases,
+  registerAdmin,
+  loginAdmin,
+  getAdminMe,
+  getStats,
+  getPendingLawyers,
+  verifyLawyer,
+  getFlaggedCases,
 } = require('../controllers/adminController');
 const { protect, allowRoles } = require('../middleware/auth');
 
+// Public Admin Auth Routes (Protected by DTO Admin Secret Key)
+router.post('/register', registerAdmin);
+router.post('/login',    loginAdmin);
+
+// Protected Admin Management Routes (Requires Bearer JWT Token with role = 'admin')
+router.get('/me',                 protect, allowRoles('admin'), getAdminMe);
 router.get('/stats',              protect, allowRoles('admin'), getStats);
 router.get('/pending-lawyers',    protect, allowRoles('admin'), getPendingLawyers);
 router.put('/lawyers/:id/verify', protect, allowRoles('admin'), verifyLawyer);

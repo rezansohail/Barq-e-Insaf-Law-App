@@ -5,6 +5,7 @@ import chromadb
 from chromadb.utils import embedding_functions
 
 load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 # We retrieve the API key from environment
 api_key = os.getenv("GROQ_API_KEY")

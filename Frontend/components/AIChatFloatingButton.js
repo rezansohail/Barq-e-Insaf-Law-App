@@ -78,7 +78,7 @@ export default function AIChatFloatingButton() {
       // Automatically detect the laptop's IP address so it works on any Wi-Fi!
       const laptopIp = Constants.expoConfig?.hostUri?.split(':')[0] || 'localhost';
       
-      const response = await fetch(`http://${laptopIp}:5000/api/chat`, {
+      const response = await fetch(`http://${laptopIp}:5001/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userQuery, model: 'llama-3.3-70b-versatile', temperature: 0.3 }),

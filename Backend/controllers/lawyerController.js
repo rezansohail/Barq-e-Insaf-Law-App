@@ -1,37 +1,72 @@
-const supabase = require('../config/supabase');
+const RegisterLawyerDTO = require('../dto/RegisterLawyerDTO');
+const LoginLawyerDTO = require('../dto/LoginLawyerDTO');
+const lawyerService = require('../services/lawyerServiceImpl');
+
+/**
+ * Controller for Lawyer Endpoints
+ * Bridges HTTP layer with Business Logic Service layer
+ */
+
+// POST /api/lawyers/register
+const registerLawyer = async (req, res) => {
+  try {
+    const dto = new RegisterLawyerDTO(req.body);
+    const result = await lawyerService.registerLawyer(dto);
+    return res.status(201).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message,
+      errors: error.errors || null,
+    });
+  }
+};
+
+// POST /api/lawyers/login
+const loginLawyer = async (req, res) => {
+  try {
+    const dto = new LoginLawyerDTO(req.body);
+    const result = await lawyerService.loginLawyer(dto);
+    return res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message,
+      errors: error.errors || null,
+    });
+  }
+};
 
 // GET /api/lawyers
 const getLawyers = async (req, res) => {
   try {
-    let query = supabase
-      .from('lawyers')
-      .select('*, user:user_id(id, name, email, phone)')
-      .eq('is_verified', true);
-
-    if (req.query.specialty) query = query.eq('specialty', req.query.specialty);
-    if (req.query.district)  query = query.eq('district',  req.query.district);
-
-    const { data, error } = await query;
-    if (error) return res.status(500).json({ message: error.message });
-    res.json(data);
+    const lawyers = await lawyerService.getLawyers({
+      specialty: req.query.specialty,
+      district: req.query.district,
+    });
+    res.json(lawyers);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message });
   }
 };
 
 // GET /api/lawyers/:id
 const getLawyerById = async (req, res) => {
   try {
-    const { data, error } = await supabase
-      .from('lawyers')
-      .select('*, user:user_id(id, name, email, phone)')
-      .eq('id', req.params.id)
-      .single();
-
-    if (error) return res.status(404).json({ message: 'Lawyer not found' });
-    res.json(data);
+    const lawyer = await lawyerService.getLawyerById(req.params.id);
+    res.json(lawyer);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message });
   }
 };
 
@@ -39,33 +74,21 @@ const getLawyerById = async (req, res) => {
 const rateLawyer = async (req, res) => {
   try {
     const { rating } = req.body;
-
-    const { data: lawyer, error } = await supabase
-      .from('lawyers')
-      .select('rating, total_ratings')
-      .eq('id', req.params.id)
-      .single();
-
-    if (error) return res.status(404).json({ message: 'Lawyer not found' });
-
-    const newTotal  = lawyer.total_ratings + 1;
-    const newRating = ((lawyer.rating * lawyer.total_ratings) + rating) / newTotal;
-
-    const { data, error: updateError } = await supabase
-      .from('lawyers')
-      .update({
-        rating: Math.round(newRating * 10) / 10,
-        total_ratings: newTotal,
-      })
-      .eq('id', req.params.id)
-      .select()
-      .single();
-
-    if (updateError) return res.status(500).json({ message: updateError.message });
-    res.json(data);
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    }
+    const updated = await lawyerService.rateLawyer(req.params.id, Number(rating));
+    res.json(updated);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message });
   }
 };
 
-module.exports = { getLawyers, getLawyerById, rateLawyer };
+module.exports = {
+  registerLawyer,
+  loginLawyer,
+  getLawyers,
+  getLawyerById,
+  rateLawyer,
+};

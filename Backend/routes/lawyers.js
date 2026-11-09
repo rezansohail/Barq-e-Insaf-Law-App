@@ -1,10 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const { getLawyers, getLawyerById, rateLawyer } = require('../controllers/lawyerController');
+const {
+  registerLawyer,
+  loginLawyer,
+  getLawyers,
+  getLawyerById,
+  rateLawyer,
+} = require('../controllers/lawyerController');
 const { protect } = require('../middleware/auth');
 
-router.get('/',         protect, getLawyers);
-router.get('/:id',      protect, getLawyerById);
-router.post('/:id/rate',protect, rateLawyer);
+// Public routes for Lawyer Authentication (From Lawyer Portal)
+router.post('/register', registerLawyer);
+router.post('/login', loginLawyer);
+
+// Lawyer discovery and profile routes
+router.get('/', getLawyers);
+router.get('/:id', getLawyerById);
+router.post('/:id/rate', protect, rateLawyer);
 
 module.exports = router;
