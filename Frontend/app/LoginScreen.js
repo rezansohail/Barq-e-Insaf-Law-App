@@ -19,6 +19,8 @@ import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import api from '../constants/api';
+import { saveSession } from '../constants/authStore';
+import { setLawyerProfileFromUser } from './(lawyer)/MockStore';
 
 const roleConfig = {
   citizen: { label: 'Citizen Portal',     color: '#FF9800', topGlow: 'rgba(255, 94, 0, 0.4)' },
@@ -253,16 +255,17 @@ export default function LoginScreen() {
       console.log('[AUTH] Login response:', response.data);
 
       if (response.data && (response.data.token || response.data.success !== false)) {
-        Alert.alert(
-          'Login Successful',
-          `Welcome back to the ${config.label}!`,
-          [
-            {
-              text: 'Continue',
-              onPress: () => router.replace(targetRoute),
-            },
-          ]
-        );
+        const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.admin || response.data.user;
+        saveSession({
+          token: response.data.token,
+          role: currentRole,
+          user: userObj,
+          id: userObj?.id,
+        });
+        if (currentRole === 'lawyer' && userObj) {
+          setLawyerProfileFromUser(userObj);
+        }
+        router.replace({ pathname: targetRoute, params: { lawyerId: userObj?.id } });
       }
     } catch (err) {
       console.error('[AUTH] Login error:', err.response?.data || err.message);
@@ -355,13 +358,17 @@ export default function LoginScreen() {
       console.log('[AUTH] Register response:', response.data);
 
       if (response.data && (response.data.token || response.data.success !== false)) {
-        const successMsg = response.data.message || 'Registration successful! Welcome to Barq-e-Insaf.';
-        Alert.alert('Registration Successful', successMsg, [
-          {
-            text: 'Proceed to Dashboard',
-            onPress: () => router.replace(targetRoute),
-          },
-        ]);
+        const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.admin || response.data.user;
+        saveSession({
+          token: response.data.token,
+          role: currentRole,
+          user: userObj,
+          id: userObj?.id,
+        });
+        if (currentRole === 'lawyer' && userObj) {
+          setLawyerProfileFromUser(userObj);
+        }
+        router.replace({ pathname: targetRoute, params: { lawyerId: userObj?.id } });
       }
     } catch (err) {
       console.error('[AUTH] Registration error:', err.response?.data || err.message);

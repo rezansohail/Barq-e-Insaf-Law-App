@@ -70,6 +70,106 @@ const getLawyerById = async (req, res) => {
   }
 };
 
+// PUT /api/lawyers/:id/profile or PUT /api/lawyers/:id
+const updateLawyerProfile = async (req, res) => {
+  try {
+    const updatedLawyer = await lawyerService.updateLawyerProfile(req.params.id, req.body);
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      lawyer: updatedLawyer,
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message });
+  }
+};
+
+// GET /api/lawyers/:id/requests
+const getLawyerRequests = async (req, res) => {
+  try {
+    const requests = await lawyerService.getLawyerRequests(req.params.id, req.query);
+    res.json(requests);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message });
+  }
+};
+
+// POST /api/lawyers/:id/requests (Citizen requests consultation)
+const createLawyerRequest = async (req, res) => {
+  try {
+    const result = await lawyerService.createLawyerRequest(req.params.id, req.body);
+    res.status(201).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message });
+  }
+};
+
+// PUT /api/lawyers/:id/requests/:requestId/accept
+const acceptLawyerRequest = async (req, res) => {
+  try {
+    const result = await lawyerService.acceptLawyerRequest(req.params.id, req.params.requestId);
+    res.json(result);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message });
+  }
+};
+
+// PUT /api/lawyers/:id/requests/:requestId/decline
+const declineLawyerRequest = async (req, res) => {
+  try {
+    const { reason, declineReason } = req.body;
+    const finalReason = reason || declineReason;
+    const result = await lawyerService.declineLawyerRequest(req.params.id, req.params.requestId, finalReason);
+    res.json(result);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message });
+  }
+};
+
+// GET /api/lawyers/:id/cases
+const getLawyerCases = async (req, res) => {
+  try {
+    const cases = await lawyerService.getLawyerCases(req.params.id);
+    res.json(cases);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message });
+  }
+};
+
+// GET /api/lawyers/:id/schedule
+const getLawyerSchedule = async (req, res) => {
+  try {
+    const schedule = await lawyerService.getLawyerSchedule(req.params.id);
+    res.json(schedule);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message });
+  }
+};
+
+// PUT /api/lawyers/:id/schedule
+const updateLawyerSchedule = async (req, res) => {
+  try {
+    const result = await lawyerService.updateLawyerSchedule(req.params.id, req.body);
+    res.json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    res.status(statusCode).json({ message: error.message });
+  }
+};
+
 // POST /api/lawyers/:id/rate
 const rateLawyer = async (req, res) => {
   try {
@@ -90,5 +190,13 @@ module.exports = {
   loginLawyer,
   getLawyers,
   getLawyerById,
+  updateLawyerProfile,
+  getLawyerRequests,
+  createLawyerRequest,
+  acceptLawyerRequest,
+  declineLawyerRequest,
+  getLawyerCases,
+  getLawyerSchedule,
+  updateLawyerSchedule,
   rateLawyer,
 };

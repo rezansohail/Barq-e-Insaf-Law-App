@@ -1,17 +1,39 @@
 import axios from 'axios';
 import Constants from 'expo-constants';
+import { Platform } from 'react-native';
 
-// Automatically detect the laptop's Wi-Fi IP address!
-const debuggerHost = Constants.expoConfig?.hostUri;
-const laptopIp = debuggerHost ? debuggerHost.split(':')[0] : 'localhost';
+const getDevHost = () => {
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return window.location.hostname || 'localhost';
+  }
 
-const BASE_URL = `http://${laptopIp}:5000/api`;
+  // Attempt to read the host IP from Expo's dev config
+  const hostUri = Constants.expoConfig?.hostUri 
+    || Constants.manifest2?.extra?.expoGo?.debuggerHost
+    || Constants.manifest?.debuggerHost
+    || (Constants.experienceUrl ? Constants.experienceUrl.replace(/^[a-z]+:\/\//, '') : null);
+
+  if (hostUri) {
+    const extracted = hostUri.split(':')[0];
+    if (extracted && extracted !== 'localhost' && extracted !== '127.0.0.1') {
+      return extracted;
+    }
+  }
+
+  // Fallback to the developer's laptop Wi-Fi IP for Expo Go on physical devices
+  return '192.168.100.246';
+};
+
+const host = getDevHost();
+const BASE_URL = `http://${host}:5000/api`;
 
 const api = axios.create({
   baseURL: BASE_URL,
+  timeout: 15000,
   headers: {
     'Content-Type': 'application/json',
   },
 });
 
+export { BASE_URL };
 export default api;

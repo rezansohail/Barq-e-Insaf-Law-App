@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -9,30 +9,58 @@ import {
   Switch, 
   StatusBar,
   Alert,
-  Modal
+  Modal,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useMockStore, lawyerProfile, updateLawyerProfile } from './MockStore';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useMockStore, lawyerProfile, updateLawyerProfile, fetchLawyerDashboard } from './MockStore';
+import { getCurrentLawyerId } from '../../constants/authStore';
 
 export default function LawyerProfile() {
   useMockStore();
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [editMode, setEditMode] = useState(false);
   const [showDPMenu, setShowDPMenu] = useState(false);
+  const [saving, setSaving] = useState(false);
   
+  const currentLawyerId = params.lawyerId || params.id || getCurrentLawyerId();
+
   // Local state for editing
   const [editedData, setEditedData] = useState({
-    name: lawyerProfile.name,
-    spec: lawyerProfile.spec,
-    address: lawyerProfile.address,
-    bio: lawyerProfile.about,
-    email: lawyerProfile.email,
-    phone: lawyerProfile.phone,
-    isAvailable: lawyerProfile.isAvailable,
-    experience: lawyerProfile.experience,
-    education: lawyerProfile.education,
+    name: lawyerProfile.name || '',
+    spec: lawyerProfile.spec || '',
+    address: lawyerProfile.address || '',
+    bio: lawyerProfile.about || '',
+    email: lawyerProfile.email || '',
+    phone: lawyerProfile.phone || '',
+    district: lawyerProfile.district || '',
+    isAvailable: lawyerProfile.isAvailable !== undefined ? lawyerProfile.isAvailable : true,
+    experience: lawyerProfile.experience || '',
+    education: lawyerProfile.education || '',
   });
+
+  useEffect(() => {
+    if (currentLawyerId) {
+      fetchLawyerDashboard(currentLawyerId);
+    }
+  }, [currentLawyerId]);
+
+  useEffect(() => {
+    setEditedData({
+      name: lawyerProfile.name || '',
+      spec: lawyerProfile.spec || '',
+      address: lawyerProfile.address || '',
+      bio: lawyerProfile.about || '',
+      email: lawyerProfile.email || '',
+      phone: lawyerProfile.phone || '',
+      district: lawyerProfile.district || '',
+      isAvailable: lawyerProfile.isAvailable !== undefined ? lawyerProfile.isAvailable : true,
+      experience: lawyerProfile.experience || '',
+      education: lawyerProfile.education || '',
+    });
+  }, [lawyerProfile.name, lawyerProfile.spec, lawyerProfile.about, lawyerProfile.address, lawyerProfile.isAvailable]);
 
   const handleNav = (lbl) => {
     if (lbl === 'home') router.push('/(lawyer)/LawyerHome');
@@ -42,31 +70,38 @@ export default function LawyerProfile() {
     if (lbl === 'profile') router.push('/(lawyer)/LawyerProfile');
   };
 
-  const handleSave = () => {
-    updateLawyerProfile({
-      name: editedData.name,
-      spec: editedData.spec,
-      address: editedData.address,
-      about: editedData.bio,
-      email: editedData.email,
-      phone: editedData.phone,
-      isAvailable: editedData.isAvailable,
-      experience: editedData.experience,
-      education: editedData.education,
-    });
-    setEditMode(false);
-    Alert.alert('Success', 'Profile updated successfully!');
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await updateLawyerProfile({
+        name: editedData.name,
+        spec: editedData.spec,
+        address: editedData.address,
+        about: editedData.bio,
+        email: editedData.email,
+        phone: editedData.phone,
+        district: editedData.district,
+        isAvailable: editedData.isAvailable,
+        experience: editedData.experience,
+        education: editedData.education,
+      }, currentLawyerId);
+      setEditMode(false);
+      Alert.alert('Success', 'Profile updated successfully and saved to database!');
+    } catch (err) {
+      Alert.alert('Update Failed', err.response?.data?.message || err.message || 'Could not update profile.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChangeDP = () => {
     setShowDPMenu(false);
-    Alert.alert('Change Profile Picture', 'Profile picture upload functionality will be available in the next update.');
+    Alert.alert('Change Profile Picture', 'Profile picture upload will be available in a future update.');
   };
 
   const handleRemoveDP = () => {
     setShowDPMenu(false);
-    updateLawyerProfile({ dp: null });
-    Alert.alert('Success', 'Profile picture removed');
+    Alert.alert('Success', 'Profile picture reset to initials.');
   };
 
   return (
@@ -91,19 +126,25 @@ export default function LawyerProfile() {
             style={styles.profilePicContainer}
             onPress={() => setShowDPMenu(true)}
           >
-            {lawyerProfile.dp ? (
-              <View style={styles.profilePic} />
-            ) : (
-              <View style={[styles.profilePic, { backgroundColor: lawyerProfile.color }]}>
-                <Text style={styles.profilePicText}>{lawyerProfile.initials}</Text>
-              </View>
-            )}
+            <View style={[styles.profilePic, { backgroundColor: lawyerProfile.color || '#0F2744' }]}>
+              <Text style={styles.profilePicText}>{lawyerProfile.initials || 'L'}</Text>
+            </View>
             <View style={styles.dpBadge}>
               <Text style={styles.dpBadgeText}>Edit</Text>
             </View>
           </TouchableOpacity>
-          <Text style={styles.profileName}>{lawyerProfile.name}</Text>
-          <Text style={styles.profileSpec}>{lawyerProfile.spec} · SBC {lawyerProfile.sbc}</Text>
+          <Text style={styles.profileName}>{lawyerProfile.name || 'Advocate'}</Text>
+          <Text style={styles.profileSpec}>
+            {lawyerProfile.spec} · SBC {lawyerProfile.sbc || 'Pending'}
+          </Text>
+          <View style={[
+            styles.statusPill,
+            !lawyerProfile.isVerified && { backgroundColor: '#B45309' }
+          ]}>
+            <Text style={styles.statusPillText}>
+              {lawyerProfile.isVerified ? 'SBC Verified Advocate' : 'Verification Pending'}
+            </Text>
+          </View>
         </View>
 
         {/* Availability Toggle */}
@@ -115,11 +156,15 @@ export default function LawyerProfile() {
             </View>
             <Switch
               value={editMode ? editedData.isAvailable : lawyerProfile.isAvailable}
-              onValueChange={(value) => {
+              onValueChange={async (value) => {
                 if (editMode) {
                   setEditedData({...editedData, isAvailable: value});
                 } else {
-                  updateLawyerProfile({ isAvailable: value });
+                  try {
+                    await updateLawyerProfile({ isAvailable: value }, currentLawyerId);
+                  } catch (e) {
+                    console.error('Toggle error:', e);
+                  }
                 }
               }}
               trackColor={{ false: '#767577', true: '#1B4332' }}
@@ -138,7 +183,7 @@ export default function LawyerProfile() {
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.name}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.name || 'Not provided'}</Text>
           </View>
         )}
 
@@ -151,7 +196,34 @@ export default function LawyerProfile() {
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.spec}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.spec || 'General Practice'}</Text>
+          </View>
+        )}
+
+        <Text style={styles.label}>SBC License Number (Registered)</Text>
+        <View style={[styles.detailCard, { backgroundColor: '#f0ede6' }]}>
+          <Text style={[styles.detailValue, { fontWeight: '700', color: '#0F2744' }]}>
+            {lawyerProfile.sbc || 'Pending Bar Verification'}
+          </Text>
+        </View>
+
+        <Text style={styles.label}>CNIC Number (Registered)</Text>
+        <View style={[styles.detailCard, { backgroundColor: '#f0ede6' }]}>
+          <Text style={[styles.detailValue, { color: '#555' }]}>
+            {lawyerProfile.cnic || 'Not provided'}
+          </Text>
+        </View>
+
+        <Text style={styles.label}>District / City</Text>
+        {editMode ? (
+          <TextInput
+            style={styles.input}
+            value={editedData.district}
+            onChangeText={(text) => setEditedData({...editedData, district: text})}
+          />
+        ) : (
+          <View style={styles.detailCard}>
+            <Text style={styles.detailValue}>{lawyerProfile.district || 'Sindh'}</Text>
           </View>
         )}
 
@@ -165,7 +237,7 @@ export default function LawyerProfile() {
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.email}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.email || 'Not provided'}</Text>
           </View>
         )}
 
@@ -179,37 +251,43 @@ export default function LawyerProfile() {
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.phone}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.phone || 'Not provided'}</Text>
           </View>
         )}
 
-        <Text style={styles.label}>Experience</Text>
+        <Text style={styles.label}>Past Experience</Text>
         {editMode ? (
           <TextInput
-            style={styles.input}
+            style={[styles.input, styles.textArea]}
             value={editedData.experience}
             onChangeText={(text) => setEditedData({...editedData, experience: text})}
+            multiline
+            numberOfLines={3}
+            placeholder="e.g. 14 Years practice in High Court and District Courts"
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.experience}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.experience || 'Not provided'}</Text>
           </View>
         )}
 
-        <Text style={styles.label}>Education</Text>
+        <Text style={styles.label}>Education / Credentials</Text>
         {editMode ? (
           <TextInput
-            style={styles.input}
+            style={[styles.input, styles.textArea]}
             value={editedData.education}
             onChangeText={(text) => setEditedData({...editedData, education: text})}
+            multiline
+            numberOfLines={2}
+            placeholder="e.g. LL.B (SM Law College), LL.M"
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.education}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.education || 'Not provided'}</Text>
           </View>
         )}
 
-        <Text style={styles.label}>Office Address</Text>
+        <Text style={styles.label}>Office / Chamber Address</Text>
         {editMode ? (
           <TextInput
             style={[styles.input, styles.textArea]}
@@ -217,10 +295,11 @@ export default function LawyerProfile() {
             onChangeText={(text) => setEditedData({...editedData, address: text})}
             multiline
             numberOfLines={3}
+            placeholder="e.g. Chamber 402, Lawyers Court Building, Karachi"
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.address}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.address || 'Not provided'}</Text>
           </View>
         )}
 
@@ -232,17 +311,26 @@ export default function LawyerProfile() {
             onChangeText={(text) => setEditedData({...editedData, bio: text})}
             multiline
             numberOfLines={4}
+            placeholder="Brief biography about your legal practice..."
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.about}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.about || 'Not provided'}</Text>
           </View>
         )}
 
         {/* Save Button - Only show in edit mode */}
         {editMode && (
-          <TouchableOpacity style={styles.saveBtn} onPress={handleSave}>
-            <Text style={styles.saveText}>SAVE CHANGES</Text>
+          <TouchableOpacity 
+            style={[styles.saveBtn, saving && { opacity: 0.7 }]} 
+            onPress={handleSave}
+            disabled={saving}
+          >
+            {saving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.saveText}>SAVE CHANGES TO DATABASE</Text>
+            )}
           </TouchableOpacity>
         )}
 
@@ -265,7 +353,7 @@ export default function LawyerProfile() {
               <Text style={styles.dpMenuItemText}>Change Profile Picture</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.dpMenuItem, styles.dpMenuItemDanger]} onPress={handleRemoveDP}>
-              <Text style={styles.dpMenuItemDangerText}>Remove Profile Picture</Text>
+              <Text style={styles.dpMenuItemDangerText}>Reset to Initials</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.dpMenuItem} onPress={() => setShowDPMenu(false)}>
               <Text style={styles.dpMenuItemCancel}>Cancel</Text>
@@ -366,6 +454,19 @@ const styles = StyleSheet.create({
   profileSpec: {
     fontSize: 14,
     color: '#888',
+  },
+  statusPill: {
+    marginTop: 6,
+    backgroundColor: '#059669',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  statusPillText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
   
   card: {

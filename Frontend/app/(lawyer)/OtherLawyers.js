@@ -10,13 +10,18 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './OtherLawyers.styles';
-import { useMockStore, otherLawyers } from './MockStore';
+import { useMockStore, otherLawyers, fetchOtherLawyers } from './MockStore';
+import { getCurrentLawyerId } from '../../constants/authStore';
 
 export default function OtherLawyers() {
   useMockStore();
   const router = useRouter();
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
+
+  React.useEffect(() => {
+    fetchOtherLawyers(getCurrentLawyerId());
+  }, []);
 
   const handleNav = (lbl) => {
     if (lbl === 'home') router.push('/(lawyer)/LawyerHome');
