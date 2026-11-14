@@ -221,19 +221,22 @@ class CitizenServiceImpl extends CitizenService {
     const citizenId = row.id;
     const userId = row.user_id;
 
-    // Real-time counts from database
-    const [resActive, resPending, resVault, resApts] = await Promise.all([
-      db.query("SELECT COUNT(*) FROM cases WHERE (citizen_id = $1 OR citizen_id = $2) AND status = 'active'", [citizenId, userId || -1]),
-      db.query("SELECT COUNT(*) FROM cases WHERE (citizen_id = $1 OR citizen_id = $2) AND status = 'pending'", [citizenId, userId || -1]),
-      db.query("SELECT COUNT(*) FROM evidence_vault WHERE citizen_id = $1", [citizenId]),
-      db.query("SELECT COUNT(*) FROM appointments WHERE citizen_id = $1", [citizenId]),
-    ]);
+    // Single fast real-time counts query from database
+    const countSql = `
+      SELECT 
+        (SELECT COUNT(*) FROM cases WHERE citizen_id IN ($1, $2) AND status = 'active') as active_count,
+        (SELECT COUNT(*) FROM cases WHERE citizen_id IN ($1, $2) AND status = 'pending') as pending_count,
+        (SELECT COUNT(*) FROM evidence_vault WHERE citizen_id = $1) as vault_count,
+        (SELECT COUNT(*) FROM appointments WHERE citizen_id = $1) as apts_count;
+    `;
+    const countResult = await db.query(countSql, [citizenId, userId || -1]);
+    const counts = countResult.rows[0] || {};
 
     const stats = {
-      activeCasesCount: parseInt(resActive.rows[0]?.count || 0),
-      pendingCasesCount: parseInt(resPending.rows[0]?.count || 0),
-      totalVaultItems: parseInt(resVault.rows[0]?.count || 0),
-      consultationsCount: parseInt(resApts.rows[0]?.count || 0),
+      activeCasesCount: parseInt(counts.active_count || 0),
+      pendingCasesCount: parseInt(counts.pending_count || 0),
+      totalVaultItems: parseInt(counts.vault_count || 0),
+      consultationsCount: parseInt(counts.apts_count || 0),
     };
 
     return new Citizen({ ...row, stats }).toResponse();

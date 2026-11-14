@@ -51,11 +51,109 @@ export const userData = {
   loading: false,
 };
 
-// ── 2. LAWYERS DIRECTORY ──
-export const lawyers = [];
+// ── 2. LAWYERS DIRECTORY (INITIAL CACHE FOR INSTANT ZERO-LATENCY LOAD) ──
+export const lawyers = [
+  {
+    id: '6',
+    name: 'Advocate Tariq Hassan',
+    spec: 'Property & Land Dispute',
+    experience: '14 Years Practice',
+    location: 'Chamber 402, Lawyers Court, Karachi',
+    district: 'Karachi',
+    rating: '5.0',
+    casesWon: '180+',
+    fee: 'Rs. 2,000 / consult',
+    phone: '+923001234567',
+    sbc: 'SBC-4421',
+    schedule: [
+      { id: 'ts-2', day: 'Wednesday', time: '03:00 PM - 06:00 PM' },
+      { id: 'ts-3', day: 'Saturday', time: '11:00 AM - 02:00 PM' },
+      { id: 'ts-1794387330587', day: 'Thursday', time: '02:00 PM - 05:00 PM' },
+    ],
+    reviews: [{ user: 'Client Review', rating: '5.0', comment: 'Dedicated legal counsel.' }],
+    initials: 'TH',
+    color: '#0F2744',
+  },
+  {
+    id: '3',
+    name: 'Advocate Tariq Aziz',
+    spec: 'Corporate & Civil Law',
+    experience: '12 Years Practice',
+    location: 'Karachi, High Court',
+    district: 'Karachi',
+    rating: '5.0',
+    casesWon: '120+',
+    fee: 'Rs. 2,500 / consult',
+    phone: '+923334567890',
+    sbc: 'KHI-9921',
+    schedule: [],
+    reviews: [{ user: 'Client Review', rating: '5.0', comment: 'Excellent legal counsel.' }],
+    initials: 'TA',
+    color: '#5C1A1A',
+  },
+  {
+    id: '2',
+    name: 'Advocate Sara Malik',
+    spec: 'Family & Custody Law',
+    experience: '7 Years Practice',
+    location: 'Karachi Central, City Courts',
+    district: 'Karachi',
+    rating: '5.0',
+    casesWon: '90+',
+    fee: 'Rs. 1,500 / consult',
+    phone: '+923219876543',
+    sbc: 'ISB-5531',
+    schedule: [],
+    reviews: [{ user: 'Client Review', rating: '5.0', comment: 'Timely and sympathetic advice.' }],
+    initials: 'SM',
+    color: '#1B4332',
+  },
+  {
+    id: '1',
+    name: 'Advocate Ahmed Khan',
+    spec: 'Civil & Criminal Defense',
+    experience: '10 Years Practice',
+    location: 'Karachi, Sindh High Court',
+    district: 'Karachi',
+    rating: '5.0',
+    casesWon: '140+',
+    fee: 'Rs. 2,000 / consult',
+    phone: '+923001234567',
+    sbc: 'LHR-8842',
+    schedule: [],
+    reviews: [{ user: 'Client Review', rating: '5.0', comment: 'Strong litigation support.' }],
+    initials: 'AK',
+    color: '#0F2744',
+  },
+];
 
-// ── 3. NGOS & MEDIA DIRECTORY ──
-export const ngos = [];
+// ── 3. NGOS & MEDIA DIRECTORY (INITIAL CACHE) ──
+export const ngos = [
+  {
+    id: '1',
+    name: 'Human Rights Commission Sindh',
+    fullName: 'Human Rights Commission Sindh',
+    type: 'Legal Aid & Human Rights',
+    organizationType: 'Legal Aid NGO',
+    district: 'Karachi',
+    phone: '021-3567890',
+    email: 'info@hrcp-sindh.org',
+    isVerified: true,
+    initials: 'HR',
+  },
+  {
+    id: '2',
+    name: 'Legal Aid Society Sindh',
+    fullName: 'Legal Aid Society Sindh',
+    type: 'Free Legal Defense',
+    organizationType: 'Legal Aid NGO',
+    district: 'Karachi',
+    phone: '021-3987654',
+    email: 'aid@legalaidsociety.org',
+    isVerified: true,
+    initials: 'LA',
+  },
+];
 
 // ── 4. CITIZEN CASES ──
 export const activeCases = [];

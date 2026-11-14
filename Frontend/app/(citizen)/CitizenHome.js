@@ -47,7 +47,6 @@ export default function CitizenHome() {
     fetchNgosList();
     if (currentCitizenId) {
       fetchCitizenDashboard(currentCitizenId);
-      fetchCitizenCases(currentCitizenId);
     }
   }, [currentCitizenId]);
 
