@@ -21,6 +21,7 @@ import Svg, { Path } from 'react-native-svg';
 import api from '../constants/api';
 import { saveSession } from '../constants/authStore';
 import { setLawyerProfileFromUser } from './(lawyer)/MockStore';
+import { setCitizenProfileFromUser } from './(citizen)/MockStore';
 
 const roleConfig = {
   citizen: { label: 'Citizen Portal',     color: '#FF9800', topGlow: 'rgba(255, 94, 0, 0.4)' },
@@ -265,7 +266,10 @@ export default function LoginScreen() {
         if (currentRole === 'lawyer' && userObj) {
           setLawyerProfileFromUser(userObj);
         }
-        router.replace({ pathname: targetRoute, params: { lawyerId: userObj?.id } });
+        if (currentRole === 'citizen' && userObj) {
+          setCitizenProfileFromUser(userObj);
+        }
+        router.replace({ pathname: targetRoute, params: { citizenId: userObj?.id, lawyerId: userObj?.id } });
       }
     } catch (err) {
       console.error('[AUTH] Login error:', err.response?.data || err.message);
@@ -368,7 +372,10 @@ export default function LoginScreen() {
         if (currentRole === 'lawyer' && userObj) {
           setLawyerProfileFromUser(userObj);
         }
-        router.replace({ pathname: targetRoute, params: { lawyerId: userObj?.id } });
+        if (currentRole === 'citizen' && userObj) {
+          setCitizenProfileFromUser(userObj);
+        }
+        router.replace({ pathname: targetRoute, params: { citizenId: userObj?.id, lawyerId: userObj?.id } });
       }
     } catch (err) {
       console.error('[AUTH] Registration error:', err.response?.data || err.message);

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,7 +9,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './MyCases.styles';
-import { useMockStore, activeCases } from './MockStore';
+import { useMockStore, activeCases, fetchCitizenCases, userData } from './MockStore';
 
 const filters = ['All', 'Active', 'Pending', 'Closed'];
 
@@ -18,6 +18,12 @@ export default function MyCases() {
   const router = useRouter();
   const [activeNav, setActiveNav] = useState('cases');
   const [activeFilter, setActiveFilter] = useState('All');
+
+  useEffect(() => {
+    if (userData.id) {
+      fetchCitizenCases(userData.id);
+    }
+  }, [userData.id]);
 
   const filtered = activeFilter === 'All'
     ? activeCases

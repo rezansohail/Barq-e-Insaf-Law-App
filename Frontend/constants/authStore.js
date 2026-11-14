@@ -49,6 +49,22 @@ export const getCurrentLawyerUser = () => {
   return session?.user || null;
 };
 
+export const getCurrentCitizenId = () => {
+  const session = getSession();
+  if (session && session.user && session.user.id) {
+    return session.user.id;
+  }
+  if (session && session.id) {
+    return session.id;
+  }
+  return 1;
+};
+
+export const getCurrentCitizenUser = () => {
+  const session = getSession();
+  return session?.user || null;
+};
+
 export const getToken = () => {
   const session = getSession();
   return session?.token || null;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './FindLawyer.styles';
-import { useMockStore, lawyers } from './MockStore';
+import { useMockStore, lawyers, fetchLawyersList } from './MockStore';
 
 const specialties = ['All', 'Property', 'Family', 'Civil', 'Criminal'];
 
@@ -23,6 +23,10 @@ export default function FindLawyer() {
   const [showLawyerProfile, setShowLawyerProfile] = useState(false);
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
+
+  useEffect(() => {
+    fetchLawyersList(activeFilter);
+  }, [activeFilter]);
 
   const filtered = lawyers.filter(l => {
     const matchSpec = activeFilter === 'All' || (l.spec && l.spec.toLowerCase().includes(activeFilter.toLowerCase()));

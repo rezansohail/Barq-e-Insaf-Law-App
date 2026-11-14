@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,20 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import styles from './CitizenHome.styles';
-import { useMockStore, userData, lawyers, activeCases } from './MockStore';
+import {
+  useMockStore,
+  userData,
+  lawyers,
+  ngos,
+  activeCases,
+  fetchCitizenDashboard,
+  fetchLawyersList,
+  fetchNgosList,
+  fetchCitizenCases,
+} from './MockStore';
+import { getCurrentCitizenId } from '../../constants/authStore';
 
 const navItems = [
   { id: 'home',     label: 'Home'    },
@@ -22,12 +33,23 @@ const navItems = [
 export default function CitizenHome() {
   useMockStore();
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const currentCitizenId = params.citizenId || params.id || getCurrentCitizenId();
+
   const [activeNav, setActiveNav] = useState('home');
   const [showCasePopup, setShowCasePopup] = useState(false);
   const [showLawyerProfile, setShowLawyerProfile] = useState(false);
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [requestSent] = useState(false);
+
+  useEffect(() => {
+    fetchLawyersList();
+    fetchNgosList();
+    if (currentCitizenId) {
+      fetchCitizenDashboard(currentCitizenId);
+      fetchCitizenCases(currentCitizenId);
+    }
+  }, [currentCitizenId]);
 
   const handleNav = (id) => {
     setActiveNav(id);
@@ -61,11 +83,14 @@ export default function CitizenHome() {
     });
   };
 
-  // Filter lawyers by citizen's current district (fallback to all verified lawyers)
+  // Show verified lawyers: prioritize citizen district if available, otherwise display all verified advocates
   const localLawyers = lawyers.filter(
-    l => userData.district && l.district && l.district.toLowerCase() === userData.district.toLowerCase()
+    (l) => userData.district && l.district && l.district.toLowerCase() === userData.district.toLowerCase()
   );
-  const displayLawyers = localLawyers.length > 0 ? localLawyers : lawyers;
+  const otherLawyers = lawyers.filter(
+    (l) => !userData.district || !l.district || l.district.toLowerCase() !== userData.district.toLowerCase()
+  );
+  const displayLawyers = localLawyers.length > 0 ? [...localLawyers, ...otherLawyers] : lawyers;
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -130,18 +155,18 @@ export default function CitizenHome() {
                 <View style={styles.ratingContainer}>
                   <Text style={styles.ratingText}>Rating: {l.rating}</Text>
                 </View>
-                <Text style={styles.sbcBadge}>SBC Approved</Text>
+                <Text style={styles.sbcBadge}>{l.sbc ? `SBC ${l.sbc}` : 'SBC Approved'}</Text>
               </TouchableOpacity>
             ))
           ) : (
-            <Text style={styles.emptyText}>No lawyers found in this district.</Text>
+            <Text style={styles.emptyText}>Loading verified advocates...</Text>
           )}
         </ScrollView>
 
         {/* ACTIVE CASES */}
         <Text style={styles.sectionLabel}>My Active Cases</Text>
         {activeCases.length === 0 && (
-          <Text style={styles.emptyText}>No active cases yet.</Text>
+          <Text style={styles.emptyText}>No active cases yet. Tap 'Build a Case' to register one.</Text>
         )}
         {activeCases.map((c, i) => (
           <TouchableOpacity
@@ -152,11 +177,32 @@ export default function CitizenHome() {
             <View style={[styles.caseDot, { backgroundColor: c.status === 'Active' ? '#4ade80' : '#f59e0b' }]} />
             <View style={styles.caseInfo}>
               <Text style={styles.caseTitle}>{c.title}</Text>
-              <Text style={styles.caseSub}>{c.type} Law · Updated {c.lastUpdated}</Text>
+              <Text style={styles.caseSub}>{c.type} Law · {c.district}</Text>
             </View>
             <Text style={styles.badgeText}>{c.status}</Text>
           </TouchableOpacity>
         ))}
+
+        {/* VERIFIED NGOS & MEDIA SECTION */}
+        {ngos.length > 0 && (
+          <>
+            <Text style={[styles.sectionLabel, { marginTop: 20 }]}>Legal Aid NGOs & Media</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.lawyerRow}>
+              {ngos.map((ngo, ni) => (
+                <View key={ngo.id || ni} style={[styles.lawyerBubble, { minWidth: 140, borderColor: '#eedcd0' }]}>
+                  <View style={[styles.lawyerAvatar, { backgroundColor: '#5C1A1A' }]}>
+                    <Text style={styles.lawyerAvatarText}>{ngo.initials || 'NGO'}</Text>
+                  </View>
+                  <Text style={styles.lawyerName} numberOfLines={1}>{ngo.name}</Text>
+                  <Text style={styles.lawyerSpec}>{ngo.type}</Text>
+                  <Text style={[styles.sbcBadge, { backgroundColor: '#e2f0d9', color: '#276738' }]}>
+                    {ngo.district}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </>
+        )}
       </ScrollView>
 
       {/* BOTTOM NAV */}

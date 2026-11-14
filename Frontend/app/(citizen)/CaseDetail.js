@@ -32,17 +32,17 @@ export default function CaseDetail() {
     if (id === 'profile') router.push('/(citizen)/Profile');
   };
 
-  const handleSaveChanges = () => {
-    if (!editedTitle || !editedDesc) {
+  const handleSaveChanges = async () => {
+    if (!editedTitle.trim() || !editedDesc.trim()) {
       Alert.alert('Error', 'Please fill in all fields.');
       return;
     }
-    updateCase(caseData.id, {
-      title: editedTitle,
-      description: editedDesc
+    await updateCase(caseData.id, {
+      title: editedTitle.trim(),
+      description: editedDesc.trim(),
     });
     setEditMode(false);
-    Alert.alert('Success', 'Case updated successfully!');
+    Alert.alert('Success', 'Case updated successfully in database!');
   };
 
   if (!caseData) {

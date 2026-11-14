@@ -1,172 +1,485 @@
-// Data will come from the backend API; these stores start empty.
 import { useState, useEffect } from 'react';
+import api from '../../constants/api';
+import { getCurrentCitizenId, getCurrentCitizenUser } from '../../constants/authStore';
+import { saveFileToLocalVault, deleteLocalVaultFile } from '../../services/vaultStorage';
 
 let listeners = [];
 
 function notify() {
-  listeners.forEach(listener => listener());
+  listeners.forEach((listener) => {
+    try {
+      listener();
+    } catch (e) {
+      console.warn('Citizen store notification error:', e);
+    }
+  });
 }
 
 export const subscribe = (listener) => {
   listeners.push(listener);
   return () => {
-    listeners = listeners.filter(l => l !== listener);
+    listeners = listeners.filter((l) => l !== listener);
   };
 };
 
 export function useMockStore() {
   const [, setTick] = useState(0);
   useEffect(() => {
-    return subscribe(() => setTick(t => t + 1));
+    return subscribe(() => setTick((t) => t + 1));
   }, []);
 }
 
+// ── 1. CITIZEN USER STATE ──
 export const userData = {
-  name: 'Ahmed Khan',
-  email: 'ahmed.citizen@barqeinsaf.pk',
-  phone: '0300-1234567',
-  cnic: '42101-1234567-1',
-  district: 'Karachi Central',
+  id: 1,
+  name: '',
+  fullName: '',
+  email: '',
+  phone: '',
+  cnic: '',
+  district: '',
+  city: '',
+  address: '',
   role: 'Citizen',
-  joinedDate: 'November 2026',
-  dp: 'AK',
+  joinedDate: '',
+  dp: 'C',
+  customSections: [],
+  activeCasesCount: 0,
+  pendingCasesCount: 0,
+  totalVaultItems: 0,
+  consultationsCount: 0,
+  loading: false,
 };
 
-export const updateProfile = (newData) => {
+// ── 2. LAWYERS DIRECTORY ──
+export const lawyers = [];
+
+// ── 3. NGOS & MEDIA DIRECTORY ──
+export const ngos = [];
+
+// ── 4. CITIZEN CASES ──
+export const activeCases = [];
+
+// ── 5. EVIDENCE VAULT (PRIVATE ENCRYPTED REPOSITORY) ──
+export const evidenceVault = [];
+
+// ── 6. CONSULTATION REQUESTS ──
+export const consultationRequests = [];
+
+/**
+ * Pre-populates citizen state immediately from login/register response
+ */
+export const setCitizenProfileFromUser = (user) => {
+  if (!user) return;
+  if (user.id) userData.id = user.id;
+  const name = user.fullName || user.name || '';
+  if (name) {
+    userData.name = name;
+    userData.fullName = name;
+  }
+  if (user.email) userData.email = user.email;
+  if (user.phone) userData.phone = user.phone;
+  if (user.district) userData.district = user.district;
+  if (user.city) userData.city = user.city;
+  if (user.cnic) userData.cnic = user.cnic;
+  if (user.address) userData.address = user.address;
+  if (user.dp) userData.dp = user.dp;
+  else if (name) {
+    userData.dp = name.split(' ').map((w) => w[0]).join('').substring(0, 2).toUpperCase();
+  }
+  if (user.customSections) {
+    userData.customSections = Array.isArray(user.customSections)
+      ? user.customSections
+      : (typeof user.customSections === 'string' ? JSON.parse(user.customSections) : []);
+  }
+  notify();
+};
+
+// Try hydrating immediately from session in memory
+try {
+  const existingUser = getCurrentCitizenUser();
+  if (existingUser) {
+    setCitizenProfileFromUser(existingUser);
+  }
+} catch (e) {}
+
+/**
+ * Loads entire citizen portal data from backend:
+ * Citizen Profile, Cases, Vault, Lawyers, NGOs, Consultations
+ */
+export const fetchCitizenDashboard = async (targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
+  if (!id) return;
+
+  userData.loading = true;
+  notify();
+
+  try {
+    const res = await api.get(`/citizens/${id}`);
+    const data = res.data;
+
+    userData.id = data.id || id;
+    userData.name = data.fullName || data.name || userData.name || 'Citizen';
+    userData.fullName = data.fullName || data.name || userData.fullName || 'Citizen';
+    userData.email = data.email || userData.email || '';
+    userData.phone = data.phone || userData.phone || '';
+    userData.cnic = data.cnic || userData.cnic || '';
+    userData.district = data.district || data.city || userData.district || '';
+    userData.city = data.city || data.district || userData.city || '';
+    userData.address = data.address || userData.address || '';
+    userData.dp = data.dp || data.initials || (userData.name ? userData.name.substring(0, 2).toUpperCase() : 'C');
+    userData.role = 'Citizen';
+    userData.joinedDate = data.createdAt ? new Date(data.createdAt).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Member';
+
+    if (data.customSections) {
+      userData.customSections = Array.isArray(data.customSections)
+        ? data.customSections
+        : (typeof data.customSections === 'string' ? JSON.parse(data.customSections) : []);
+    }
+
+    if (data.stats) {
+      userData.activeCasesCount = data.stats.activeCasesCount || 0;
+      userData.pendingCasesCount = data.stats.pendingCasesCount || 0;
+      userData.totalVaultItems = data.stats.totalVaultItems || 0;
+      userData.consultationsCount = data.stats.consultationsCount || 0;
+    }
+
+    userData.loading = false;
+    notify();
+
+    // Fetch related datasets in parallel
+    await Promise.allSettled([
+      fetchCitizenCases(id),
+      fetchCitizenVault(id),
+      fetchLawyersList(),
+      fetchNgosList(),
+      fetchCitizenConsultations(id),
+    ]);
+  } catch (err) {
+    console.error('[CITIZEN] Error fetching citizen profile:', err.response?.data || err.message);
+    userData.loading = false;
+    notify();
+  }
+};
+
+/**
+ * Fetches all cases for the citizen
+ */
+export const fetchCitizenCases = async (targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
+  try {
+    const res = await api.get(`/citizens/${id}/cases`);
+    const data = res.data || [];
+    activeCases.length = 0;
+    data.forEach((c) => {
+      const caseEvidence = evidenceVault.filter((v) => String(v.caseId) === String(c.id));
+      activeCases.push({
+        id: String(c.id),
+        title: c.title,
+        type: c.type || 'Legal Dispute',
+        description: c.description || '',
+        district: c.district || userData.district || 'Sindh',
+        court: c.court || 'District Court',
+        filingDate: c.createdAt ? new Date(c.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }) : 'Recent',
+        lastUpdated: 'Recently',
+        status: c.status ? (c.status.charAt(0).toUpperCase() + c.status.slice(1)) : 'Active',
+        hearingDate: c.hearingDate,
+        lawyer: c.lawyer || null,
+        evidence: caseEvidence,
+      });
+    });
+    userData.activeCasesCount = activeCases.filter((c) => c.status === 'Active').length;
+    userData.pendingCasesCount = activeCases.filter((c) => c.status === 'Pending').length;
+    notify();
+  } catch (err) {
+    console.error('[CITIZEN] Error fetching cases:', err.response?.data || err.message);
+  }
+};
+
+/**
+ * Fetches citizen's evidence vault items
+ */
+export const fetchCitizenVault = async (targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
+  try {
+    const res = await api.get(`/citizens/${id}/vault`);
+    const data = res.data || [];
+    evidenceVault.length = 0;
+    data.forEach((v) => {
+      evidenceVault.push({
+        id: String(v.id),
+        caseId: v.caseId ? String(v.caseId) : null,
+        title: v.title,
+        name: v.title,
+        category: v.category || 'Legal Document',
+        type: v.fileType || 'Photo',
+        fileType: v.fileType || 'Photo',
+        size: v.fileSize || '1.0 MB',
+        fileSize: v.fileSize || '1.0 MB',
+        uri: v.fileUri || '',
+        fileUri: v.fileUri || '',
+        encryptedData: v.encryptedData,
+        notes: v.notes || '',
+        isSharedWithLawyer: Boolean(v.isSharedWithLawyer),
+        createdAt: v.createdAt,
+      });
+    });
+    // Link vault items to existing cases
+    activeCases.forEach((c) => {
+      c.evidence = evidenceVault.filter((v) => String(v.caseId) === String(c.id));
+    });
+    userData.totalVaultItems = evidenceVault.length;
+    notify();
+  } catch (err) {
+    console.error('[CITIZEN] Error fetching vault:', err.response?.data || err.message);
+  }
+};
+
+/**
+ * Fetches verified lawyers directory from API with optional specialty filter
+ */
+export const fetchLawyersList = async (specialty = '') => {
+  try {
+    const url = specialty && specialty !== 'All' 
+      ? `/lawyers?specialty=${encodeURIComponent(specialty)}`
+      : '/lawyers';
+    const res = await api.get(url);
+    const data = res.data || [];
+    lawyers.length = 0;
+    data.forEach((l) => {
+      lawyers.push({
+        id: String(l.id),
+        name: l.name,
+        spec: l.specialty || 'General Practice',
+        experience: l.pastExperience || (l.experienceYears ? `${l.experienceYears} Years Practice` : '10+ Years'),
+        location: l.officeAddress || `${l.district || 'Karachi'}, High Court`,
+        district: l.district || 'Karachi',
+        rating: String(l.rating || '5.0'),
+        casesWon: `${l.stats?.successfulCasesCount || 0}+`,
+        fee: 'Rs. 2,000 / consult',
+        phone: l.phone || '',
+        sbc: l.sbcNumber || '',
+        schedule: Array.isArray(l.officeHours) ? l.officeHours : [],
+        reviews: [
+          { user: 'Client Review', rating: '5.0', comment: 'Dedicated legal counsel and timely advice.' }
+        ],
+        initials: l.initials || 'L',
+        color: '#0F2744',
+      });
+    });
+    notify();
+  } catch (err) {
+    console.error('[CITIZEN] Error fetching lawyers:', err.response?.data || err.message);
+  }
+};
+
+/**
+ * Fetches active NGOs & Media directory
+ */
+export const fetchNgosList = async (filter = {}) => {
+  try {
+    const res = await api.get('/ngos', { params: filter });
+    const data = res.data || [];
+    ngos.length = 0;
+    data.forEach((n) => {
+      ngos.push({
+        id: String(n.id),
+        name: n.fullName || n.name,
+        fullName: n.fullName || n.name,
+        type: n.organizationType || 'NGO / Media',
+        organizationType: n.organizationType || 'NGO / Media',
+        district: n.district || 'Sindh',
+        phone: n.phone || '',
+        email: n.email || '',
+        isVerified: Boolean(n.isVerified),
+        initials: n.initials || 'N',
+      });
+    });
+    notify();
+  } catch (err) {
+    console.error('[CITIZEN] Error fetching NGOs:', err.response?.data || err.message);
+  }
+};
+
+/**
+ * Fetches all consultation requests sent by this citizen
+ */
+export const fetchCitizenConsultations = async (targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
+  try {
+    const res = await api.get(`/citizens/${id}/consultations`);
+    const data = res.data || [];
+    consultationRequests.length = 0;
+    data.forEach((c) => consultationRequests.push(c));
+    userData.consultationsCount = consultationRequests.length;
+    notify();
+  } catch (err) {
+    console.error('[CITIZEN] Error fetching consultations:', err.response?.data || err.message);
+  }
+};
+
+/**
+ * Updates citizen profile in database
+ */
+export const updateProfile = async (newData, targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
   Object.assign(userData, newData);
+  if (newData.name) userData.fullName = newData.name;
   notify();
+
+  try {
+    const res = await api.put(`/citizens/${id}`, {
+      fullName: userData.name || userData.fullName,
+      phone: userData.phone,
+      district: userData.district,
+      city: userData.city,
+      cnic: userData.cnic,
+      address: userData.address,
+      dp: userData.dp,
+      customSections: userData.customSections,
+    });
+    if (res.data?.citizen) {
+      setCitizenProfileFromUser(res.data.citizen);
+    }
+    return res.data;
+  } catch (err) {
+    console.error('[CITIZEN] Error updating profile:', err.response?.data || err.message);
+    throw err;
+  }
 };
 
-export const lawyers = [
-  {
-    id: 'l-1',
-    name: 'Adv. Tariq Mansoor',
-    spec: 'Property & Land Dispute',
-    experience: '14 years',
-    location: 'High Court, Karachi',
-    district: 'Karachi Central',
-    rating: '4.9',
-    casesWon: '180+',
-    fee: 'Rs. 2,000 / consult',
-    phone: '0321-9876543',
-    initials: 'TM',
-    color: '#0F2744',
-  },
-  {
-    id: 'l-2',
-    name: 'Adv. Fatima Shah',
-    spec: 'Family Law & Custody',
-    experience: '9 years',
-    location: 'District Court, Karachi',
-    district: 'Karachi Central',
-    rating: '4.8',
-    casesWon: '95+',
-    fee: 'Rs. 1,500 / consult',
-    phone: '0333-1234567',
-    initials: 'FS',
-    color: '#1B4332',
-  },
-  {
-    id: 'l-3',
-    name: 'Adv. Rehan Qureshi',
-    spec: 'Civil & Inheritance',
-    experience: '12 years',
-    location: 'Sessions Court, Hyderabad',
-    district: 'Hyderabad',
-    rating: '4.9',
-    casesWon: '140+',
-    fee: 'Rs. 2,500 / consult',
-    phone: '0300-4455667',
-    initials: 'RQ',
-    color: '#5C1A1A',
-  },
-  {
-    id: 'l-4',
-    name: 'Adv. Bilal Soomro',
-    spec: 'Criminal & Bail Defense',
-    experience: '16 years',
-    location: 'High Court Bench, Sukkur',
-    district: 'Sukkur',
-    rating: '4.7',
-    casesWon: '210+',
-    fee: 'Rs. 3,000 / consult',
-    phone: '0312-3344556',
-    initials: 'BS',
-    color: '#4a148c',
-  },
-];
-
-export const activeCases = [
-  {
-    id: 'case-101',
-    title: 'Gulshan Plot Ownership Dispute',
-    type: 'Property Dispute',
-    description: 'Encroachment dispute regarding residential plot #B-14 in Gulshan-e-Iqbal Block 13-D. Mutation records and survey documents need verification before Sindh High Court.',
-    district: 'Karachi - Karachi Central',
-    filingDate: 'November 1, 2026',
-    lastUpdated: 'Today',
-    status: 'Active',
-    evidence: [
-      { id: 'ev-1', name: 'Registry_Deed_Copy.pdf', type: 'PDF', size: '2.4 MB', uri: '' },
-      { id: 'ev-2', name: 'Site_Demarcation_Photo.jpg', type: 'Photo', size: '3.1 MB', uri: '' },
-      { id: 'ev-3', name: 'KMC_Tax_Challan_2025.pdf', type: 'PDF', size: '940 KB', uri: '' },
-    ],
-  },
-  {
-    id: 'case-102',
-    title: 'Family Maintenance & Custody Claim',
-    type: 'Family Case',
-    description: 'Petition filed under Family Courts Act 1964 for monthly maintenance allowance and visitation rights schedule in Family Court Central Karachi.',
-    district: 'Karachi - Karachi Central',
-    filingDate: 'October 24, 2026',
-    lastUpdated: '3 days ago',
-    status: 'Pending',
-    evidence: [
-      { id: 'ev-4', name: 'Nikahnama_Certified_Copy.pdf', type: 'PDF', size: '1.8 MB', uri: '' },
-      { id: 'ev-5', name: 'Children_Birth_Certificates.pdf', type: 'PDF', size: '1.2 MB', uri: '' },
-    ],
-  },
-];
-
-export const addCase = (newCase) => {
-  activeCases.unshift({
-    id: 'case-' + Date.now(),
-    filingDate: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' }),
-    lastUpdated: 'Just now',
-    status: 'Pending',
-    evidence: [],
-    ...newCase
-  });
-  notify();
+/**
+ * Builds a new case in the database
+ */
+export const addCase = async (newCase, targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
+  try {
+    const res = await api.post(`/citizens/${id}/cases`, {
+      title: newCase.title,
+      type: newCase.type,
+      description: newCase.description,
+      district: newCase.district || userData.district,
+      court: newCase.court || 'District Court',
+      lawyerId: newCase.lawyerId || null,
+    });
+    const createdCaseId = res.data?.case?.id || res.data?.id;
+    if (createdCaseId && Array.isArray(newCase.evidence) && newCase.evidence.length > 0) {
+      for (const ev of newCase.evidence) {
+        try {
+          await addToVault({ ...ev, caseId: createdCaseId }, id);
+        } catch (evErr) {
+          console.warn('[CITIZEN] Could not auto-attach evidence to vault:', evErr.message);
+        }
+      }
+    }
+    await fetchCitizenCases(id);
+    return res.data;
+  } catch (err) {
+    console.error('[CITIZEN] Error adding case:', err.response?.data || err.message);
+    throw err;
+  }
 };
 
-export const updateCase = (id, updatedFields) => {
-  const cIndex = activeCases.findIndex(c => c.id === id);
+/**
+ * Sends a consultation request to a lawyer
+ */
+export const requestConsultation = async (consultationData, targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
+  try {
+    const res = await api.post(`/citizens/${id}/consultations`, consultationData);
+    await fetchCitizenConsultations(id);
+    return res.data;
+  } catch (err) {
+    console.error('[CITIZEN] Error sending consultation request:', err.response?.data || err.message);
+    throw err;
+  }
+};
+
+/**
+ * Adds an item to the on-device sandbox vault AND database
+ */
+export const addToVault = async (itemData, targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
+  
+  // 1. Copy file to local sandbox directory (Tier 1)
+  let localUri = itemData.fileUri || itemData.uri || '';
+  if (localUri) {
+    localUri = await saveFileToLocalVault(localUri, itemData.title || itemData.name || 'evidence');
+  }
+
+  // 2. Persist metadata & encrypted reference to database
+  try {
+    const res = await api.post(`/citizens/${id}/vault`, {
+      title: itemData.title || itemData.name || 'Evidence Item',
+      category: itemData.category || 'Legal Document',
+      fileType: itemData.fileType || itemData.type || 'Photo',
+      fileSize: itemData.fileSize || itemData.size || '1.0 MB',
+      fileUri: localUri,
+      encryptedData: itemData.encryptedData || null,
+      notes: itemData.notes || '',
+      caseId: itemData.caseId || null,
+    });
+
+    await fetchCitizenVault(id);
+    return res.data;
+  } catch (err) {
+    console.error('[CITIZEN] Error saving to vault:', err.response?.data || err.message);
+    throw err;
+  }
+};
+
+/**
+ * Deletes an item from the citizen's vault
+ */
+export const deleteFromVault = async (itemId, targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
+  const existing = evidenceVault.find((v) => String(v.id) === String(itemId));
+  if (existing && existing.fileUri) {
+    await deleteLocalVaultFile(existing.fileUri);
+  }
+
+  try {
+    const res = await api.delete(`/citizens/${id}/vault/${itemId}`);
+    await fetchCitizenVault(id);
+    return res.data;
+  } catch (err) {
+    console.error('[CITIZEN] Error deleting vault item:', err.response?.data || err.message);
+    throw err;
+  }
+};
+
+export const updateCase = async (caseId, updatedFields, targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
+  const cIndex = activeCases.findIndex((c) => String(c.id) === String(caseId));
   if (cIndex !== -1) {
     activeCases[cIndex] = {
       ...activeCases[cIndex],
       ...updatedFields,
-      lastUpdated: 'Just now'
+      lastUpdated: 'Just now',
     };
     notify();
   }
-};
 
-export const addEvidenceToCase = (caseId, file) => {
-  const c = activeCases.find(c => c.id === caseId);
-  if (c) {
-    c.evidence.push(file);
-    c.lastUpdated = 'Just now';
-    notify();
+  try {
+    const res = await api.put(`/citizens/${id}/cases/${caseId}`, updatedFields);
+    await fetchCitizenCases(id);
+    return res.data;
+  } catch (err) {
+    console.error('[CITIZEN] Error updating case in DB:', err.response?.data || err.message);
   }
 };
 
-export const removeEvidenceFromCase = (caseId, index) => {
-  const c = activeCases.find(c => c.id === caseId);
-  if (c && c.evidence[index] !== undefined) {
-    c.evidence.splice(index, 1);
-    c.lastUpdated = 'Just now';
-    notify();
+export const addEvidenceToCase = async (caseId, file, targetId) => {
+  await addToVault({ ...file, caseId }, targetId);
+};
+
+export const removeEvidenceFromCase = async (caseId, index, targetId) => {
+  const c = activeCases.find((c) => c.id === caseId);
+  if (c && c.evidence && c.evidence[index]) {
+    const item = c.evidence[index];
+    if (item.id) {
+      await deleteFromVault(item.id, targetId);
+    }
   }
 };
 
