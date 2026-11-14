@@ -7,10 +7,11 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 const { Pool } = require('pg');
 
-const connectionString = process.env.DATABASE_URL;
+const DEFAULT_DB_URL = 'postgresql://neondb_owner:npg_lojIUbmT31yZ@ep-small-water-b5avgt8p-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require';
+const connectionString = process.env.DATABASE_URL || DEFAULT_DB_URL;
 
-if (!connectionString) {
-  console.warn('WARNING: DATABASE_URL is not set in environment or .env file!');
+if (!process.env.DATABASE_URL) {
+  console.log('Using default Neon cloud PostgreSQL database');
 }
 
 const pool = new Pool({

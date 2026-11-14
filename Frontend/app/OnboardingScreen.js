@@ -28,7 +28,7 @@ const slides = [
   {
     id: '2',
     badge: 'MULTILINGUAL AI CHATBOT',
-    title: 'Instant Legal Guidance\nin Urdu & Sindhi.',
+    title: 'Instant Legal Guidance\nin English, Urdu & Sindhi.',
     subtitle:
       'Ask legal questions regarding Pakistan Penal Code, Family Laws, and Property rights 24/7.',
     image: require('../assets/images/onb2.png'),
@@ -167,31 +167,21 @@ export default function OnboardingScreen() {
               <View
                 style={[
                   styles.cardWrapper,
-                  { width: Math.min(width - 32, 480), height: Math.round(Math.min(width - 32, 480) / 1.78) },
+                  {
+                    width: Math.min(width - 32, 450),
+                    height: Math.round(Math.min(width - 32, 450) / 1.95),
+                  },
                 ]}
               >
-                <BlurView
-                  intensity={Platform.OS === 'ios' ? 35 : 55}
-                  tint="dark"
-                  style={styles.cardBlur}
-                >
-                  <Image
-                    source={item.image}
-                    style={styles.cardImage}
-                    contentFit="cover"
-                    transition={300}
-                  />
-                  {/* Subtle dark overlay at bottom for readability */}
-                  <LinearGradient
-                    colors={['transparent', 'rgba(6, 2, 1, 0.45)']}
-                    style={styles.cardImageOverlay}
-                    start={{ x: 0.5, y: 0.3 }}
-                    end={{ x: 0.5, y: 1 }}
-                    pointerEvents="none"
-                  />
-                  {/* Top specular sheen */}
-                  <View style={styles.cardSheen} pointerEvents="none" />
-                </BlurView>
+                <Image
+                  source={item.image}
+                  style={styles.cardImage}
+                  contentFit="cover"
+                  contentPosition="center"
+                  transition={250}
+                />
+                {/* Top specular sheen */}
+                <View style={styles.cardSheen} pointerEvents="none" />
               </View>
 
               {/* Text Information */}
@@ -329,6 +319,8 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 210, 140, 0.24)',
     marginTop: 8,
     marginBottom: 20,
+    backgroundColor: '#0E0603',
+    position: 'relative',
     shadowColor: '#FF7A00',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -343,25 +335,10 @@ const styles = StyleSheet.create({
         }
       : {}),
   },
-  cardBlur: {
-    flex: 1,
-    overflow: 'hidden',
-  },
   cardImage: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
+    ...StyleSheet.absoluteFillObject,
     width: '100%',
     height: '100%',
-  },
-  cardImageOverlay: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: '55%',
   },
   cardSheen: {
     position: 'absolute',

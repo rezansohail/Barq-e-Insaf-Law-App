@@ -1,93 +1,89 @@
 import React from 'react';
-// Import layout components from React Native:
-// View: acts like a division/box (similar to <div> in web)
-// Text: acts like a text container (similar to <p> or <span> in web)
-// StyleSheet: styling helper (similar to CSS in web)
-// SafeAreaView: prevents content from rendering behind notches/camera holes on phones
-// TouchableOpacity: a clickable button that fades slightly when pressed
-// StatusBar: controls the top battery/network bar colors
-import { View, Text, StyleSheet, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router'; // Routing helper
+import { useRouter } from 'expo-router';
+import LiquidGlassButton from '../../components/LiquidGlassButton';
 
 export default function VerificationPending() {
-  const router = useRouter(); // Initialize router to change screens
+  const router = useRouter();
 
   return (
     <SafeAreaView style={styles.container}>
-      {/* Configure phone status bar style */}
-      <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
       
-      {/* Box container holding the text cards */}
       <View style={styles.content}>
-        <Text style={styles.badge}>🛡️</Text> {/* Emoji badge */}
+        <View style={styles.badgeBox}>
+          <Text style={styles.badge}>🛡️</Text>
+        </View>
+
         <Text style={styles.title}>Account Under Verification</Text>
+        
         <Text style={styles.desc}>
-          Thank you for registering on Barq-e-Insaf. We have received your Sindh Bar Council license credentials.
-        </Text>
-        <Text style={styles.desc}>
-          Our administration team is currently validating your registration details. This process typically takes 12-24 hours. You will receive a notification once verified.
+          Thank you for registering on Barq-e-Insaf. We have received your Sindh Bar Council license credentials and CNIC.
         </Text>
         
-        {/* Clickable button that redirects the user back to role selection screen */}
-        <TouchableOpacity style={styles.btn} onPress={() => router.replace('/RoleSelectScreen')}>
-          <Text style={styles.btnText}>Go Back to Roles</Text>
-        </TouchableOpacity>
+        <Text style={styles.desc}>
+          Our administrative compliance team is validating your registration details with the SBC directory. This process typically takes 12–24 hours. You will receive an SMS and email notification upon approval.
+        </Text>
+        
+        <View style={{ width: '100%', marginTop: 20 }}>
+          <LiquidGlassButton
+            title="RETURN TO ROLE SELECTION"
+            onPress={() => router.replace('/RoleSelectScreen')}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
 }
 
-// Styling definitions (Stylesheets are similar to CSS)
 const styles = StyleSheet.create({
   container: {
-    flex: 1, // Tells container to fill the entire height/width of screen
-    backgroundColor: '#0F2744', // Dark Navy Blue background
-    justifyContent: 'center', // Centers contents vertically
-    padding: 24, // Generates padding margins around page edges
+    flex: 1,
+    backgroundColor: '#060201',
+    justifyContent: 'center',
+    padding: 24,
   },
   content: {
-    backgroundColor: '#fff', // White card panel
-    borderRadius: 24, // Rounded corners
-    padding: 30, // Spacing inside card
-    alignItems: 'center', // Centers child items horizontally
-    shadowColor: '#000', // Shadows configuration
-    shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 15,
-    elevation: 8, // Shadows for Android
+    backgroundColor: 'rgba(22, 10, 4, 0.85)',
+    borderRadius: 24,
+    padding: 28,
+    alignItems: 'center',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 160, 40, 0.28)',
+    shadowColor: '#FF9500',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.25,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  badgeBox: {
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    borderWidth: 1.5,
+    borderColor: '#FF9500',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 16,
   },
   badge: {
-    fontSize: 72, // Large emoji size
-    marginBottom: 20,
+    fontSize: 28,
   },
   title: {
-    fontSize: 22,
-    fontWeight: '800', // Heavy Bold font
-    color: '#0F2744',
+    fontSize: 20,
+    fontWeight: '800',
+    color: '#FFF5E8',
+    marginBottom: 12,
     textAlign: 'center',
-    marginBottom: 16,
+    letterSpacing: -0.3,
   },
   desc: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 13,
+    color: '#C8A892',
     textAlign: 'center',
-    lineHeight: 20, // Line heights (spacing between lines of text)
-    marginBottom: 16,
-  },
-  btn: {
-    backgroundColor: '#0F2744',
-    paddingVertical: 14,
-    paddingHorizontal: 28,
-    borderRadius: 12,
-    marginTop: 10,
-    width: '100%',
-    alignItems: 'center',
-  },
-  btnText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '700',
-    letterSpacing: 0.5,
+    lineHeight: 20,
+    marginBottom: 10,
   },
 });
