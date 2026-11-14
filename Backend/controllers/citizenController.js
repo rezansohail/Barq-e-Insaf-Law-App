@@ -232,6 +232,20 @@ const getAllNgos = async (req, res) => {
   }
 };
 
+// GET /api/citizens/media or GET /api/media
+const getAllMedia = async (req, res) => {
+  try {
+    const media = await citizenService.getAllMedia(req.query);
+    return res.status(200).json(media);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   registerCitizen,
   loginCitizen,
@@ -247,4 +261,5 @@ module.exports = {
   addCitizenVaultItem,
   deleteCitizenVaultItem,
   getAllNgos,
+  getAllMedia,
 };

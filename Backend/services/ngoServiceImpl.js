@@ -24,9 +24,9 @@ class NgoServiceImpl extends NgoService {
     const userRoleCheck = await db.query('SELECT role FROM users WHERE email = $1', [dto.email]);
     if (userRoleCheck.rows.length > 0) {
       const actualRole = userRoleCheck.rows[0].role;
-      const roleNames = { lawyer: 'Lawyer', citizen: 'Citizen', admin: 'Admin', ngo: 'NGO / Media' };
+      const roleNames = { lawyer: 'Lawyer', citizen: 'Citizen', admin: 'Admin', ngo: 'NGO', media: 'Media' };
       const displayName = roleNames[actualRole] || actualRole;
-      const error = new Error(`This email is already registered as a ${displayName}. You cannot register it as an NGO / Media.`);
+      const error = new Error(`This email is already registered as a ${displayName}. You cannot register it as an NGO.`);
       error.statusCode = 409;
       throw error;
     }
@@ -92,6 +92,7 @@ class NgoServiceImpl extends NgoService {
     const insertQuery = `
       INSERT INTO ngos (
         full_name,
+        resource_person,
         email,
         phone,
         district,
@@ -102,12 +103,13 @@ class NgoServiceImpl extends NgoService {
         role,
         user_id
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'ngo', $9)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ngo', $10)
       RETURNING *;
     `;
 
     const values = [
       dto.fullName,
+      dto.resourcePerson || null,
       dto.email,
       dto.phone,
       dto.district,
@@ -170,7 +172,7 @@ class NgoServiceImpl extends NgoService {
       const userCheck = await db.query('SELECT role FROM users WHERE email = $1', [dto.email]);
       if (userCheck.rows.length > 0) {
         const actualRole = userCheck.rows[0].role;
-        const roleNames = { lawyer: 'Lawyer', citizen: 'Citizen', admin: 'Admin', ngo: 'NGO / Media' };
+        const roleNames = { lawyer: 'Lawyer', citizen: 'Citizen', admin: 'Admin', ngo: 'NGO', media: 'Media' };
         const displayName = roleNames[actualRole] || actualRole;
         const error = new Error(`This email belongs to a ${displayName} account. Please switch to the ${displayName} Portal to log in.`);
         error.statusCode = 403;

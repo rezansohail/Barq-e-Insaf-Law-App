@@ -9,6 +9,10 @@ class RegisterNgoDTO {
     full_name,
     organizationName,
     organization_name,
+    resourcePerson,
+    resource_person,
+    contactPerson,
+    contact_person,
     phone,
     cnic,
     district,
@@ -21,13 +25,14 @@ class RegisterNgoDTO {
     registration_number,
   }) {
     this.fullName = (fullName || name || full_name || organizationName || organization_name || '').trim();
+    this.resourcePerson = (resourcePerson || resource_person || contactPerson || contact_person || '').trim();
     this.phone = phone ? phone.trim() : '';
     this.cnic = cnic ? cnic.trim() : null;
     this.district = district ? district.trim() : '';
     this.email = email ? email.trim().toLowerCase() : '';
     this.password = password || '';
     this.confirmPassword = confirmPassword || '';
-    this.organizationType = (organizationType || organization_type || 'NGO / Media').trim();
+    this.organizationType = (organizationType || organization_type || 'Human Development / Legal Aid').trim();
     this.registrationNumber = (registrationNumber || registration_number || '').trim() || null;
   }
 

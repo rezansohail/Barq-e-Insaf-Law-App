@@ -17,6 +17,7 @@ app.use('/api/cases',    require('./routes/cases'));
 app.use('/api/admin',    require('./routes/admin'));
 app.use('/api/ngo',      require('./routes/ngo'));
 app.use('/api/ngos',     require('./routes/ngo'));
+app.use('/api/media',    require('./routes/media'));
 
 app.get('/', (req, res) => {
   res.json({ message: 'Barq-e-Insaf API running with Neon PostgreSQL' });

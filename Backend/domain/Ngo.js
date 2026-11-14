@@ -7,6 +7,8 @@ class Ngo {
     full_name,
     fullName,
     name,
+    resource_person,
+    resourcePerson,
     email,
     phone,
     district,
@@ -29,15 +31,16 @@ class Ngo {
   }) {
     this.id = id;
     this.fullName = full_name || fullName || name;
+    this.resourcePerson = resource_person || resourcePerson || '';
     this.email = email;
     this.phone = phone;
     this.district = district;
     this.cnic = cnic;
     this.password = password;
-    this.organizationType = organization_type || organizationType || 'NGO / Media';
+    this.organizationType = organization_type || organizationType || 'Human Development / Legal Aid';
     this.registrationNumber = registration_number || registrationNumber;
     this.isVerified = is_verified !== undefined ? is_verified : Boolean(isVerified);
-    this.verificationStatus = verification_status || verificationStatus || 'pending';
+    this.verificationStatus = verification_status || verificationStatus || 'approved';
     this.status = status || 'Active';
     this.role = role || 'ngo';
     this.userId = user_id || userId;
@@ -46,12 +49,13 @@ class Ngo {
   }
 
   /**
-   * Sanitizes NGO / Media object for client responses (omits password hash)
+   * Sanitizes NGO object for client responses (omits password hash)
    */
   toResponse() {
     return {
       id: this.id,
       fullName: this.fullName,
+      resourcePerson: this.resourcePerson,
       email: this.email,
       phone: this.phone,
       district: this.district,

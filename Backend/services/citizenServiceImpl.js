@@ -688,13 +688,18 @@ class CitizenServiceImpl extends CitizenService {
   }
 
   /**
-   * Retrieves active NGOs and Media organizations for citizens
+   * Retrieves active NGOs (and Media organizations for combined directory views)
    */
   async getAllNgos(filter = {}) {
+    if (filter.role === 'media' || filter.type === 'media') {
+      return this.getAllMedia(filter);
+    }
+
     let sql = `
       SELECT 
         id,
         full_name,
+        resource_person,
         email,
         phone,
         district,
@@ -702,6 +707,7 @@ class CitizenServiceImpl extends CitizenService {
         registration_number,
         is_verified,
         status,
+        role,
         created_at
       FROM ngos 
       WHERE status = 'Active' OR status IS NULL
@@ -720,18 +726,85 @@ class CitizenServiceImpl extends CitizenService {
     sql += ` ORDER BY id ASC`;
 
     const { rows } = await db.query(sql, params);
-    return rows.map((r) => ({
+    const ngos = rows.map((r) => ({
       id: r.id,
       name: r.full_name,
       fullName: r.full_name,
+      resourcePerson: r.resource_person,
       email: r.email,
       phone: r.phone,
       district: r.district,
-      organizationType: r.organization_type || 'NGO / Media',
+      type: r.organization_type || 'Human Development / Legal Aid',
+      organizationType: r.organization_type || 'Human Development / Legal Aid',
       registrationNumber: r.registration_number,
       isVerified: Boolean(r.is_verified),
       status: r.status || 'Active',
-      initials: (r.full_name || 'N').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
+      role: r.role || 'ngo',
+      initials: (r.full_name || 'N').split(' ').map(w => w[0]).join('').substring(0, 3).toUpperCase(),
+    }));
+
+    // If general directory request without role filter, combine with media table
+    // so existing citizen views display both NCHD and KTN News seamlessly
+    if (!filter.role && !filter.organizationType) {
+      const mediaList = await this.getAllMedia(filter);
+      return [...ngos, ...mediaList];
+    }
+
+    return ngos;
+  }
+
+  /**
+   * Retrieves active Media organizations for citizens
+   */
+  async getAllMedia(filter = {}) {
+    let sql = `
+      SELECT 
+        id,
+        full_name,
+        channel_name,
+        resource_person,
+        email,
+        phone,
+        district,
+        media_type,
+        registration_number,
+        is_verified,
+        status,
+        role,
+        created_at
+      FROM media 
+      WHERE status = 'Active' OR status IS NULL
+    `;
+    const params = [];
+
+    if (filter.mediaType) {
+      params.push(filter.mediaType);
+      sql += ` AND media_type ILIKE $${params.length}`;
+    }
+    if (filter.district) {
+      params.push(filter.district);
+      sql += ` AND district ILIKE $${params.length}`;
+    }
+
+    sql += ` ORDER BY id ASC`;
+
+    const { rows } = await db.query(sql, params);
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.channel_name || r.full_name,
+      fullName: r.full_name,
+      channelName: r.channel_name,
+      resourcePerson: r.resource_person,
+      email: r.email,
+      phone: r.phone,
+      district: r.district,
+      type: r.media_type || 'News Channel',
+      mediaType: r.media_type || 'News Channel',
+      registrationNumber: r.registration_number,
+      isVerified: Boolean(r.is_verified),
+      status: r.status || 'Active',
+      role: r.role || 'media',
+      initials: (r.channel_name || r.full_name || 'M').split(' ').map(w => w[0]).join('').substring(0, 3).toUpperCase(),
     }));
   }
 }

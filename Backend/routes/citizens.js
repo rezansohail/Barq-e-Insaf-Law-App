@@ -15,6 +15,7 @@ const {
   addCitizenVaultItem,
   deleteCitizenVaultItem,
   getAllNgos,
+  getAllMedia,
 } = require('../controllers/citizenController');
 const { protect } = require('../middleware/auth');
 
@@ -25,8 +26,9 @@ router.post('/login',    loginCitizen);
 // ── PROTECTED CURRENT USER ──
 router.get('/me', protect, getMe);
 
-// ── NGO / MEDIA DIRECTORY (FOR CITIZENS) ──
-router.get('/ngos', getAllNgos);
+// ── NGO & MEDIA DIRECTORIES (FOR CITIZENS) ──
+router.get('/ngos',  getAllNgos);
+router.get('/media', getAllMedia);
 
 // ── CITIZEN PROFILE BY ID ──
 router.get('/:id',         getCitizenById);
