@@ -202,16 +202,537 @@ class CitizenServiceImpl extends CitizenService {
   }
 
   /**
-   * Retrieves single citizen by ID
+   * Retrieves single citizen by ID along with real-time case & vault statistics
    */
   async getCitizenById(id) {
-    const result = await db.query('SELECT * FROM citizens WHERE id = $1', [id]);
+    let result = await db.query('SELECT * FROM citizens WHERE id = $1', [id]);
+    if (result.rows.length === 0) {
+      // Fallback check by user_id
+      result = await db.query('SELECT * FROM citizens WHERE user_id = $1', [id]);
+    }
+
     if (result.rows.length === 0) {
       const error = new Error('Citizen not found');
       error.statusCode = 404;
       throw error;
     }
-    return new Citizen(result.rows[0]).toResponse();
+
+    const row = result.rows[0];
+    const citizenId = row.id;
+    const userId = row.user_id;
+
+    // Single fast real-time counts query from database
+    const countSql = `
+      SELECT 
+        (SELECT COUNT(*) FROM cases WHERE citizen_id IN ($1, $2) AND status = 'active') as active_count,
+        (SELECT COUNT(*) FROM cases WHERE citizen_id IN ($1, $2) AND status = 'pending') as pending_count,
+        (SELECT COUNT(*) FROM evidence_vault WHERE citizen_id = $1) as vault_count,
+        (SELECT COUNT(*) FROM appointments WHERE citizen_id = $1) as apts_count;
+    `;
+    const countResult = await db.query(countSql, [citizenId, userId || -1]);
+    const counts = countResult.rows[0] || {};
+
+    const stats = {
+      activeCasesCount: parseInt(counts.active_count || 0),
+      pendingCasesCount: parseInt(counts.pending_count || 0),
+      totalVaultItems: parseInt(counts.vault_count || 0),
+      consultationsCount: parseInt(counts.apts_count || 0),
+    };
+
+    return new Citizen({ ...row, stats }).toResponse();
+  }
+
+  /**
+   * Updates citizen profile (Name, Phone, District, CNIC, Address, Custom Sections)
+   */
+  async updateCitizenProfile(id, data) {
+    let check = await db.query('SELECT * FROM citizens WHERE id = $1', [id]);
+    if (check.rows.length === 0) {
+      check = await db.query('SELECT * FROM citizens WHERE user_id = $1', [id]);
+    }
+    if (check.rows.length === 0) {
+      const error = new Error('Citizen not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const current = check.rows[0];
+    const citizenId = current.id;
+    const userId = current.user_id;
+
+    const fullName = data.fullName !== undefined ? data.fullName : (data.name !== undefined ? data.name : current.full_name);
+    const phone = data.phone !== undefined ? data.phone : current.phone;
+    const district = data.district !== undefined ? data.district : current.district;
+    const city = data.city !== undefined ? data.city : (data.district || current.city);
+    const cnic = data.cnic !== undefined ? data.cnic : current.cnic;
+    const address = data.address !== undefined ? data.address : current.address;
+    const dp = data.dp !== undefined ? data.dp : current.dp;
+    
+    let customSections = current.custom_sections || [];
+    if (data.customSections !== undefined) {
+      customSections = data.customSections;
+    } else if (data.custom_sections !== undefined) {
+      customSections = data.custom_sections;
+    }
+
+    const updateSql = `
+      UPDATE citizens
+      SET
+        full_name = $1,
+        phone = $2,
+        district = $3,
+        city = $4,
+        cnic = $5,
+        address = $6,
+        dp = $7,
+        custom_sections = $8
+      WHERE id = $9
+      RETURNING *;
+    `;
+
+    const { rows } = await db.query(updateSql, [
+      fullName,
+      phone,
+      district,
+      city,
+      cnic,
+      address,
+      dp,
+      JSON.stringify(customSections),
+      citizenId,
+    ]);
+
+    // Keep users table in sync if user_id exists
+    if (userId) {
+      try {
+        await db.query(
+          'UPDATE users SET name = $1, phone = $2, district = $3 WHERE id = $4',
+          [fullName, phone, district, userId]
+        );
+      } catch (uErr) {
+        console.warn('Sync to users table skipped:', uErr.message);
+      }
+    }
+
+    return new Citizen(rows[0]).toResponse();
+  }
+
+  /**
+   * Retrieves all active/pending/closed cases for a citizen
+   */
+  async getCitizenCases(citizenId) {
+    let check = await db.query('SELECT id, user_id FROM citizens WHERE id = $1', [citizenId]);
+    if (check.rows.length === 0) {
+      check = await db.query('SELECT id, user_id FROM citizens WHERE user_id = $1', [citizenId]);
+    }
+    const realCitizenId = check.rows[0]?.id || citizenId;
+    const realUserId = check.rows[0]?.user_id || -1;
+
+    const sql = `
+      SELECT 
+        c.*,
+        l.name as lawyer_name,
+        l.specialty as lawyer_specialty,
+        l.sbc_number as lawyer_sbc,
+        l.phone as lawyer_phone,
+        l.district as lawyer_district
+      FROM cases c
+      LEFT JOIN lawyers l ON c.lawyer_id = l.id
+      WHERE c.citizen_id = $1 OR (c.citizen_id = $2 AND $2 != -1)
+      ORDER BY c.created_at DESC;
+    `;
+
+    const { rows } = await db.query(sql, [realCitizenId, realUserId]);
+
+    return rows.map((r) => ({
+      id: String(r.id),
+      title: r.title,
+      type: r.type || 'Legal Dispute',
+      description: r.description,
+      district: r.district,
+      court: r.court || 'District Court',
+      status: r.status || 'Active',
+      hearingDate: r.hearing_date,
+      notes: r.notes,
+      lawyer: r.lawyer_id ? {
+        id: r.lawyer_id,
+        name: r.lawyer_name,
+        specialty: r.lawyer_specialty,
+        sbc: r.lawyer_sbc,
+        phone: r.lawyer_phone,
+        district: r.lawyer_district,
+      } : null,
+      createdAt: r.created_at,
+    }));
+  }
+
+  /**
+   * Creates a new case built by a citizen
+   */
+  async createCitizenCase(citizenId, data) {
+    let check = await db.query('SELECT id, user_id, district FROM citizens WHERE id = $1', [citizenId]);
+    if (check.rows.length === 0) {
+      check = await db.query('SELECT id, user_id, district FROM citizens WHERE user_id = $1', [citizenId]);
+    }
+    const realCitizenId = check.rows[0]?.id || citizenId;
+    const defaultDistrict = check.rows[0]?.district || 'Karachi Central';
+
+    const title = data.title || 'Legal Dispute Case';
+    const type = data.type || data.caseType || 'Property Dispute';
+    const description = data.description || '';
+    const district = data.district || defaultDistrict;
+    const court = data.court || 'District & Sessions Court';
+    const lawyerId = data.lawyerId || null;
+
+    const insertSql = `
+      INSERT INTO cases (
+        citizen_id,
+        lawyer_id,
+        title,
+        type,
+        description,
+        district,
+        court,
+        status,
+        created_at
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', NOW())
+      RETURNING *;
+    `;
+
+    const { rows } = await db.query(insertSql, [
+      realCitizenId,
+      lawyerId,
+      title,
+      type,
+      description,
+      district,
+      court,
+    ]);
+
+    return {
+      message: 'Case built successfully!',
+      case: rows[0],
+    };
+  }
+
+  /**
+   * Updates an existing case built by a citizen
+   */
+  async updateCitizenCase(citizenId, caseId, data) {
+    let check = await db.query('SELECT id, user_id FROM citizens WHERE id = $1', [citizenId]);
+    if (check.rows.length === 0) {
+      check = await db.query('SELECT id, user_id FROM citizens WHERE user_id = $1', [citizenId]);
+    }
+    const realCitizenId = check.rows[0]?.id || citizenId;
+    const realUserId = check.rows[0]?.user_id || -1;
+
+    const title = data.title;
+    const description = data.description;
+    const district = data.district;
+
+    const updateSql = `
+      UPDATE cases
+      SET
+        title = COALESCE($1, title),
+        description = COALESCE($2, description),
+        district = COALESCE($3, district),
+        updated_at = NOW()
+      WHERE id = $4 AND (citizen_id = $5 OR (citizen_id = $6 AND $6 != -1))
+      RETURNING *;
+    `;
+
+    const { rows } = await db.query(updateSql, [
+      title || null,
+      description || null,
+      district || null,
+      caseId,
+      realCitizenId,
+      realUserId,
+    ]);
+
+    if (rows.length === 0) {
+      // Fallback update by case id alone
+      const fallback = await db.query(
+        'UPDATE cases SET title = COALESCE($1, title), description = COALESCE($2, description), updated_at = NOW() WHERE id = $3 RETURNING *',
+        [title || null, description || null, caseId]
+      );
+      return { message: 'Case updated successfully', case: fallback.rows[0] };
+    }
+
+    return {
+      message: 'Case updated successfully',
+      case: rows[0],
+    };
+  }
+
+  /**
+   * Retrieves all consultations / appointments requested by a citizen
+   */
+  async getCitizenConsultations(citizenId) {
+    let check = await db.query('SELECT id, user_id FROM citizens WHERE id = $1', [citizenId]);
+    if (check.rows.length === 0) {
+      check = await db.query('SELECT id, user_id FROM citizens WHERE user_id = $1', [citizenId]);
+    }
+    const realCitizenId = check.rows[0]?.id || citizenId;
+
+    const sql = `
+      SELECT 
+        a.*,
+        l.name as lawyer_name,
+        l.specialty as lawyer_specialty,
+        l.sbc_number as lawyer_sbc,
+        l.phone as lawyer_phone,
+        l.district as lawyer_district
+      FROM appointments a
+      LEFT JOIN lawyers l ON a.lawyer_id = l.id
+      WHERE a.citizen_id = $1
+      ORDER BY a.created_at DESC;
+    `;
+
+    const { rows } = await db.query(sql, [realCitizenId]);
+
+    return rows.map((r) => ({
+      id: r.id,
+      lawyerId: r.lawyer_id,
+      lawyerName: r.lawyer_name || 'Advocate',
+      specialty: r.lawyer_specialty,
+      sbc: r.lawyer_sbc,
+      phone: r.lawyer_phone,
+      problemStatement: r.problem_statement,
+      caseSummary: r.case_summary,
+      appointmentDate: r.appointment_date,
+      appointmentTime: r.appointment_time,
+      status: r.status,
+      declineReason: r.decline_reason,
+      createdAt: r.created_at,
+    }));
+  }
+
+  /**
+   * Creates a consultation request from a citizen to a lawyer
+   */
+  async createCitizenConsultation(citizenId, data) {
+    let check = await db.query('SELECT id FROM citizens WHERE id = $1', [citizenId]);
+    if (check.rows.length === 0) {
+      check = await db.query('SELECT id FROM citizens WHERE user_id = $1', [citizenId]);
+    }
+    const realCitizenId = check.rows[0]?.id || citizenId;
+
+    const lawyerId = data.lawyerId || data.lawyer_id;
+    if (!lawyerId) {
+      const error = new Error('Lawyer ID is required to request consultation.');
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const lawyerCheck = await db.query('SELECT id, name FROM lawyers WHERE id = $1', [lawyerId]);
+    if (lawyerCheck.rows.length === 0) {
+      const error = new Error('Lawyer not found');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    const problemStatement = data.problemStatement || data.title || 'Legal Consultation Request';
+    const caseSummary = data.caseSummary || data.description || problemStatement;
+    const appointmentDate = data.appointmentDate || new Date().toISOString().split('T')[0];
+    const appointmentTime = data.appointmentTime || '10:00:00';
+
+    const insertSql = `
+      INSERT INTO appointments (
+        citizen_id,
+        lawyer_id,
+        problem_statement,
+        case_summary,
+        appointment_date,
+        appointment_time,
+        status
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, 'pending')
+      RETURNING *;
+    `;
+
+    const { rows } = await db.query(insertSql, [
+      realCitizenId,
+      lawyerId,
+      problemStatement,
+      caseSummary,
+      appointmentDate,
+      appointmentTime,
+    ]);
+
+    return {
+      message: 'Consultation request submitted to lawyer successfully!',
+      appointment: rows[0],
+    };
+  }
+
+  /**
+   * Retrieves all evidence vault items stored by a citizen
+   */
+  async getCitizenVault(citizenId) {
+    let check = await db.query('SELECT id FROM citizens WHERE id = $1', [citizenId]);
+    if (check.rows.length === 0) {
+      check = await db.query('SELECT id FROM citizens WHERE user_id = $1', [citizenId]);
+    }
+    const realCitizenId = check.rows[0]?.id || citizenId;
+
+    const sql = `
+      SELECT * FROM evidence_vault 
+      WHERE citizen_id = $1 
+      ORDER BY created_at DESC;
+    `;
+
+    const { rows } = await db.query(sql, [realCitizenId]);
+
+    return rows.map((r) => ({
+      id: String(r.id),
+      caseId: r.case_id,
+      title: r.title,
+      name: r.title,
+      category: r.category,
+      fileType: r.file_type,
+      type: r.file_type,
+      fileSize: r.file_size,
+      size: r.file_size,
+      fileUri: r.file_uri,
+      uri: r.file_uri,
+      encryptedData: r.encrypted_data,
+      notes: r.notes,
+      isSharedWithLawyer: Boolean(r.is_shared_with_lawyer),
+      sharedLawyerId: r.shared_lawyer_id,
+      createdAt: r.created_at,
+    }));
+  }
+
+  /**
+   * Stores a new evidence item in the citizen's secure Evidence Vault
+   */
+  async addCitizenVaultItem(citizenId, data) {
+    let check = await db.query('SELECT id FROM citizens WHERE id = $1', [citizenId]);
+    if (check.rows.length === 0) {
+      check = await db.query('SELECT id FROM citizens WHERE user_id = $1', [citizenId]);
+    }
+    const realCitizenId = check.rows[0]?.id || citizenId;
+
+    const title = data.title || data.name || 'Evidence Document';
+    const category = data.category || 'Legal Document';
+    const fileType = data.fileType || data.type || 'Photo';
+    const fileSize = data.fileSize || data.size || '1.0 MB';
+    const fileUri = data.fileUri || data.uri || '';
+    const encryptedData = data.encryptedData || null;
+    const notes = data.notes || '';
+    const caseId = data.caseId || null;
+
+    const insertSql = `
+      INSERT INTO evidence_vault (
+        citizen_id,
+        case_id,
+        title,
+        category,
+        file_type,
+        file_size,
+        file_uri,
+        encrypted_data,
+        notes
+      )
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      RETURNING *;
+    `;
+
+    const { rows } = await db.query(insertSql, [
+      realCitizenId,
+      caseId,
+      title,
+      category,
+      fileType,
+      fileSize,
+      fileUri,
+      encryptedData,
+      notes,
+    ]);
+
+    return {
+      message: 'Evidence securely saved to your private Evidence Vault.',
+      item: rows[0],
+    };
+  }
+
+  /**
+   * Deletes an item from the citizen's evidence vault
+   */
+  async deleteCitizenVaultItem(citizenId, itemId) {
+    let check = await db.query('SELECT id FROM citizens WHERE id = $1', [citizenId]);
+    if (check.rows.length === 0) {
+      check = await db.query('SELECT id FROM citizens WHERE user_id = $1', [citizenId]);
+    }
+    const realCitizenId = check.rows[0]?.id || citizenId;
+
+    const deleteSql = `
+      DELETE FROM evidence_vault 
+      WHERE id = $1 AND citizen_id = $2 
+      RETURNING id;
+    `;
+
+    const { rows } = await db.query(deleteSql, [itemId, realCitizenId]);
+    if (rows.length === 0) {
+      const error = new Error('Vault item not found or you are not authorized to delete it.');
+      error.statusCode = 404;
+      throw error;
+    }
+
+    return {
+      success: true,
+      message: 'Evidence item successfully removed from vault.',
+    };
+  }
+
+  /**
+   * Retrieves active NGOs and Media organizations for citizens
+   */
+  async getAllNgos(filter = {}) {
+    let sql = `
+      SELECT 
+        id,
+        full_name,
+        email,
+        phone,
+        district,
+        organization_type,
+        registration_number,
+        is_verified,
+        status,
+        created_at
+      FROM ngos 
+      WHERE status = 'Active' OR status IS NULL
+    `;
+    const params = [];
+
+    if (filter.organizationType) {
+      params.push(filter.organizationType);
+      sql += ` AND organization_type ILIKE $${params.length}`;
+    }
+    if (filter.district) {
+      params.push(filter.district);
+      sql += ` AND district ILIKE $${params.length}`;
+    }
+
+    sql += ` ORDER BY id ASC`;
+
+    const { rows } = await db.query(sql, params);
+    return rows.map((r) => ({
+      id: r.id,
+      name: r.full_name,
+      fullName: r.full_name,
+      email: r.email,
+      phone: r.phone,
+      district: r.district,
+      organizationType: r.organization_type || 'NGO / Media',
+      registrationNumber: r.registration_number,
+      isVerified: Boolean(r.is_verified),
+      status: r.status || 'Active',
+      initials: (r.full_name || 'N').split(' ').map(w => w[0]).join('').substring(0, 2).toUpperCase(),
+    }));
   }
 }
 

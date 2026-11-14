@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -8,48 +8,132 @@ import {
   StatusBar, 
   TextInput, 
   Modal, 
-  Alert 
+  Alert,
+  Platform,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useMockStore, timingSlots, addTimingSlot, deleteTimingSlot, editTimingSlot } from './MockStore';
-import AppHeader from '../../components/AppHeader';
-import BottomNavBar from '../../components/BottomNavBar';
-import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { 
+  useMockStore, 
+  timingSlots, 
+  addTimingSlot, 
+  deleteTimingSlot, 
+  editTimingSlot, 
+  fetchSchedule 
+} from './MockStore';
+import { getCurrentLawyerId } from '../../constants/authStore';
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
+
+const PRESET_TIMES = [
+  '10:00 AM - 01:00 PM',
+  '02:00 PM - 05:00 PM',
+  '03:00 PM - 06:00 PM',
+  '11:00 AM - 02:00 PM',
+  '09:00 AM - 12:00 PM',
+  '05:00 PM - 08:00 PM',
+];
 
 export default function Schedule() {
   useMockStore();
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const currentLawyerId = params.lawyerId || params.id || getCurrentLawyerId();
+
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingSlot, setEditingSlot] = useState(null);
   const [newDay, setNewDay] = useState('Monday');
-  const [newTime, setNewTime] = useState('');
+  const [newTime, setNewTime] = useState('10:00 AM - 01:00 PM');
   const [showDayDropdown, setShowDayDropdown] = useState(false);
 
-  // Hardware back returns to LawyerHome
-  useAppNavigation({ isHome: false, homeRoute: '/(lawyer)/LawyerHome' });
-
-  const handleAddSlot = () => {
-    if (!newTime.trim()) {
-      Alert.alert('Error', 'Please enter consultation time (e.g. 10:00 AM - 01:00 PM)');
-      return;
+  useEffect(() => {
+    let isMounted = true;
+    if (currentLawyerId) {
+      setIsLoading(true);
+      fetchSchedule(currentLawyerId)
+        .finally(() => {
+          if (isMounted) setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
     }
-    addTimingSlot(newDay, newTime.trim());
+    return () => {
+      isMounted = false;
+    };
+  }, [currentLawyerId]);
+
+  const handleOpenAddModal = () => {
     setNewDay('Monday');
-    setNewTime('');
-    setShowAddModal(false);
-    Alert.alert('Success', 'Office hours updated successfully');
+    setNewTime('10:00 AM - 01:00 PM');
+    setShowDayDropdown(false);
+    setShowAddModal(true);
   };
 
-  const handleDeleteSlot = (id) => {
+  const handleAddSlot = async () => {
+    const slotTime = (newTime || '').trim() || '10:00 AM - 01:00 PM';
+    setIsSaving(true);
+    try {
+      await addTimingSlot(newDay, slotTime, currentLawyerId);
+      setShowAddModal(false);
+      setNewDay('Monday');
+      setNewTime('10:00 AM - 01:00 PM');
+      if (Platform.OS !== 'web') {
+        Alert.alert('Success', 'Time slot added and saved to database');
+      }
+    } catch (err) {
+      console.error('Failed to add slot:', err);
+      if (Platform.OS === 'web') {
+        alert('Failed to save slot to database.');
+      } else {
+        Alert.alert('Error', 'Failed to save slot to database');
+      }
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteSlot = async (id) => {
+    if (Platform.OS === 'web') {
+      const confirmed = typeof window !== 'undefined'
+        ? window.confirm('Are you sure you want to delete this time slot from your schedule?')
+        : true;
+      if (confirmed) {
+        setIsSaving(true);
+        try {
+          await deleteTimingSlot(id, currentLawyerId);
+        } catch (err) {
+          console.error('Failed to delete slot:', err);
+          alert('Failed to delete slot from database.');
+        } finally {
+          setIsSaving(false);
+        }
+      }
+      return;
+    }
+
     Alert.alert(
-      'Remove Slot',
-      'Are you sure you want to remove this availability window?',
+      'Delete Slot',
+      'Are you sure you want to delete this time slot from your schedule?',
       [
-        { text: 'Yes, Remove', style: 'destructive', onPress: () => deleteTimingSlot(id) },
+        { 
+          text: 'Yes, Delete', 
+          style: 'destructive',
+          onPress: async () => {
+            setIsSaving(true);
+            try {
+              await deleteTimingSlot(id, currentLawyerId);
+              Alert.alert('Deleted', 'Schedule slot removed');
+            } catch (err) {
+              Alert.alert('Error', 'Failed to delete slot');
+            } finally {
+              setIsSaving(false);
+            }
+          } 
+        },
         { text: 'Cancel', style: 'cancel' }
       ]
     );
@@ -57,54 +141,78 @@ export default function Schedule() {
 
   const handleEditSlot = (slot) => {
     setEditingSlot(slot);
-    setNewDay(slot.day);
-    setNewTime(slot.time);
+    setNewDay(slot.day || 'Monday');
+    setNewTime(slot.time || '10:00 AM - 01:00 PM');
+    setShowDayDropdown(false);
     setShowEditModal(true);
   };
 
-  const handleUpdateSlot = () => {
-    if (!newTime.trim()) {
-      Alert.alert('Error', 'Please enter a valid time window');
-      return;
+  const handleUpdateSlot = async () => {
+    if (!editingSlot) return;
+    const slotTime = (newTime || '').trim() || editingSlot.time || '10:00 AM - 01:00 PM';
+    setIsSaving(true);
+    try {
+      await editTimingSlot(editingSlot.id, newDay, slotTime, currentLawyerId);
+      setShowEditModal(false);
+      setEditingSlot(null);
+      setNewDay('Monday');
+      setNewTime('10:00 AM - 01:00 PM');
+      if (Platform.OS !== 'web') {
+        Alert.alert('Success', 'Time slot updated and saved to database');
+      }
+    } catch (err) {
+      console.error('Failed to update slot:', err);
+      if (Platform.OS === 'web') {
+        alert('Failed to update slot in database.');
+      } else {
+        Alert.alert('Error', 'Failed to update slot in database');
+      }
+    } finally {
+      setIsSaving(false);
     }
-    editTimingSlot(editingSlot.id, newDay, newTime.trim());
-    setShowEditModal(false);
-    setEditingSlot(null);
-    setNewDay('Monday');
-    setNewTime('');
-    Alert.alert('Success', 'Availability window updated');
+  };
+
+  const handleNav = (lbl) => {
+    if (lbl === 'home') router.push('/(lawyer)/LawyerHome');
+    if (lbl === 'requests') router.push('/(lawyer)/CaseRequests');
+    if (lbl === 'cases') router.push('/(lawyer)/MyCases');
+    if (lbl === 'schedule') router.push('/(lawyer)/Schedule');
+    if (lbl === 'profile') router.push('/(lawyer)/LawyerProfile');
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+      <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
       
-      {/* Modern '< Chamber Schedule' Header with + Add button on right */}
-      <AppHeader
-        title="Chamber Schedule"
-        showBack={true}
-        homeRoute="/(lawyer)/LawyerHome"
-        role="lawyer"
-        rightElement={
-          <TouchableOpacity 
-            style={styles.addBtn} 
-            onPress={() => setShowAddModal(true)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.addBtnText}>+ ADD</Text>
-          </TouchableOpacity>
-        }
-      />
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Text style={styles.backText}>←</Text>
+        </TouchableOpacity>
+        <View style={styles.brandRow}>
+          <View style={styles.logoBadge}>
+            <Text style={styles.logoBadgeText}>BI</Text>
+          </View>
+          <Text style={styles.headerTitle}>My Schedule ({timingSlots.length})</Text>
+        </View>
+        <TouchableOpacity style={styles.addBtn} onPress={handleOpenAddModal}>
+          <Text style={styles.addBtnText}>+ Add</Text>
+        </TouchableOpacity>
+      </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <Text style={styles.sectionTitle}>Chamber Office Hours</Text>
-        <Text style={styles.sectionSub}>Set your weekly availability for citizen consultations</Text>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        <Text style={styles.sectionTitle}>Office Hours</Text>
+        <Text style={styles.sectionSub}>Set your available consultation hours for citizens</Text>
 
-        {timingSlots.length > 0 ? (
+        {isLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="large" color="#0F2744" />
+            <Text style={styles.loadingText}>Loading schedule...</Text>
+          </View>
+        ) : timingSlots.length > 0 ? (
           timingSlots.map((slot, i) => (
-            <View key={i} style={styles.card}>
+            <View key={slot.id || i} style={styles.card}>
               <View style={styles.cardTop}>
-                <View>
+                <View style={{ flex: 1 }}>
                   <Text style={styles.dayText}>{slot.day}</Text>
                   <Text style={styles.timeText}>⏰ {slot.time}</Text>
                 </View>
@@ -112,14 +220,14 @@ export default function Schedule() {
                   <TouchableOpacity 
                     style={styles.editBtn} 
                     onPress={() => handleEditSlot(slot)}
-                    activeOpacity={0.75}
+                    disabled={isSaving}
                   >
                     <Text style={styles.editBtnText}>Edit</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={styles.deleteBtn} 
                     onPress={() => handleDeleteSlot(slot.id)}
-                    activeOpacity={0.75}
+                    disabled={isSaving}
                   >
                     <Text style={styles.deleteBtnText}>Delete</Text>
                   </TouchableOpacity>
@@ -129,8 +237,8 @@ export default function Schedule() {
           ))
         ) : (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No availability slots configured</Text>
-            <Text style={styles.emptySub}>Tap "+ ADD" above to publish chamber consultation hours</Text>
+            <Text style={styles.emptyText}>No time slots added yet</Text>
+            <Text style={styles.emptySub}>Tap + Add to set your available hours</Text>
           </View>
         )}
       </ScrollView>
@@ -143,59 +251,64 @@ export default function Schedule() {
         onRequestClose={() => setShowAddModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Add Office Hours</Text>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Add Time Slot</Text>
+              <TouchableOpacity onPress={() => setShowAddModal(false)}>
+                <Text style={styles.modalClose}>×</Text>
+              </TouchableOpacity>
+            </View>
 
-            <Text style={styles.inputLabel}>Select Day</Text>
-            <TouchableOpacity 
-              style={styles.dropdownBtn}
-              onPress={() => setShowDayDropdown(!showDayDropdown)}
-              activeOpacity={0.75}
-            >
-              <Text style={styles.dropdownBtnText}>{newDay}</Text>
-              <Text style={styles.dropdownArrow}>▼</Text>
-            </TouchableOpacity>
+            <Text style={styles.modalLabel}>Day</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayChipsRow}>
+              {daysOfWeek.map((day) => (
+                <TouchableOpacity 
+                  key={day}
+                  style={[styles.dayChip, newDay === day && styles.dayChipActive]}
+                  onPress={() => setNewDay(day)}
+                >
+                  <Text style={[styles.dayChipText, newDay === day && styles.dayChipTextActive]}>
+                    {day}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
 
-            {showDayDropdown && (
-              <View style={styles.dropdownList}>
-                {daysOfWeek.map((day) => (
-                  <TouchableOpacity
-                    key={day}
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setNewDay(day);
-                      setShowDayDropdown(false);
-                    }}
-                  >
-                    <Text style={styles.dropdownItemText}>{day}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
+            <Text style={styles.modalLabel}>Quick Time Presets</Text>
+            <View style={styles.presetChipsWrap}>
+              {PRESET_TIMES.map((pt) => (
+                <TouchableOpacity
+                  key={pt}
+                  style={[styles.presetChip, newTime === pt && styles.presetChipActive]}
+                  onPress={() => setNewTime(pt)}
+                >
+                  <Text style={[styles.presetChipText, newTime === pt && styles.presetChipTextActive]}>
+                    {pt}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
 
-            <Text style={styles.inputLabel}>Consultation Hours</Text>
+            <Text style={styles.modalLabel}>Time Interval</Text>
             <TextInput
-              style={styles.input}
+              style={styles.modalInput}
               placeholder="e.g. 10:00 AM - 01:00 PM"
-              placeholderTextColor="rgba(255, 220, 180, 0.35)"
+              placeholderTextColor="#999"
               value={newTime}
               onChangeText={setNewTime}
             />
 
-            <View style={styles.modalBtnRow}>
-              <TouchableOpacity 
-                style={styles.cancelBtn} 
-                onPress={() => setShowAddModal(false)}
-              >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.saveBtn} 
-                onPress={handleAddSlot}
-              >
-                <Text style={styles.saveBtnText}>Save Slot</Text>
-              </TouchableOpacity>
-            </View>
+            <TouchableOpacity 
+              style={[styles.saveBtn, isSaving && { opacity: 0.7 }]} 
+              onPress={handleAddSlot}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Text style={styles.saveBtnText}>Add Slot</Text>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
@@ -208,191 +321,256 @@ export default function Schedule() {
         onRequestClose={() => setShowEditModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Edit Consultation Hours</Text>
-
-            <Text style={styles.inputLabel}>Day of Week</Text>
-            <View style={styles.uneditableBox}>
-              <Text style={styles.uneditableText}>{newDay}</Text>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Time Slot</Text>
+              <TouchableOpacity onPress={() => setShowEditModal(false)}>
+                <Text style={styles.modalClose}>×</Text>
+              </TouchableOpacity>
             </View>
 
-            <Text style={styles.inputLabel}>Time Window</Text>
+            <Text style={styles.modalLabel}>Day</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.dayChipsRow}>
+              {daysOfWeek.map((day) => (
+                <TouchableOpacity 
+                  key={day}
+                  style={[styles.dayChip, newDay === day && styles.dayChipActive]}
+                  onPress={() => setNewDay(day)}
+                >
+                  <Text style={[styles.dayChipText, newDay === day && styles.dayChipTextActive]}>
+                    {day}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+
+            <Text style={styles.modalLabel}>Quick Time Presets</Text>
+            <View style={styles.presetChipsWrap}>
+              {PRESET_TIMES.map((pt) => (
+                <TouchableOpacity
+                  key={pt}
+                  style={[styles.presetChip, newTime === pt && styles.presetChipActive]}
+                  onPress={() => setNewTime(pt)}
+                >
+                  <Text style={[styles.presetChipText, newTime === pt && styles.presetChipTextActive]}>
+                    {pt}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.modalLabel}>Time Interval</Text>
             <TextInput
-              style={styles.input}
+              style={styles.modalInput}
+              placeholder="e.g. 02:00 PM - 05:00 PM"
+              placeholderTextColor="#999"
               value={newTime}
               onChangeText={setNewTime}
-              placeholderTextColor="rgba(255, 220, 180, 0.35)"
             />
 
-            <View style={styles.modalBtnRow}>
-              <TouchableOpacity 
-                style={styles.cancelBtn} 
-                onPress={() => setShowEditModal(false)}
-              >
-                <Text style={styles.cancelBtnText}>Cancel</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.saveBtn} 
-                onPress={handleUpdateSlot}
-              >
+            <TouchableOpacity 
+              style={[styles.saveBtn, isSaving && { opacity: 0.7 }]} 
+              onPress={handleUpdateSlot}
+              disabled={isSaving}
+            >
+              {isSaving ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
                 <Text style={styles.saveBtnText}>Update Slot</Text>
-              </TouchableOpacity>
-            </View>
+              )}
+            </TouchableOpacity>
           </View>
         </View>
       </Modal>
 
-      {/* Consistent Bottom Nav */}
-      <BottomNavBar role="lawyer" activeTab="schedule" />
+      {/* FOOTER */}
+      <View style={styles.bottomNav}>
+        {['Dashboard', 'Requests', 'Cases', 'Schedule', 'Profile'].map((lbl, idx) => {
+          const ids = ['home', 'requests', 'cases', 'schedule', 'profile'];
+          return (
+            <TouchableOpacity
+              key={lbl}
+              style={styles.navItem}
+              onPress={() => handleNav(ids[idx])}
+            >
+              <Text style={[styles.navLabel, ids[idx] === 'schedule' && styles.navLabelActive]}>{lbl}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#060201' },
-  scroll: { flex: 1 },
-  content: { padding: 16, paddingBottom: 110, gap: 12 },
+  safe: { flex: 1, backgroundColor: '#0F2744' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    paddingTop: 14,
+    paddingBottom: 16,
+    backgroundColor: '#0F2744',
+  },
+  backBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  backText: { color: '#fff', fontSize: 16 },
+  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, marginLeft: 8 },
+  logoBadge: {
+    backgroundColor: '#fff', width: 32, height: 32, borderRadius: 8,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  logoBadgeText: { color: '#0F2744', fontSize: 14, fontWeight: '800' },
+  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
   addBtn: {
-    backgroundColor: '#FF9500',
+    backgroundColor: '#fff',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 10,
-    shadowColor: '#FF9500',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 3,
+    borderRadius: 8,
   },
   addBtnText: {
-    color: '#0A0301',
-    fontSize: 11,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+    color: '#0F2744',
+    fontSize: 12,
+    fontWeight: '700',
   },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#FFF5E8' },
-  sectionSub: { fontSize: 12, color: 'rgba(255, 220, 180, 0.6)', marginBottom: 6 },
-  card: {
-    backgroundColor: 'rgba(22, 10, 4, 0.78)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.22)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
-    shadowRadius: 8,
-    elevation: 3,
-  },
+  scroll: { flex: 1, backgroundColor: '#F5F3EF' },
+  content: { padding: 20, paddingBottom: 100, gap: 14 },
+  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#0F2744' },
+  sectionSub: { fontSize: 12, color: '#888', marginBottom: 4 },
+  loadingWrap: { padding: 40, alignItems: 'center', gap: 10 },
+  loadingText: { fontSize: 13, color: '#666' },
+  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#ece9e4', elevation: 2 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dayText: { fontSize: 15, fontWeight: '800', color: '#FFF5E8' },
-  timeText: { fontSize: 13, color: '#FFB74D', marginTop: 4, fontWeight: '600' },
+  dayText: { fontSize: 15, fontWeight: '700', color: '#1a1a1a' },
+  timeText: { fontSize: 13, color: '#666', marginTop: 4 },
   actionRow: { flexDirection: 'row', gap: 8 },
   editBtn: {
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 200, 120, 0.25)',
+    backgroundColor: '#e0ebf5',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
   },
-  editBtnText: { color: '#FFEED6', fontSize: 11, fontWeight: '700' },
+  editBtnText: { color: '#0F2744', fontSize: 11, fontWeight: '700' },
   deleteBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.15)',
-    borderWidth: 1,
-    borderColor: 'rgba(239, 68, 68, 0.35)',
+    backgroundColor: '#fee2e2',
     paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    paddingVertical: 5,
+    borderRadius: 6,
   },
-  deleteBtnText: { color: '#ef4444', fontSize: 11, fontWeight: '700' },
+  deleteBtnText: { color: '#991b1b', fontSize: 11, fontWeight: '700' },
   emptyCard: {
-    backgroundColor: 'rgba(22, 10, 4, 0.65)',
+    backgroundColor: '#fff',
     borderRadius: 16,
     padding: 30,
     borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.18)',
+    borderColor: '#ece9e4',
     alignItems: 'center',
-    marginTop: 20,
   },
-  emptyText: { fontSize: 14, fontWeight: '700', color: '#FFF5E8', marginBottom: 4 },
-  emptySub: { fontSize: 12, color: 'rgba(255, 220, 180, 0.5)', textAlign: 'center' },
+  emptyText: { fontSize: 16, color: '#666', fontWeight: '600' },
+  emptySub: { fontSize: 13, color: '#999', marginTop: 4 },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.82)',
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  modalCard: {
-    backgroundColor: '#0E0603',
+  modalContent: {
+    backgroundColor: '#fff',
     borderRadius: 20,
-    padding: 20,
+    padding: 24,
     width: '100%',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.25)',
+    maxWidth: 420,
   },
-  modalTitle: { fontSize: 16, fontWeight: '800', color: '#FFF5E8', marginBottom: 16, textAlign: 'center' },
-  inputLabel: { fontSize: 11, fontWeight: '700', color: '#FFB74D', textTransform: 'uppercase', marginBottom: 6, letterSpacing: 0.5 },
-  dropdownBtn: {
-    backgroundColor: 'rgba(25, 12, 5, 0.75)',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.25)',
-    padding: 12,
+  modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  dropdownBtnText: { color: '#FFF5E8', fontSize: 14, fontWeight: '600' },
-  dropdownArrow: { color: '#FF9500', fontSize: 10 },
-  dropdownList: {
-    backgroundColor: '#140803',
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.3)',
-    marginBottom: 14,
-    maxHeight: 180,
-    overflow: 'hidden',
+  modalTitle: { fontSize: 20, fontWeight: '700', color: '#1a1a1a' },
+  modalClose: { fontSize: 28, color: '#666', fontWeight: '300' },
+  modalLabel: { fontSize: 12, fontWeight: '700', color: '#666', textTransform: 'uppercase', marginBottom: 6, marginTop: 12 },
+  dayChipsRow: { flexDirection: 'row', marginBottom: 4 },
+  dayChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    backgroundColor: '#f1f1f1',
+    marginRight: 6,
   },
-  dropdownItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.06)' },
-  dropdownItemText: { color: '#FFF5E8', fontSize: 13 },
-  input: {
-    backgroundColor: 'rgba(25, 12, 5, 0.75)',
-    borderRadius: 12,
+  dayChipActive: {
+    backgroundColor: '#0F2744',
+  },
+  dayChipText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#555',
+  },
+  dayChipTextActive: {
+    color: '#fff',
+  },
+  presetChipsWrap: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginBottom: 6,
+  },
+  presetChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    backgroundColor: '#f1f5f9',
     borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.25)',
+    borderColor: '#e2e8f0',
+  },
+  presetChipActive: {
+    backgroundColor: '#0F2744',
+    borderColor: '#0F2744',
+  },
+  presetChipText: {
+    fontSize: 11,
+    color: '#334155',
+    fontWeight: '500',
+  },
+  presetChipTextActive: {
+    color: '#fff',
+    fontWeight: '700',
+  },
+  modalInput: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
     padding: 12,
-    color: '#FFF5E8',
     fontSize: 14,
-    marginBottom: 16,
-  },
-  uneditableBox: {
-    backgroundColor: 'rgba(15, 7, 3, 0.65)',
-    borderRadius: 12,
+    color: '#1a1a1a',
     borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.15)',
-    padding: 12,
-    marginBottom: 16,
+    borderColor: '#e0e0e0',
   },
-  uneditableText: { color: '#C8A892', fontSize: 14, fontWeight: '600' },
-  modalBtnRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  cancelBtn: {
-    flex: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.08)',
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 200, 120, 0.25)',
-  },
-  cancelBtnText: { color: '#FFE5C4', fontSize: 13, fontWeight: '700' },
   saveBtn: {
-    flex: 1,
-    backgroundColor: '#FF9500',
+    backgroundColor: '#0F2744',
     borderRadius: 12,
-    paddingVertical: 12,
+    paddingVertical: 14,
     alignItems: 'center',
+    marginTop: 18,
   },
-  saveBtnText: { color: '#0A0301', fontSize: 13, fontWeight: '900' },
+  saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
+  bottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#ece9e4',
+    flexDirection: 'row',
+    height: 80,
+    paddingBottom: 24,
+    paddingTop: 10,
+  },
+  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  navLabel: { fontSize: 11, fontWeight: '600', color: '#bbb' },
+  navLabelActive: { color: '#0F2744' },
 });

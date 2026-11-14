@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -7,132 +7,170 @@ import {
   TextInput, 
   TouchableOpacity, 
   Switch, 
-  StatusBar, 
-  Alert, 
-  Modal 
+  StatusBar,
+  Alert,
+  Modal,
+  ActivityIndicator
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
-import { useMockStore, lawyerProfile, updateLawyerProfile } from './MockStore';
-import AppHeader from '../../components/AppHeader';
-import BottomNavBar from '../../components/BottomNavBar';
-import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useMockStore, lawyerProfile, updateLawyerProfile, fetchLawyerDashboard } from './MockStore';
+import { getCurrentLawyerId } from '../../constants/authStore';
 
 export default function LawyerProfile() {
   useMockStore();
   const router = useRouter();
+  const params = useLocalSearchParams();
   const [editMode, setEditMode] = useState(false);
   const [showDPMenu, setShowDPMenu] = useState(false);
+  const [saving, setSaving] = useState(false);
   
+  const currentLawyerId = params.lawyerId || params.id || getCurrentLawyerId();
+
   // Local state for editing
   const [editedData, setEditedData] = useState({
-    name: lawyerProfile.name,
-    spec: lawyerProfile.spec,
-    address: lawyerProfile.address,
-    bio: lawyerProfile.about,
-    email: lawyerProfile.email,
-    phone: lawyerProfile.phone,
-    isAvailable: lawyerProfile.isAvailable,
-    experience: lawyerProfile.experience,
-    education: lawyerProfile.education,
+    name: lawyerProfile.name || '',
+    spec: lawyerProfile.spec || '',
+    address: lawyerProfile.address || '',
+    bio: lawyerProfile.about || '',
+    email: lawyerProfile.email || '',
+    phone: lawyerProfile.phone || '',
+    district: lawyerProfile.district || '',
+    isAvailable: lawyerProfile.isAvailable !== undefined ? lawyerProfile.isAvailable : true,
+    experience: lawyerProfile.experience || '',
+    education: lawyerProfile.education || '',
   });
 
-  // Hardware back returns to LawyerHome
-  useAppNavigation({ isHome: false, homeRoute: '/(lawyer)/LawyerHome' });
+  useEffect(() => {
+    if (currentLawyerId) {
+      fetchLawyerDashboard(currentLawyerId);
+    }
+  }, [currentLawyerId]);
 
-  const handleSave = () => {
-    updateLawyerProfile({
-      name: editedData.name,
-      spec: editedData.spec,
-      address: editedData.address,
-      about: editedData.bio,
-      email: editedData.email,
-      phone: editedData.phone,
-      isAvailable: editedData.isAvailable,
-      experience: editedData.experience,
-      education: editedData.education,
+  useEffect(() => {
+    setEditedData({
+      name: lawyerProfile.name || '',
+      spec: lawyerProfile.spec || '',
+      address: lawyerProfile.address || '',
+      bio: lawyerProfile.about || '',
+      email: lawyerProfile.email || '',
+      phone: lawyerProfile.phone || '',
+      district: lawyerProfile.district || '',
+      isAvailable: lawyerProfile.isAvailable !== undefined ? lawyerProfile.isAvailable : true,
+      experience: lawyerProfile.experience || '',
+      education: lawyerProfile.education || '',
     });
-    setEditMode(false);
-    Alert.alert('Success', 'Advocate profile updated successfully!');
+  }, [lawyerProfile.name, lawyerProfile.spec, lawyerProfile.about, lawyerProfile.address, lawyerProfile.isAvailable]);
+
+  const handleNav = (lbl) => {
+    if (lbl === 'home') router.push('/(lawyer)/LawyerHome');
+    if (lbl === 'requests') router.push('/(lawyer)/CaseRequests');
+    if (lbl === 'cases') router.push('/(lawyer)/MyCases');
+    if (lbl === 'schedule') router.push('/(lawyer)/Schedule');
+    if (lbl === 'profile') router.push('/(lawyer)/LawyerProfile');
+  };
+
+  const handleSave = async () => {
+    try {
+      setSaving(true);
+      await updateLawyerProfile({
+        name: editedData.name,
+        spec: editedData.spec,
+        address: editedData.address,
+        about: editedData.bio,
+        email: editedData.email,
+        phone: editedData.phone,
+        district: editedData.district,
+        isAvailable: editedData.isAvailable,
+        experience: editedData.experience,
+        education: editedData.education,
+      }, currentLawyerId);
+      setEditMode(false);
+      Alert.alert('Success', 'Profile updated successfully and saved to database!');
+    } catch (err) {
+      Alert.alert('Update Failed', err.response?.data?.message || err.message || 'Could not update profile.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleChangeDP = () => {
     setShowDPMenu(false);
-    Alert.alert('Profile Avatar', 'Avatar selection updated for chamber profile.');
+    Alert.alert('Change Profile Picture', 'Profile picture upload will be available in a future update.');
   };
 
   const handleRemoveDP = () => {
     setShowDPMenu(false);
-    updateLawyerProfile({ dp: null });
-    Alert.alert('Success', 'Profile photo reset to initials');
+    Alert.alert('Success', 'Profile picture reset to initials.');
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+      <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
       
-      {/* Modern '< Advocate Profile' Header */}
-      <AppHeader
-        title="Advocate Profile"
-        showBack={true}
-        homeRoute="/(lawyer)/LawyerHome"
-        role="lawyer"
-        rightElement={
-          <TouchableOpacity 
-            style={styles.editToggle} 
-            onPress={() => setEditMode(!editMode)}
-            activeOpacity={0.8}
-          >
-            <Text style={styles.editToggleText}>{editMode ? 'CANCEL' : 'EDIT'}</Text>
-          </TouchableOpacity>
-        }
-      />
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Text style={styles.backText}>←</Text>
+        </TouchableOpacity>
+        <Text style={styles.headerTitle}>Profile</Text>
+        <TouchableOpacity style={styles.editToggle} onPress={() => setEditMode(!editMode)}>
+          <Text style={styles.editToggleText}>{editMode ? 'Cancel' : 'Edit'}</Text>
+        </TouchableOpacity>
+      </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Profile Picture & Badges */}
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+        
+        {/* Profile Picture */}
         <View style={styles.profilePicSection}>
           <TouchableOpacity 
             style={styles.profilePicContainer}
             onPress={() => setShowDPMenu(true)}
-            activeOpacity={0.8}
           >
-            <View style={[styles.profilePic, { backgroundColor: lawyerProfile.color || '#2A1206' }]}>
-              <Text style={styles.profilePicText}>{lawyerProfile.initials || 'ADV'}</Text>
+            <View style={[styles.profilePic, { backgroundColor: lawyerProfile.color || '#0F2744' }]}>
+              <Text style={styles.profilePicText}>{lawyerProfile.initials || 'L'}</Text>
             </View>
             <View style={styles.dpBadge}>
-              <Text style={styles.dpBadgeText}>EDIT</Text>
+              <Text style={styles.dpBadgeText}>Edit</Text>
             </View>
           </TouchableOpacity>
-          <Text style={styles.profileName}>{lawyerProfile.name}</Text>
-          <Text style={styles.profileSpec}>{lawyerProfile.spec} · SBC {lawyerProfile.sbc || 'Verified'}</Text>
+          <Text style={styles.profileName}>{lawyerProfile.name || 'Advocate'}</Text>
+          <Text style={styles.profileSpec}>
+            {lawyerProfile.spec} · SBC {lawyerProfile.sbc || 'Pending'}
+          </Text>
+          <View style={[
+            styles.statusPill,
+            !lawyerProfile.isVerified && { backgroundColor: '#B45309' }
+          ]}>
+            <Text style={styles.statusPillText}>
+              {lawyerProfile.isVerified ? 'SBC Verified Advocate' : 'Verification Pending'}
+            </Text>
+          </View>
         </View>
 
         {/* Availability Toggle */}
         <View style={styles.card}>
           <View style={styles.row}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.cardTitle}>Accepting New Consultations</Text>
-              <Text style={styles.cardSub}>Toggle whether citizens can book your chamber</Text>
+            <View>
+              <Text style={styles.cardTitle}>Accepting New Clients</Text>
+              <Text style={styles.cardSub}>Toggle whether clients can hire you</Text>
             </View>
             <Switch
               value={editMode ? editedData.isAvailable : lawyerProfile.isAvailable}
-              onValueChange={(value) => {
+              onValueChange={async (value) => {
                 if (editMode) {
                   setEditedData({...editedData, isAvailable: value});
                 } else {
-                  updateLawyerProfile({ isAvailable: value });
+                  try {
+                    await updateLawyerProfile({ isAvailable: value }, currentLawyerId);
+                  } catch (e) {
+                    console.error('Toggle error:', e);
+                  }
                 }
               }}
-              trackColor={{ false: 'rgba(255,255,255,0.1)', true: '#FF9500' }}
-              thumbColor={editMode ? (editedData.isAvailable ? '#FFF' : '#888') : (lawyerProfile.isAvailable ? '#FFF' : '#888')}
+              trackColor={{ false: '#767577', true: '#1B4332' }}
+              thumbColor={editMode ? (editedData.isAvailable ? '#4ade80' : '#f4f3f4') : (lawyerProfile.isAvailable ? '#4ade80' : '#f4f3f4')}
             />
           </View>
-        </View>
-
-        {/* CNIC (Retained for Lawyer SBC Verification as required) */}
-        <Text style={styles.label}>SBC Verification CNIC</Text>
-        <View style={styles.detailCard}>
-          <Text style={styles.detailValue}>{lawyerProfile.cnic || '42101-7788990-1 (Verified)'}</Text>
         </View>
 
         {/* Profile Fields */}
@@ -142,73 +180,114 @@ export default function LawyerProfile() {
             style={styles.input}
             value={editedData.name}
             onChangeText={(text) => setEditedData({...editedData, name: text})}
-            placeholderTextColor="rgba(255, 220, 180, 0.35)"
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.name}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.name || 'Not provided'}</Text>
           </View>
         )}
 
-        <Text style={styles.label}>Legal Specialty</Text>
+        <Text style={styles.label}>Specialty</Text>
         {editMode ? (
           <TextInput
             style={styles.input}
             value={editedData.spec}
             onChangeText={(text) => setEditedData({...editedData, spec: text})}
-            placeholderTextColor="rgba(255, 220, 180, 0.35)"
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.spec}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.spec || 'General Practice'}</Text>
           </View>
         )}
 
-        <Text style={styles.label}>Chamber Email</Text>
+        <Text style={styles.label}>SBC License Number (Registered)</Text>
+        <View style={[styles.detailCard, { backgroundColor: '#f0ede6' }]}>
+          <Text style={[styles.detailValue, { fontWeight: '700', color: '#0F2744' }]}>
+            {lawyerProfile.sbc || 'Pending Bar Verification'}
+          </Text>
+        </View>
+
+        <Text style={styles.label}>CNIC Number (Registered)</Text>
+        <View style={[styles.detailCard, { backgroundColor: '#f0ede6' }]}>
+          <Text style={[styles.detailValue, { color: '#555' }]}>
+            {lawyerProfile.cnic || 'Not provided'}
+          </Text>
+        </View>
+
+        <Text style={styles.label}>District / City</Text>
+        {editMode ? (
+          <TextInput
+            style={styles.input}
+            value={editedData.district}
+            onChangeText={(text) => setEditedData({...editedData, district: text})}
+          />
+        ) : (
+          <View style={styles.detailCard}>
+            <Text style={styles.detailValue}>{lawyerProfile.district || 'Sindh'}</Text>
+          </View>
+        )}
+
+        <Text style={styles.label}>Email</Text>
         {editMode ? (
           <TextInput
             style={styles.input}
             value={editedData.email}
             onChangeText={(text) => setEditedData({...editedData, email: text})}
             keyboardType="email-address"
-            placeholderTextColor="rgba(255, 220, 180, 0.35)"
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.email}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.email || 'Not provided'}</Text>
           </View>
         )}
 
-        <Text style={styles.label}>Chamber Phone</Text>
+        <Text style={styles.label}>Phone</Text>
         {editMode ? (
           <TextInput
             style={styles.input}
             value={editedData.phone}
             onChangeText={(text) => setEditedData({...editedData, phone: text})}
             keyboardType="phone-pad"
-            placeholderTextColor="rgba(255, 220, 180, 0.35)"
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.phone}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.phone || 'Not provided'}</Text>
           </View>
         )}
 
-        <Text style={styles.label}>Bar Experience</Text>
+        <Text style={styles.label}>Past Experience</Text>
         {editMode ? (
           <TextInput
-            style={styles.input}
+            style={[styles.input, styles.textArea]}
             value={editedData.experience}
             onChangeText={(text) => setEditedData({...editedData, experience: text})}
-            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+            multiline
+            numberOfLines={3}
+            placeholder="e.g. 14 Years practice in High Court and District Courts"
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.experience}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.experience || 'Not provided'}</Text>
           </View>
         )}
 
-        <Text style={styles.label}>Chamber Address</Text>
+        <Text style={styles.label}>Education / Credentials</Text>
+        {editMode ? (
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            value={editedData.education}
+            onChangeText={(text) => setEditedData({...editedData, education: text})}
+            multiline
+            numberOfLines={2}
+            placeholder="e.g. LL.B (SM Law College), LL.M"
+          />
+        ) : (
+          <View style={styles.detailCard}>
+            <Text style={styles.detailValue}>{lawyerProfile.education || 'Not provided'}</Text>
+          </View>
+        )}
+
+        <Text style={styles.label}>Office / Chamber Address</Text>
         {editMode ? (
           <TextInput
             style={[styles.input, styles.textArea]}
@@ -216,15 +295,15 @@ export default function LawyerProfile() {
             onChangeText={(text) => setEditedData({...editedData, address: text})}
             multiline
             numberOfLines={3}
-            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+            placeholder="e.g. Chamber 402, Lawyers Court Building, Karachi"
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.address}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.address || 'Not provided'}</Text>
           </View>
         )}
 
-        <Text style={styles.label}>Advocate Bio</Text>
+        <Text style={styles.label}>Professional Biography</Text>
         {editMode ? (
           <TextInput
             style={[styles.input, styles.textArea]}
@@ -232,24 +311,29 @@ export default function LawyerProfile() {
             onChangeText={(text) => setEditedData({...editedData, bio: text})}
             multiline
             numberOfLines={4}
-            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+            placeholder="Brief biography about your legal practice..."
           />
         ) : (
           <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.about}</Text>
+            <Text style={styles.detailValue}>{lawyerProfile.about || 'Not provided'}</Text>
           </View>
         )}
 
         {/* Save Button - Only show in edit mode */}
         {editMode && (
           <TouchableOpacity 
-            style={styles.saveBtn} 
+            style={[styles.saveBtn, saving && { opacity: 0.7 }]} 
             onPress={handleSave}
-            activeOpacity={0.8}
+            disabled={saving}
           >
-            <Text style={styles.saveText}>SAVE CHANGES</Text>
+            {saving ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.saveText}>SAVE CHANGES TO DATABASE</Text>
+            )}
           </TouchableOpacity>
         )}
+
       </ScrollView>
 
       {/* DP Change Modal */}
@@ -266,176 +350,221 @@ export default function LawyerProfile() {
         >
           <View style={styles.dpMenu}>
             <TouchableOpacity style={styles.dpMenuItem} onPress={handleChangeDP}>
-              <Text style={styles.dpMenuItemText}>Change Chamber Photo</Text>
+              <Text style={styles.dpMenuItemText}>Change Profile Picture</Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.dpMenuItem, styles.dpMenuItemDanger]} onPress={handleRemoveDP}>
-              <Text style={styles.dpMenuItemDangerText}>Reset to Initials Badge</Text>
+              <Text style={styles.dpMenuItemDangerText}>Reset to Initials</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.dpMenuItem} onPress={() => setShowDPMenu(false)}>
-              <Text style={styles.dpMenuItemCancel}>Close</Text>
+              <Text style={styles.dpMenuItemCancel}>Cancel</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
       </Modal>
 
-      {/* Consistent Bottom Nav */}
-      <BottomNavBar role="lawyer" activeTab="profile" />
+      {/* FOOTER */}
+      <View style={styles.bottomNav}>
+        {['Dashboard', 'Requests', 'Cases', 'Schedule', 'Profile'].map((lbl, idx) => {
+          const ids = ['home', 'requests', 'cases', 'schedule', 'profile'];
+          return (
+            <TouchableOpacity
+              key={lbl}
+              style={styles.navItem}
+              onPress={() => handleNav(ids[idx])}
+            >
+              <Text style={[styles.navLabel, ids[idx] === 'profile' && styles.navLabelActive]}>{lbl}</Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#060201' },
-  scroll: { flex: 1 },
-  content: { padding: 16, paddingBottom: 110 },
+  safe: { flex: 1, backgroundColor: '#0F2744' },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: 20,
+    paddingVertical: 18,
+    backgroundColor: '#0F2744',
+  },
+  backBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    backgroundColor: 'rgba(255,255,255,0.12)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  backText: { color: '#fff', fontSize: 16 },
+  headerTitle: { color: '#fff', fontSize: 18, fontWeight: '800' },
   editToggle: {
-    backgroundColor: '#FF9500',
+    backgroundColor: 'rgba(255,255,255,0.15)',
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 10,
-    shadowColor: '#FF9500',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 3,
+    borderRadius: 8,
   },
-  editToggleText: { color: '#0A0301', fontSize: 11, fontWeight: '900', letterSpacing: 0.5 },
+  editToggleText: { color: '#fff', fontSize: 12, fontWeight: '700' },
+  scroll: { flex: 1, backgroundColor: '#F5F3EF' },
+  content: { padding: 20, paddingBottom: 100 },
+  
   profilePicSection: {
     alignItems: 'center',
     marginBottom: 20,
-    marginTop: 6,
   },
   profilePicContainer: {
     position: 'relative',
   },
   profilePic: {
-    width: 90,
-    height: 90,
-    borderRadius: 45,
+    width: 100,
+    height: 100,
+    borderRadius: 50,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FF9500',
-    shadowColor: '#FF9500',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    borderWidth: 3,
+    borderColor: '#0F2744',
   },
   profilePicText: {
-    fontSize: 32,
+    fontSize: 36,
     fontWeight: '800',
-    color: '#FFF5E8',
+    color: '#fff',
   },
   dpBadge: {
     position: 'absolute',
     bottom: 0,
     right: 0,
-    backgroundColor: '#FF9500',
+    backgroundColor: '#0F2744',
     paddingHorizontal: 8,
     paddingVertical: 2,
     borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: '#060201',
+    borderWidth: 2,
+    borderColor: '#fff',
   },
   dpBadgeText: {
-    color: '#0A0301',
+    color: '#fff',
     fontSize: 9,
-    fontWeight: '900',
+    fontWeight: '700',
   },
   profileName: {
-    fontSize: 20,
-    fontWeight: '800',
-    color: '#FFF5E8',
-    marginTop: 10,
-  },
-  profileSpec: {
-    fontSize: 13,
-    color: '#FFB74D',
-    marginTop: 2,
-    fontWeight: '600',
-  },
-  card: {
-    backgroundColor: 'rgba(22, 10, 4, 0.78)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.22)',
-    marginBottom: 16,
-  },
-  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  cardTitle: { fontSize: 14, fontWeight: '800', color: '#FFF5E8' },
-  cardSub: { fontSize: 12, color: 'rgba(255, 220, 180, 0.6)', marginTop: 2 },
-  label: {
-    fontSize: 11,
+    fontSize: 22,
     fontWeight: '700',
-    color: '#FFB74D',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 6,
+    color: '#1a1a1a',
     marginTop: 8,
   },
-  detailCard: {
-    backgroundColor: 'rgba(25, 12, 5, 0.75)',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.2)',
-    marginBottom: 8,
-  },
-  detailValue: { fontSize: 14, color: '#FFF5E8', fontWeight: '600' },
-  input: {
-    backgroundColor: 'rgba(25, 12, 5, 0.75)',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.3)',
-    color: '#FFF5E8',
+  profileSpec: {
     fontSize: 14,
+    color: '#888',
+  },
+  statusPill: {
+    marginTop: 6,
+    backgroundColor: '#059669',
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  statusPillText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 18,
+    elevation: 3,
+    marginBottom: 12,
+  },
+  row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  cardTitle: { fontSize: 15, fontWeight: '700', color: '#1a1a1a' },
+  cardSub: { fontSize: 12, color: '#888', marginTop: 2 },
+  
+  label: { fontSize: 11, fontWeight: '700', color: '#aaa', textTransform: 'uppercase', letterSpacing: 0.5, marginTop: 10, marginBottom: 4 },
+  input: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    fontSize: 14,
+    color: '#1a1a1a',
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
     marginBottom: 8,
   },
-  textArea: {
-    minHeight: 80,
-    textAlignVertical: 'top',
+  textArea: { textAlignVertical: 'top', minHeight: 80 },
+  detailCard: {
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
+    marginBottom: 8,
   },
+  detailValue: { fontSize: 14, color: '#1a1a1a' },
+  
   saveBtn: {
-    backgroundColor: '#FF9500',
-    paddingVertical: 14,
-    borderRadius: 14,
+    backgroundColor: '#0F2744',
+    borderRadius: 12,
+    paddingVertical: 16,
     alignItems: 'center',
-    marginTop: 14,
-    shadowColor: '#FF9500',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.4,
-    shadowRadius: 8,
+    marginTop: 10,
+    marginBottom: 20,
   },
-  saveText: { color: '#0A0301', fontSize: 14, fontWeight: '900', letterSpacing: 0.8 },
+  saveText: { color: '#fff', fontSize: 14, fontWeight: '800', letterSpacing: 1 },
+  
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.82)',
+    backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center',
     alignItems: 'center',
-    padding: 20,
   },
   dpMenu: {
-    backgroundColor: '#0E0603',
-    borderRadius: 20,
-    width: '85%',
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    width: '80%',
     maxWidth: 320,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.25)',
+    padding: 8,
   },
   dpMenuItem: {
     paddingVertical: 14,
     paddingHorizontal: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: '#f5f3f0',
   },
   dpMenuItemDanger: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: '#f5f3f0',
   },
-  dpMenuItemText: { fontSize: 14, color: '#FFF5E8', textAlign: 'center', fontWeight: '600' },
-  dpMenuItemDangerText: { fontSize: 14, color: '#ef4444', textAlign: 'center', fontWeight: '700' },
-  dpMenuItemCancel: { fontSize: 14, color: '#FFB74D', textAlign: 'center', fontWeight: '700' },
+  dpMenuItemText: {
+    fontSize: 15,
+    color: '#333',
+    textAlign: 'center',
+  },
+  dpMenuItemDangerText: {
+    fontSize: 15,
+    color: '#ef4444',
+    textAlign: 'center',
+  },
+  dpMenuItemCancel: {
+    fontSize: 15,
+    color: '#888',
+    textAlign: 'center',
+  },
+  
+  bottomNav: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+    backgroundColor: '#fff',
+    borderTopWidth: 1,
+    borderTopColor: '#ece9e4',
+    flexDirection: 'row',
+    height: 80,
+    paddingBottom: 24,
+    paddingTop: 10,
+  },
+  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  navLabel: { fontSize: 11, fontWeight: '600', color: '#bbb' },
+  navLabelActive: { color: '#0F2744' },
 });

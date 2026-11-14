@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,26 +8,55 @@ import {
   Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import styles from './CitizenHome.styles';
-import { useMockStore, userData, lawyers, activeCases } from './MockStore';
-import TopHeaderMenu from '../../components/TopHeaderMenu';
-import LanguagePeekingTab from '../../components/LanguagePeekingTab';
-import LiquidGlassButton from '../../components/LiquidGlassButton';
-import BottomNavBar from '../../components/BottomNavBar';
-import { useAppNavigation } from '../../hooks/useAppNavigation';
+import {
+  useMockStore,
+  userData,
+  lawyers,
+  ngos,
+  activeCases,
+  fetchCitizenDashboard,
+  fetchLawyersList,
+  fetchNgosList,
+  fetchCitizenCases,
+} from './MockStore';
+import { getCurrentCitizenId } from '../../constants/authStore';
+
+const navItems = [
+  { id: 'home',     label: 'Home'    },
+  { id: 'cases',    label: 'Cases'   },
+  { id: 'lawyers',  label: 'Lawyers' },
+  { id: 'profile',  label: 'Profile' },
+];
 
 export default function CitizenHome() {
   useMockStore();
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const currentCitizenId = params.citizenId || params.id || getCurrentCitizenId();
+
+  const [activeNav, setActiveNav] = useState('home');
   const [showCasePopup, setShowCasePopup] = useState(false);
   const [showLawyerProfile, setShowLawyerProfile] = useState(false);
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
-  const [requestSent] = useState(false);
 
-  // Enforce double-back to exit on Home, never fall back to login screen
-  useAppNavigation({ isHome: true, homeRoute: '/(citizen)/CitizenHome' });
+  useEffect(() => {
+    fetchLawyersList();
+    fetchNgosList();
+    if (currentCitizenId) {
+      fetchCitizenDashboard(currentCitizenId);
+    }
+  }, [currentCitizenId]);
+
+  const handleNav = (id) => {
+    setActiveNav(id);
+    if (id === 'cases')   router.push('/(citizen)/MyCases');
+    if (id === 'lawyers') router.push('/(citizen)/FindLawyer');
+    if (id === 'home')    router.push('/(citizen)/CitizenHome');
+    if (id === 'profile') router.push('/(citizen)/Profile');
+  };
 
   const handleBuildCase = () => {
     setShowCasePopup(true);
@@ -53,17 +82,20 @@ export default function CitizenHome() {
     });
   };
 
-  // Filter lawyers by citizen's current district (fallback to all verified lawyers)
+  // Show verified lawyers: prioritize citizen district if available, otherwise display all verified advocates
   const localLawyers = lawyers.filter(
-    l => userData.district && l.district && l.district.toLowerCase() === userData.district.toLowerCase()
+    (l) => userData.district && l.district && l.district.toLowerCase() === userData.district.toLowerCase()
   );
-  const displayLawyers = localLawyers.length > 0 ? localLawyers : lawyers;
+  const otherLawyers = lawyers.filter(
+    (l) => !userData.district || !l.district || l.district.toLowerCase() !== userData.district.toLowerCase()
+  );
+  const displayLawyers = localLawyers.length > 0 ? [...localLawyers, ...otherLawyers] : lawyers;
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#140803" />
+      <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
 
-      {/* HEADER - Main Dashboard (No Back Button) */}
+      {/* HEADER */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.brandRow}>
@@ -72,16 +104,16 @@ export default function CitizenHome() {
             </View>
             <View style={styles.brand}>
               <Text style={styles.brandName}>Barq-e-Insaf</Text>
-              <Text style={styles.brandSub}>Citizen Portal</Text>
+              <Text style={styles.brandSub}>Lightning Justice</Text>
             </View>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/(citizen)/MyCases')}>
-              <Text style={styles.notifBtnText}>Cases ({activeCases.length})</Text>
+            <TouchableOpacity style={styles.notifBtn}>
+              <Text style={styles.notifBtnText}>Notif</Text>
             </TouchableOpacity>
-
-            {/* Top Right Dropdown Menu with Sign Out, Profile, Dark/Light Mode */}
-            <TopHeaderMenu role="citizen" avatarText={userData.dp || 'AK'} />
+            <View style={styles.avatar}>
+              <Text style={styles.avatarText}>{userData.dp}</Text>
+            </View>
           </View>
         </View>
 
@@ -93,11 +125,10 @@ export default function CitizenHome() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* BUILD A CASE LIQUID GLASS BUTTON */}
-        <LiquidGlassButton
-          title="⚡ BUILD YOUR CASE"
-          onPress={handleBuildCase}
-        />
+        {/* BUILD A CASE BUTTON */}
+        <TouchableOpacity style={styles.buildCaseBtn} onPress={handleBuildCase}>
+          <Text style={styles.buildCaseBtnText}>Build a Case</Text>
+        </TouchableOpacity>
 
         {/* VERIFIED LAWYERS NEAR YOU */}
         <Text style={styles.sectionLabel}>
@@ -123,18 +154,18 @@ export default function CitizenHome() {
                 <View style={styles.ratingContainer}>
                   <Text style={styles.ratingText}>Rating: {l.rating}</Text>
                 </View>
-                <Text style={styles.sbcBadge}>SBC Approved</Text>
+                <Text style={styles.sbcBadge}>{l.sbc ? `SBC ${l.sbc}` : 'SBC Approved'}</Text>
               </TouchableOpacity>
             ))
           ) : (
-            <Text style={styles.emptyText}>No lawyers found in this district.</Text>
+            <Text style={styles.emptyText}>Loading verified advocates...</Text>
           )}
         </ScrollView>
 
         {/* ACTIVE CASES */}
         <Text style={styles.sectionLabel}>My Active Cases</Text>
         {activeCases.length === 0 && (
-          <Text style={styles.emptyText}>No active cases yet.</Text>
+          <Text style={styles.emptyText}>No active cases yet. Tap 'Build a Case' to register one.</Text>
         )}
         {activeCases.map((c, i) => (
           <TouchableOpacity
@@ -145,15 +176,52 @@ export default function CitizenHome() {
             <View style={[styles.caseDot, { backgroundColor: c.status === 'Active' ? '#4ade80' : '#f59e0b' }]} />
             <View style={styles.caseInfo}>
               <Text style={styles.caseTitle}>{c.title}</Text>
-              <Text style={styles.caseSub}>{c.type} Law · Updated {c.lastUpdated}</Text>
+              <Text style={styles.caseSub}>{c.type} Law · {c.district}</Text>
             </View>
             <Text style={styles.badgeText}>{c.status}</Text>
           </TouchableOpacity>
         ))}
+
+        {/* VERIFIED NGOS & MEDIA SECTION */}
+        {ngos.length > 0 && (
+          <>
+            <Text style={[styles.sectionLabel, { marginTop: 20 }]}>Legal Aid NGOs & Media</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.lawyerRow}>
+              {ngos.map((ngo, ni) => (
+                <View key={ngo.id || ni} style={[styles.lawyerBubble, { minWidth: 140, borderColor: '#eedcd0' }]}>
+                  <View style={[styles.lawyerAvatar, { backgroundColor: '#5C1A1A' }]}>
+                    <Text style={styles.lawyerAvatarText}>{ngo.initials || 'NGO'}</Text>
+                  </View>
+                  <Text style={styles.lawyerName} numberOfLines={1}>{ngo.name}</Text>
+                  <Text style={styles.lawyerSpec}>{ngo.type}</Text>
+                  <Text style={[styles.sbcBadge, { backgroundColor: '#e2f0d9', color: '#276738' }]}>
+                    {ngo.district}
+                  </Text>
+                </View>
+              ))}
+            </ScrollView>
+          </>
+        )}
       </ScrollView>
 
-      {/* Consistent Bottom Nav */}
-      <BottomNavBar role="citizen" activeTab="home" />
+      {/* BOTTOM NAV */}
+      <View style={styles.bottomNav}>
+        {navItems.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={styles.navItem}
+            onPress={() => handleNav(item.id)}
+          >
+            <Text style={[
+              styles.navLabel,
+              activeNav === item.id && styles.navLabelActive,
+            ]}>
+              {item.label}
+            </Text>
+            {activeNav === item.id && <View style={styles.navActiveDot} />}
+          </TouchableOpacity>
+        ))}
+      </View>
 
       {/* CASE TYPE POPUP */}
       <Modal
@@ -299,18 +367,18 @@ export default function CitizenHome() {
                     <Text style={styles.requestSentText}>Request Sent Successfully</Text>
                   </View>
                 ) : (
-                  <View style={{ marginTop: 14, marginBottom: 8 }}>
-                    <LiquidGlassButton
-                      title="REQUEST CONSULTATION"
-                      onPress={() => {
-                        setShowLawyerProfile(false);
-                        router.push({
-                          pathname: '/(citizen)/RequestConsultation',
-                          params: { lawyerId: selectedLawyer.id }
-                        });
-                      }}
-                    />
-                  </View>
+                  <TouchableOpacity 
+                    style={styles.sendRequestBtn}
+                    onPress={() => {
+                      setShowLawyerProfile(false);
+                      router.push({
+                        pathname: '/(citizen)/RequestConsultation',
+                        params: { lawyerId: selectedLawyer.id }
+                      });
+                    }}
+                  >
+                    <Text style={styles.sendRequestBtnText}>Request Consultation</Text>
+                  </TouchableOpacity>
                 )}
               </ScrollView>
             )}
@@ -343,8 +411,6 @@ export default function CitizenHome() {
           </View>
         </View>
       </Modal>
-      {/* PEinterface: Sliding Language Card (Urdu/Sindhi/English) */}
-      <LanguagePeekingTab />
     </SafeAreaView>
   );
 }

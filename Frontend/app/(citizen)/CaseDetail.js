@@ -10,12 +10,8 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import Svg, { Path } from 'react-native-svg';
 import styles from './CaseDetail.styles';
 import { useMockStore, activeCases, updateCase } from './MockStore';
-import AppHeader from '../../components/AppHeader';
-import BottomNavBar from '../../components/BottomNavBar';
-import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 export default function CaseDetail() {
   useMockStore();
@@ -23,90 +19,76 @@ export default function CaseDetail() {
   const params = useLocalSearchParams();
   const caseId = params.caseId;
 
-  // Intercept hardware back button to return to MyCases
-  useAppNavigation({ isHome: false, homeRoute: '/(citizen)/MyCases' });
-
-  const caseData = activeCases.find((c) => c.id === caseId);
+  const caseData = activeCases.find(c => c.id === caseId);
 
   const [editMode, setEditMode] = useState(false);
   const [editedTitle, setEditedTitle] = useState(caseData ? caseData.title : '');
   const [editedDesc, setEditedDesc] = useState(caseData ? caseData.description : '');
 
-  const handleSaveChanges = () => {
-    if (!editedTitle || !editedDesc) {
+  const handleNav = (id) => {
+    if (id === 'home')    router.push('/(citizen)/CitizenHome');
+    if (id === 'cases')   router.push('/(citizen)/MyCases');
+    if (id === 'lawyers') router.push('/(citizen)/FindLawyer');
+    if (id === 'profile') router.push('/(citizen)/Profile');
+  };
+
+  const handleSaveChanges = async () => {
+    if (!editedTitle.trim() || !editedDesc.trim()) {
       Alert.alert('Error', 'Please fill in all fields.');
       return;
     }
-    updateCase(caseData.id, {
-      title: editedTitle,
-      description: editedDesc,
+    await updateCase(caseData.id, {
+      title: editedTitle.trim(),
+      description: editedDesc.trim(),
     });
     setEditMode(false);
-    Alert.alert('Success', 'Case updated successfully!');
-  };
-
-  const handleCallLawyer = (phone) => {
-    Alert.alert(
-      'Contact Advocate',
-      `Calling Advocate at ${phone} to arrange consultation meeting.`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Call Now', onPress: () => Alert.alert('Dialer', `Calling ${phone}...`) },
-      ]
-    );
+    Alert.alert('Success', 'Case updated successfully in database!');
   };
 
   if (!caseData) {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
-        <AppHeader
-          title="Case Details"
-          showBack={true}
-          homeRoute="/(citizen)/MyCases"
-          role="citizen"
-        />
-        <View style={[styles.scrollContent, { alignItems: 'center', justifyContent: 'center', flex: 1 }]}>
-          <Text style={styles.descriptionText}>Case record not found.</Text>
+        <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
+        <View style={styles.header}>
+          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+            <Text style={styles.backText}>Back</Text>
+          </TouchableOpacity>
         </View>
-        <BottomNavBar role="citizen" activeTab="cases" />
+        <View style={styles.scrollContent}>
+          <Text style={styles.descriptionText}>Case not found</Text>
+        </View>
       </SafeAreaView>
     );
   }
 
-  const sig = caseData.digitalSignature;
-
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+      <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
 
-      {/* Modern '< Case Details' Header */}
-      <AppHeader
-        title="Case Details"
-        showBack={true}
-        homeRoute="/(citizen)/MyCases"
-        role="citizen"
-      />
+      {/* HEADER */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
+        <View style={styles.brandRow}>
+          <View style={styles.logoBadge}>
+            <Text style={styles.logoBadgeText}>BI</Text>
+          </View>
+          <Text style={styles.headerTitle}>Case Details</Text>
+        </View>
+      </View>
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 }]}
+        contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* CASE HEADER */}
         <View style={styles.caseHeader}>
           {editMode ? (
-            <View>
-              <Text style={{ color: '#FFE2B8', fontSize: 11, marginBottom: 4 }}>Edit Case Title</Text>
+            <View style={styles.editForm}>
+              <Text style={styles.editLabel}>Edit Case Title</Text>
               <TextInput
-                style={{
-                  backgroundColor: 'rgba(32, 14, 5, 0.7)',
-                  color: '#fff',
-                  padding: 8,
-                  borderRadius: 8,
-                  borderWidth: 1,
-                  borderColor: 'rgba(255, 149, 0, 0.3)',
-                }}
+                style={styles.editInput}
                 value={editedTitle}
                 onChangeText={setEditedTitle}
               />
@@ -116,134 +98,95 @@ export default function CaseDetail() {
           )}
 
           <View style={styles.caseStatusRow}>
-            <View
-              style={[
-                styles.statusBadge,
-                caseData.status === 'Active' ? styles.statusActive : styles.statusPending,
-              ]}
-            >
-              <Text
-                style={[
-                  styles.statusText,
-                  caseData.status === 'Active'
-                    ? styles.statusTextActive
-                    : styles.statusTextPending,
-                ]}
-              >
-                {caseData.status}
-              </Text>
+            <View style={styles.statusBadge}>
+              <Text style={styles.statusText}>{caseData.status}</Text>
             </View>
-            <Text style={styles.caseType}>{caseData.type || 'Legal Matter'}</Text>
+            <Text style={styles.caseType}>{caseData.type} Law</Text>
           </View>
         </View>
 
-        {/* ⚖️ ADVOCATE DIGITAL SIGNATURE & CONSULTANCY APPOINTMENT CARD */}
-        {sig && (
-          <View style={styles.consultancyCard}>
-            <View style={styles.consultancyHeader}>
-              <View style={styles.sealIcon}>
-                <Text style={styles.sealIconText}>SBC</Text>
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.consultancyTitle}>
-                  Consultancy Scheduled & Digitally Signed
-                </Text>
-                <Text style={styles.consultancyCert}>
-                  Signed by {sig.signedName} · #{sig.certificateId}
-                </Text>
-              </View>
-            </View>
-
-            {/* Highlighted Visit Time */}
-            <View style={styles.visitHighlightBox}>
-              <Text style={styles.visitHighlightLabel}>SCHEDULED CONSULTATION VISIT</Text>
-              <Text style={styles.visitHighlightTime}>{sig.consultancyTime}</Text>
-              <Text style={styles.visitHighlightChamber}>
-                📍 {sig.chamberAddress}
-              </Text>
-            </View>
-
-            {/* Signature Stamp Display */}
-            <View style={styles.lawyerSignatureDisplay}>
-              {sig.signatureType === 'drawn' && sig.drawnPaths && sig.drawnPaths.length > 0 ? (
-                <View style={{ width: '100%', height: 60, marginVertical: 4 }}>
-                  <Svg width="100%" height={60}>
-                    {sig.drawnPaths.map((p, idx) => (
-                      <Path
-                        key={idx}
-                        d={p}
-                        stroke="#FFA726"
-                        strokeWidth={2.5}
-                        fill="none"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    ))}
-                  </Svg>
-                </View>
-              ) : (
-                <Text style={styles.lawyerCursiveName}>{sig.signedName}</Text>
-              )}
-              <Text style={styles.lawyerStampFooter}>
-                Licence: {sig.sbcLicense} · Signed: {sig.signedAt}
-              </Text>
-            </View>
-
-            {/* Direct Contact Actions to arrange meeting */}
-            <View style={styles.contactActionRow}>
-              <TouchableOpacity
-                style={styles.callLawyerBtn}
-                onPress={() => handleCallLawyer(sig.lawyerPhone)}
-                activeOpacity={0.84}
-              >
-                <Text style={styles.callLawyerBtnText}>
-                  📞 Call Advocate: {sig.lawyerPhone}
-                </Text>
-              </TouchableOpacity>
-              {sig.notes && (
-                <Text style={styles.notesBoxText}>
-                  Advocate Note: "{sig.notes}"
-                </Text>
-              )}
-            </View>
-          </View>
-        )}
-
-        {/* CASE DESCRIPTION CARD */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Case Description & Facts</Text>
-          <Text style={styles.descriptionText}>{caseData.description}</Text>
-        </View>
-
-        {/* EVIDENCE DOCUMENTS */}
-        <View style={styles.sectionCard}>
-          <Text style={styles.sectionTitle}>Evidence & Supporting Files</Text>
-          {caseData.evidence && caseData.evidence.length > 0 ? (
-            <View style={styles.evidenceList}>
-              {caseData.evidence.map((ev, index) => (
-                <View key={ev.id || index} style={styles.evidenceItem}>
-                  <View>
-                    <Text style={styles.evidenceName}>{ev.name}</Text>
-                    <Text style={styles.evidenceMeta}>
-                      {ev.type} · {ev.size}
-                    </Text>
-                  </View>
-                  <View style={styles.evidenceBadge}>
-                    <Text style={styles.evidenceBadgeText}>Verified</Text>
-                  </View>
-                </View>
-              ))}
+        {/* CASE SUMMARY PROFILE */}
+        <View style={styles.descriptionSection}>
+          <Text style={styles.sectionTitle}>Case Summary</Text>
+          {editMode ? (
+            <View style={styles.editForm}>
+              <Text style={styles.editLabel}>Edit Summary Description</Text>
+              <TextInput
+                style={[styles.editInput, styles.editTextArea]}
+                multiline
+                numberOfLines={4}
+                value={editedDesc}
+                onChangeText={setEditedDesc}
+              />
             </View>
           ) : (
-            <Text style={{ color: 'rgba(255, 220, 180, 0.5)', fontSize: 12 }}>
-              No evidence files attached.
-            </Text>
+            <Text style={styles.descriptionText}>{caseData.description}</Text>
           )}
         </View>
+
+        {/* METADATA INFO */}
+        <View style={styles.infoSection}>
+          <Text style={styles.sectionTitle}>Filing Details</Text>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Filing Date</Text>
+            <Text style={styles.infoValue}>{caseData.filingDate}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Last Updated</Text>
+            <Text style={styles.infoValue}>{caseData.lastUpdated}</Text>
+          </View>
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Jurisdiction</Text>
+            <Text style={styles.infoValue}>{caseData.district || 'Sindh'}</Text>
+          </View>
+        </View>
+
+        {/* EVIDENCE BUTTON */}
+        <TouchableOpacity 
+          style={styles.evidenceVaultBtn}
+          onPress={() => router.push({
+            pathname: '/(citizen)/CaseEvidence',
+            params: { caseId: caseData.id }
+          })}
+        >
+          <Text style={styles.evidenceVaultBtnText}>
+            Open Evidence Vault ({Array.isArray(caseData.evidence) ? caseData.evidence.length : 0} {Array.isArray(caseData.evidence) && caseData.evidence.length === 1 ? 'file' : 'files'})
+          </Text>
+        </TouchableOpacity>
+
+        {/* EDIT TOGGLE CONTROLS */}
+        {editMode ? (
+          <View style={styles.editActionRow}>
+            <TouchableOpacity style={styles.saveBtn} onPress={handleSaveChanges}>
+              <Text style={styles.saveBtnText}>Save Changes</Text>
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.cancelBtn} onPress={() => {
+              setEditedTitle(caseData.title);
+              setEditedDesc(caseData.description);
+              setEditMode(false);
+            }}>
+              <Text style={styles.cancelBtnText}>Cancel</Text>
+            </TouchableOpacity>
+          </View>
+        ) : (
+          <TouchableOpacity style={styles.updateBtn} onPress={() => setEditMode(true)}>
+            <Text style={styles.updateBtnText}>Edit Case Details</Text>
+          </TouchableOpacity>
+        )}
       </ScrollView>
 
-      {/* Consistent Bottom Nav */}
-      <BottomNavBar role="citizen" activeTab="cases" />
+      {/* FOOTER */}
+      <View style={styles.bottomNav}>
+        {['Home', 'Cases', 'Lawyers', 'Profile'].map((lbl) => (
+          <TouchableOpacity
+            key={lbl}
+            style={styles.navItem}
+            onPress={() => handleNav(lbl.toLowerCase())}
+          >
+            <Text style={styles.navLabel}>{lbl}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </SafeAreaView>
   );
 }

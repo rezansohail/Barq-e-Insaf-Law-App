@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -9,24 +9,33 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './MyCases.styles';
-import { useMockStore, activeCases } from './MockStore';
-import AppHeader from '../../components/AppHeader';
-import BottomNavBar from '../../components/BottomNavBar';
-import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useMockStore, activeCases, fetchCitizenCases, userData } from './MockStore';
 
 const filters = ['All', 'Active', 'Pending', 'Closed'];
 
 export default function MyCases() {
   useMockStore();
   const router = useRouter();
+  const [activeNav, setActiveNav] = useState('cases');
   const [activeFilter, setActiveFilter] = useState('All');
 
-  // Enforces hardware back button goes back to CitizenHome
-  useAppNavigation({ isHome: false, homeRoute: '/(citizen)/CitizenHome' });
+  useEffect(() => {
+    if (userData.id) {
+      fetchCitizenCases(userData.id);
+    }
+  }, [userData.id]);
 
   const filtered = activeFilter === 'All'
     ? activeCases
     : activeCases.filter(c => c.status === activeFilter);
+
+  const handleNav = (id) => {
+    setActiveNav(id);
+    if (id === 'home')    router.push('/(citizen)/CitizenHome');
+    if (id === 'cases')   router.push('/(citizen)/MyCases');
+    if (id === 'lawyers') router.push('/(citizen)/FindLawyer');
+    if (id === 'profile') router.push('/(citizen)/Profile');
+  };
 
   const handleCasePress = (caseItem) => {
     router.push({
@@ -37,15 +46,20 @@ export default function MyCases() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+      <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
 
-      {/* Modern Header: '< My Cases' */}
-      <AppHeader
-        title="My Cases"
-        showBack={true}
-        homeRoute="/(citizen)/CitizenHome"
-        role="citizen"
-      />
+      {/* Header */}
+      <View style={styles.header}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+          <Text style={styles.backText}>Back</Text>
+        </TouchableOpacity>
+        <View style={styles.brandRow}>
+          <View style={styles.logoBadge}>
+            <Text style={styles.logoBadgeText}>BI</Text>
+          </View>
+          <Text style={styles.headerTitle}>My Cases</Text>
+        </View>
+      </View>
 
       <ScrollView
         style={styles.scroll}
@@ -63,7 +77,6 @@ export default function MyCases() {
               key={f}
               style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
               onPress={() => setActiveFilter(f)}
-              activeOpacity={0.75}
             >
               <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>
                 {f}
@@ -74,14 +87,13 @@ export default function MyCases() {
 
         {/* CASE CARDS */}
         {filtered.length === 0 && (
-          <Text style={styles.emptyText}>No cases recorded yet.</Text>
+          <Text style={styles.caseMeta}>No cases yet</Text>
         )}
         {filtered.map((c, i) => (
           <TouchableOpacity
             key={i}
             style={styles.caseCard}
             onPress={() => handleCasePress(c)}
-            activeOpacity={0.78}
           >
             <View style={styles.caseCardTop}>
               <View style={styles.caseType}>
@@ -90,12 +102,31 @@ export default function MyCases() {
               <Text style={styles.badgeText}>{c.status}</Text>
             </View>
             <Text style={styles.caseMeta}>Filing Date: {c.filingDate}</Text>
+            
+            {/* NO case description shown here as per prompt details */}
+            
+            <View style={styles.caseFooter}>
+              <Text style={styles.caseFooterText}>Updated {c.lastUpdated}</Text>
+              <TouchableOpacity style={styles.viewBtn} onPress={() => handleCasePress(c)}>
+                <Text style={styles.viewBtnText}>View Details</Text>
+              </TouchableOpacity>
+            </View>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* Consistent Bottom Nav */}
-      <BottomNavBar role="citizen" activeTab="cases" />
+      {/* BOTTOM NAV */}
+      <View style={styles.bottomNav}>
+        {['Home', 'Cases', 'Lawyers', 'Profile'].map((lbl) => (
+          <TouchableOpacity
+            key={lbl}
+            style={styles.navItem}
+            onPress={() => handleNav(lbl.toLowerCase())}
+          >
+            <Text style={[styles.navLabel, lbl === 'Cases' && styles.navLabelActive]}>{lbl}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
     </SafeAreaView>
   );
 }
