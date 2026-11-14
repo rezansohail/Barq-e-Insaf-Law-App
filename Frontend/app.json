@@ -17,6 +17,10 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
+      "navigationBar": {
+        "backgroundColor": "#080402",
+        "barStyle": "light-content"
+      },
       "predictiveBackGestureEnabled": false,
       "package": "com.anonymous.BarqEInsafApp"
     },

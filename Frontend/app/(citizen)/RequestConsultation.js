@@ -13,13 +13,17 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { useMockStore, lawyers, requestConsultation, userData } from './MockStore';
+import { useMockStore, lawyers, requestConsultation } from './MockStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 export default function RequestConsultation() {
   useMockStore();
   const router = useRouter();
   const params = useLocalSearchParams();
   const targetLawyerId = params.lawyerId;
+  useAppNavigation({ isHome: false, homeRoute: '/(citizen)/CitizenHome' });
 
   const lawyer = lawyers.find((l) => String(l.id) === String(targetLawyerId)) || {
     id: targetLawyerId,
@@ -60,7 +64,7 @@ export default function RequestConsultation() {
         alert(successMsg);
         router.replace('/(citizen)/CitizenHome');
       } else {
-        Alert.alert('Request Submitted! ⚡', successMsg, [
+        Alert.alert('Consultation Requested', successMsg, [
           {
             text: 'OK',
             onPress: () => router.replace('/(citizen)/CitizenHome'),
@@ -77,16 +81,15 @@ export default function RequestConsultation() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
+      <StatusBar barStyle="light-content" backgroundColor="#080402" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>← Back</Text>
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Request Consultation</Text>
-        <View style={{ width: 40 }} />
-      </View>
+      <AppHeader 
+        title="Request Consultation" 
+        showBack={true} 
+        homeRoute="/(citizen)/CitizenHome"
+        role="citizen"
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Lawyer Summary Card */}
@@ -98,7 +101,7 @@ export default function RequestConsultation() {
             <Text style={styles.lawyerName}>{lawyer.name}</Text>
             <Text style={styles.lawyerSpec}>{lawyer.spec}</Text>
             <Text style={styles.lawyerSbc}>Licence: {lawyer.sbc || 'SBC Approved'}</Text>
-            <Text style={styles.lawyerDistrict}>📍 {lawyer.district || 'Sindh Jurisdiction'}</Text>
+            <Text style={styles.lawyerDistrict}>Chamber District: {lawyer.district || 'Sindh Jurisdiction'}</Text>
           </View>
         </View>
 
@@ -110,7 +113,7 @@ export default function RequestConsultation() {
           <TextInput
             style={styles.input}
             placeholder="e.g. Property Boundary Dispute / Cheque Dishonor"
-            placeholderTextColor="#999"
+            placeholderTextColor="rgba(255,255,255,0.3)"
             value={problemStatement}
             onChangeText={setProblemStatement}
           />
@@ -119,7 +122,7 @@ export default function RequestConsultation() {
           <TextInput
             style={[styles.input, styles.textArea]}
             placeholder="Describe the incident, dispute history, parties involved, or urgent court relief needed..."
-            placeholderTextColor="#999"
+            placeholderTextColor="rgba(255,255,255,0.3)"
             multiline
             numberOfLines={4}
             value={caseSummary}
@@ -130,7 +133,7 @@ export default function RequestConsultation() {
           <TextInput
             style={styles.input}
             placeholder="YYYY-MM-DD"
-            placeholderTextColor="#999"
+            placeholderTextColor="rgba(255,255,255,0.3)"
             value={selectedDate}
             onChangeText={setSelectedDate}
           />
@@ -158,7 +161,7 @@ export default function RequestConsultation() {
             <TextInput
               style={styles.input}
               placeholder="e.g. 10:00 AM - 01:00 PM"
-              placeholderTextColor="#999"
+              placeholderTextColor="rgba(255,255,255,0.3)"
               value={selectedTime}
               onChangeText={setSelectedTime}
             />
@@ -172,74 +175,65 @@ export default function RequestConsultation() {
             {submitting ? (
               <ActivityIndicator color="#fff" />
             ) : (
-              <Text style={styles.submitBtnText}>Send Consultation Request ⚡</Text>
+              <Text style={styles.submitBtnText}>Send Consultation Request</Text>
             )}
           </TouchableOpacity>
         </View>
       </ScrollView>
+
+      {/* Shared bottom navigation */}
+      <BottomNavBar role="citizen" activeTab="lawyers" />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#5C1A1A' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 16,
-    backgroundColor: '#5C1A1A',
-  },
-  backBtn: { paddingVertical: 6, paddingHorizontal: 8 },
-  backText: { color: '#FFEED6', fontSize: 14, fontWeight: '700' },
-  headerTitle: { color: '#fff', fontSize: 17, fontWeight: '800' },
-  scrollContent: { padding: 20, paddingBottom: 60, backgroundColor: '#F8F6F2', minHeight: '100%' },
+  safe: { flex: 1, backgroundColor: '#080402' },
+  scrollContent: { padding: 16, paddingBottom: 110, backgroundColor: '#080402' },
   lawyerCard: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(32, 16, 7, 0.94)',
     borderRadius: 16,
     padding: 16,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 14,
-    marginBottom: 20,
+    marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#ece9e4',
-    elevation: 2,
+    borderColor: 'rgba(255, 160, 40, 0.35)',
   },
   avatar: {
     width: 52,
     height: 52,
     borderRadius: 26,
-    backgroundColor: '#0F2744',
+    backgroundColor: '#E65100',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#FF9100',
   },
   avatarText: { color: '#fff', fontSize: 18, fontWeight: '800' },
   lawyerInfo: { flex: 1 },
-  lawyerName: { fontSize: 16, fontWeight: '800', color: '#1a1a1a' },
-  lawyerSpec: { fontSize: 13, color: '#666', marginTop: 2 },
-  lawyerSbc: { fontSize: 11, color: '#0F2744', fontWeight: '700', marginTop: 3 },
-  lawyerDistrict: { fontSize: 11, color: '#888', marginTop: 2 },
+  lawyerName: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
+  lawyerSpec: { fontSize: 13, color: '#FFB74D', marginTop: 2, fontWeight: '600' },
+  lawyerSbc: { fontSize: 11, color: '#FF9100', fontWeight: '700', marginTop: 3 },
+  lawyerDistrict: { fontSize: 11, color: 'rgba(255, 235, 215, 0.65)', marginTop: 2 },
   formCard: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(32, 16, 7, 0.94)',
     borderRadius: 16,
-    padding: 20,
+    padding: 18,
     borderWidth: 1,
-    borderColor: '#ece9e4',
-    elevation: 2,
+    borderColor: 'rgba(255, 160, 40, 0.35)',
   },
-  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#5C1A1A', marginBottom: 16 },
-  label: { fontSize: 12, fontWeight: '700', color: '#555', textTransform: 'uppercase', marginBottom: 6, marginTop: 12 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#FFB74D', marginBottom: 14 },
+  label: { fontSize: 11, fontWeight: '700', color: '#FFB74D', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6, marginTop: 12 },
   input: {
-    backgroundColor: '#fafafa',
+    backgroundColor: 'rgba(20, 9, 4, 0.95)',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
-    borderRadius: 10,
+    borderColor: 'rgba(255, 160, 40, 0.35)',
+    borderRadius: 12,
     padding: 12,
     fontSize: 14,
-    color: '#1a1a1a',
+    color: '#FFFFFF',
   },
   textArea: { height: 100, textAlignVertical: 'top' },
   slotsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
@@ -247,21 +241,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 10,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: 'rgba(20, 9, 4, 0.95)',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: 'rgba(255, 160, 40, 0.3)',
   },
-  slotChipActive: { backgroundColor: '#5C1A1A', borderColor: '#5C1A1A' },
-  slotChipDay: { fontSize: 11, fontWeight: '700', color: '#64748b' },
-  slotChipDayActive: { color: '#FFEED6' },
-  slotChipText: { fontSize: 11, color: '#334155', marginTop: 2 },
+  slotChipActive: { backgroundColor: '#FF7A00', borderColor: '#FF9100' },
+  slotChipDay: { fontSize: 11, fontWeight: '700', color: '#FFB74D' },
+  slotChipDayActive: { color: '#FFFFFF' },
+  slotChipText: { fontSize: 11, color: 'rgba(255, 235, 215, 0.8)', marginTop: 2 },
   slotChipTextActive: { color: '#fff', fontWeight: '700' },
   submitBtn: {
-    backgroundColor: '#5C1A1A',
-    borderRadius: 12,
-    paddingVertical: 14,
+    backgroundColor: '#FF7A00',
+    borderRadius: 14,
+    paddingVertical: 15,
     alignItems: 'center',
-    marginTop: 24,
+    marginTop: 22,
+    shadowColor: '#FF7A00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+    elevation: 5,
   },
-  submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '700' },
+  submitBtnText: { color: '#fff', fontSize: 15, fontWeight: '800', letterSpacing: 0.5 },
 });

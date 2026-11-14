@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
 import LiquidGlassButton from '../../components/LiquidGlassButton';
 
 export default function VerificationPending() {
@@ -13,7 +14,15 @@ export default function VerificationPending() {
       
       <View style={styles.content}>
         <View style={styles.badgeBox}>
-          <Text style={styles.badge}>🛡️</Text>
+          <Svg width={40} height={40} viewBox="0 0 24 24" fill="none">
+            <Path
+              d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"
+              stroke="#FFA726"
+              strokeWidth={2}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </Svg>
         </View>
 
         <Text style={styles.title}>Account Under Verification</Text>
@@ -50,40 +59,32 @@ const styles = StyleSheet.create({
     padding: 28,
     alignItems: 'center',
     borderWidth: 1.2,
-    borderColor: 'rgba(255, 160, 40, 0.28)',
-    shadowColor: '#FF9500',
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.25,
-    shadowRadius: 16,
-    elevation: 8,
+    borderColor: 'rgba(255, 149, 0, 0.35)',
   },
   badgeBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
+    width: 72,
+    height: 72,
+    borderRadius: 36,
     backgroundColor: 'rgba(255, 149, 0, 0.15)',
     borderWidth: 1.5,
-    borderColor: '#FF9500',
+    borderColor: 'rgba(255, 149, 0, 0.40)',
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  badge: {
-    fontSize: 28,
+    marginBottom: 20,
   },
   title: {
     fontSize: 20,
     fontWeight: '800',
     color: '#FFF5E8',
-    marginBottom: 12,
     textAlign: 'center',
+    marginBottom: 14,
     letterSpacing: -0.3,
   },
   desc: {
     fontSize: 13,
-    color: '#C8A892',
+    color: 'rgba(255, 220, 180, 0.75)',
     textAlign: 'center',
     lineHeight: 20,
-    marginBottom: 10,
+    marginBottom: 12,
   },
 });

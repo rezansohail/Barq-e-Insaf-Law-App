@@ -13,6 +13,9 @@ import {
   activeCases,
   userData,
 } from './MockStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 export default function AddEvidence() {
   useMockStore();
@@ -20,6 +23,7 @@ export default function AddEvidence() {
   const params = useLocalSearchParams();
   const caseType = params.caseType || 'property';
   const caseId = params.caseId;
+  useAppNavigation({ isHome: false, homeRoute: '/(citizen)/CitizenHome' });
 
   const [loading, setLoading] = useState(false);
 
@@ -28,13 +32,6 @@ export default function AddEvidence() {
       fetchCitizenVault(userData.id);
     }
   }, [userData.id]);
-
-  const handleNav = (id) => {
-    if (id === 'home')    router.push('/(citizen)/CitizenHome');
-    if (id === 'cases')   router.push('/(citizen)/MyCases');
-    if (id === 'lawyers') router.push('/(citizen)/FindLawyer');
-    if (id === 'profile') router.push('/(citizen)/Profile');
-  };
 
   // 1. Pick Document from Phone
   const handleBrowseFiles = async () => {
@@ -67,11 +64,8 @@ export default function AddEvidence() {
           caseId: caseId ? Number(caseId) : null,
         };
 
-        const saved = await addToVault(newDoc);
-        handleSelectFile({
-          ...newDoc,
-          id: saved?.evidence?.id || newDoc.title,
-        });
+        await addToVault(newDoc);
+        router.back();
       }
     } catch (err) {
       const msg = 'Unable to pick document: ' + (err.message || 'Please try again');
@@ -81,50 +75,34 @@ export default function AddEvidence() {
     }
   };
 
-  // 2. Pick Photo from Gallery
+  // 2. Pick Photo from Phone Gallery
   const handlePickFromGallery = async () => {
     try {
       setLoading(true);
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        const msg = 'Please allow gallery access to upload evidence photos.';
-        Platform.OS === 'web' ? alert(msg) : Alert.alert('Permission Required', msg);
-        return;
-      }
-
       const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const rawName = asset.fileName || asset.uri.split('/').pop() || 'Evidence_Photo.jpg';
-        const formattedSize = asset.fileSize
-          ? (asset.fileSize > 1048576
-              ? (asset.fileSize / 1048576).toFixed(1) + ' MB'
-              : Math.round(asset.fileSize / 1024) + ' KB')
-          : 'Photo';
-
+        const fileName = asset.fileName || 'Photo_Evidence_' + Date.now().toString().slice(-4) + '.jpg';
         const newPhoto = {
-          title: rawName,
-          name: rawName,
+          title: fileName,
+          name: fileName,
           category: 'Photo Evidence',
           fileType: 'Photo',
           type: 'Photo',
-          fileSize: formattedSize,
-          size: formattedSize,
+          fileSize: asset.fileSize ? Math.round(asset.fileSize / 1024) + ' KB' : 'Photo',
+          size: asset.fileSize ? Math.round(asset.fileSize / 1024) + ' KB' : 'Photo',
           fileUri: asset.uri,
           uri: asset.uri,
           caseId: caseId ? Number(caseId) : null,
         };
 
-        const saved = await addToVault(newPhoto);
-        handleSelectFile({
-          ...newPhoto,
-          id: saved?.evidence?.id || newPhoto.title,
-        });
+        await addToVault(newPhoto);
+        router.back();
       }
     } catch (err) {
       const msg = 'Unable to pick photo: ' + (err.message || 'Please try again');
@@ -134,13 +112,13 @@ export default function AddEvidence() {
     }
   };
 
-  // 3. Take Photo with Camera
-  const handleCaptureCamera = async () => {
+  // 3. Snap Photo with Device Camera
+  const handleSnapCamera = async () => {
     try {
       setLoading(true);
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        const msg = 'Camera permission is required to capture evidence.';
+        const msg = 'Camera permission is required to capture evidence photos.';
         Platform.OS === 'web' ? alert(msg) : Alert.alert('Permission Required', msg);
         return;
       }
@@ -166,14 +144,11 @@ export default function AddEvidence() {
           caseId: caseId ? Number(caseId) : null,
         };
 
-        const saved = await addToVault(newPhoto);
-        handleSelectFile({
-          ...newPhoto,
-          id: saved?.evidence?.id || newPhoto.title,
-        });
+        await addToVault(newPhoto);
+        router.back();
       }
     } catch (err) {
-      const msg = 'Unable to open camera: ' + (err.message || 'Please try again');
+      const msg = 'Unable to take photo: ' + (err.message || 'Please try again');
       Platform.OS === 'web' ? alert(msg) : Alert.alert('Error', msg);
     } finally {
       setLoading(false);
@@ -181,120 +156,97 @@ export default function AddEvidence() {
   };
 
   const handleSelectFile = (file) => {
-    const fileName = file.title || file.name;
-    if (caseId) {
-      const msg = `"${fileName}" has been linked to your case vault.`;
-      Platform.OS === 'web' ? alert(msg) : Alert.alert('Evidence Attached', msg, [
-        { text: 'OK', onPress: () => router.back() }
-      ]);
-      return;
-    }
-
-    router.push({
+    router.replace({
       pathname: '/(citizen)/CaseForm',
-      params: { 
-        caseType, 
-        newFileName: fileName, 
+      params: {
+        caseType,
+        newFileName: file.title || file.name,
         newFileType: file.fileType || file.type || 'Document',
-        newFileSize: file.fileSize || file.size || 'Saved',
+        newFileSize: file.fileSize || file.size || 'Saved File',
         newFileUri: file.fileUri || file.uri || '',
-      }
+      },
     });
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
+      <StatusBar barStyle="light-content" backgroundColor="#080402" />
 
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backBtnText}>Back</Text>
-        </TouchableOpacity>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>Evidence Vault</Text>
-        </View>
-      </View>
+      <AppHeader 
+        title="Add Case Evidence" 
+        showBack={true} 
+        homeRoute="/(citizen)/CitizenHome"
+        role="citizen"
+      />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>Add Evidence from Phone</Text>
-        <Text style={styles.subtitle}>Select photos, scanned documents, or PDFs to store in your private sandbox directory.</Text>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.content, { paddingBottom: 110 }]}>
+        <Text style={styles.title}>Attach Case Documentation</Text>
+        <Text style={styles.info}>
+          Upload documents or photos from your device storage or camera. All records are backed by encrypted vault storage.
+        </Text>
 
-        {/* Action Cards Grid */}
-        <View style={{ flexDirection: 'row', gap: 10, marginBottom: 20 }}>
+        {/* 3 Real Device Pick Options */}
+        <View style={{ gap: 10, marginVertical: 14 }}>
           <TouchableOpacity 
-            style={{
-              flex: 1,
-              backgroundColor: '#5C1A1A',
-              padding: 14,
-              borderRadius: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            style={[styles.uploadBox, { backgroundColor: 'rgba(32, 16, 7, 0.94)', borderColor: 'rgba(255, 160, 40, 0.35)' }]} 
             onPress={handleBrowseFiles}
             disabled={loading}
           >
-            <Text style={{ fontSize: 24, marginBottom: 4 }}>📄</Text>
-            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', textAlign: 'center' }}>
-              Browse Files (PDF)
-            </Text>
+            <View style={[styles.uploadIcon, { backgroundColor: 'rgba(255, 140, 0, 0.2)' }]}>
+              <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFB74D' }}>DOC</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.uploadTitle}>Upload Document (PDF / DOC)</Text>
+              <Text style={styles.uploadDesc}>Browse PDFs, contracts, registry deeds on your phone</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={{
-              flex: 1,
-              backgroundColor: '#0F2744',
-              padding: 14,
-              borderRadius: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            style={[styles.uploadBox, { backgroundColor: 'rgba(32, 16, 7, 0.94)', borderColor: 'rgba(255, 160, 40, 0.35)' }]} 
             onPress={handlePickFromGallery}
             disabled={loading}
           >
-            <Text style={{ fontSize: 24, marginBottom: 4 }}>🖼️</Text>
-            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', textAlign: 'center' }}>
-              Photo Gallery
-            </Text>
+            <View style={[styles.uploadIcon, { backgroundColor: 'rgba(255, 140, 0, 0.2)' }]}>
+              <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFB74D' }}>IMG</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.uploadTitle}>Pick Photo from Gallery</Text>
+              <Text style={styles.uploadDesc}>Select receipts, CNIC copies, screenshots or photos</Text>
+            </View>
           </TouchableOpacity>
 
           <TouchableOpacity 
-            style={{
-              flex: 1,
-              backgroundColor: '#1B4332',
-              padding: 14,
-              borderRadius: 12,
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
-            onPress={handleCaptureCamera}
+            style={[styles.uploadBox, { backgroundColor: 'rgba(32, 16, 7, 0.94)', borderColor: 'rgba(255, 160, 40, 0.35)' }]} 
+            onPress={handleSnapCamera}
             disabled={loading}
           >
-            <Text style={{ fontSize: 24, marginBottom: 4 }}>📸</Text>
-            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', textAlign: 'center' }}>
-              Snap Camera
-            </Text>
+            <View style={[styles.uploadIcon, { backgroundColor: 'rgba(255, 140, 0, 0.2)' }]}>
+              <Text style={{ fontSize: 13, fontWeight: '800', color: '#FFB74D' }}>CAM</Text>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.uploadTitle}>Snap Photo with Camera</Text>
+              <Text style={styles.uploadDesc}>Take a live photo of physical documents or notices</Text>
+            </View>
           </TouchableOpacity>
         </View>
 
         {loading && (
-          <View style={{ padding: 16, alignItems: 'center', marginBottom: 12 }}>
-            <ActivityIndicator color="#5C1A1A" size="small" />
-            <Text style={{ fontSize: 12, color: '#666', marginTop: 6 }}>Saving to vault...</Text>
+          <View style={{ paddingVertical: 14, alignItems: 'center' }}>
+            <ActivityIndicator color="#FF9500" />
+            <Text style={{ fontSize: 12, color: 'rgba(255, 220, 180, 0.7)', marginTop: 4 }}>Opening device storage...</Text>
           </View>
         )}
 
-        <View style={styles.explorerBox}>
-          <Text style={styles.explorerHeader}>Available Vault Files ({evidenceVault.length})</Text>
-          
-          {evidenceVault.length > 0 ? (
+        {/* Existing Vault Files to Choose from */}
+        <View style={styles.filesCard}>
+          <Text style={styles.filesTitle}>Or Select from Existing Vault</Text>
+
+          {evidenceVault && evidenceVault.length > 0 ? (
             evidenceVault.map((file) => {
               const fileName = file.title || file.name || 'Evidence File';
-              const fileType = file.fileType || file.type || 'Document';
               const fileSize = file.fileSize || file.size || 'Saved';
+              const fileType = file.fileType || file.type || 'Document';
 
               return (
                 <TouchableOpacity 
@@ -303,38 +255,28 @@ export default function AddEvidence() {
                   onPress={() => handleSelectFile(file)}
                 >
                   <View style={styles.fileIconBox}>
-                    <Text style={styles.fileIconText}>{fileType === 'Photo' ? '🖼️' : '📄'}</Text>
+                    <Text style={[styles.fileIconText, { fontSize: 11, fontWeight: '800' }]}>{fileType === 'Photo' ? 'IMG' : 'DOC'}</Text>
                   </View>
                   <View style={styles.fileInfo}>
                     <Text style={styles.fileName} numberOfLines={1}>{fileName}</Text>
                     <Text style={styles.fileSize}>{fileType} • {fileSize}</Text>
                   </View>
-                  <View style={{ backgroundColor: '#5C1A1A', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}>
+                  <View style={{ backgroundColor: '#FF7A00', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 }}>
                     <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>Attach</Text>
                   </View>
                 </TouchableOpacity>
               );
             })
           ) : (
-            <Text style={{ padding: 14, color: '#888', fontSize: 12, textAlign: 'center' }}>
+            <Text style={{ padding: 14, color: 'rgba(255, 220, 180, 0.55)', fontSize: 12, textAlign: 'center' }}>
               No documents currently in your vault. Use the buttons above to browse or snap files.
             </Text>
           )}
         </View>
       </ScrollView>
 
-      {/* FOOTER */}
-      <View style={styles.bottomNav}>
-        {['Home', 'Cases', 'Lawyers', 'Profile'].map((lbl) => (
-          <TouchableOpacity
-            key={lbl}
-            style={styles.navItem}
-            onPress={() => handleNav(lbl.toLowerCase())}
-          >
-            <Text style={styles.navLabel}>{lbl}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Shared bottom navigation */}
+      <BottomNavBar role="citizen" activeTab="cases" />
     </SafeAreaView>
   );
 }

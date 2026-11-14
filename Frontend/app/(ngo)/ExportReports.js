@@ -30,9 +30,9 @@ export default function NGOExportReports() {
   const [generating, setGenerating] = useState(false);
 
   const formats = [
-    { id: 'PDF', label: 'PDF Dossier', icon: '📄', desc: 'Formatted for executive presentation & High Court review' },
-    { id: 'CSV', label: 'CSV Spreadsheet', icon: '📊', desc: 'Raw tabular case data for district statistical analysis' },
-    { id: 'JSON', label: 'JSON Dataset', icon: '💻', desc: 'Structured data for KTN News journalism & research archives' },
+    { id: 'PDF', label: 'PDF Dossier', icon: 'PDF', desc: 'Formatted for executive presentation & High Court review' },
+    { id: 'CSV', label: 'CSV Spreadsheet', icon: 'CSV', desc: 'Raw tabular case data for district statistical analysis' },
+    { id: 'JSON', label: 'JSON Dataset', icon: 'JSON', desc: 'Structured data for KTN News journalism & research archives' },
   ];
 
   const handleGenerate = () => {
@@ -164,7 +164,7 @@ export default function NGOExportReports() {
           {/* Liquid Glass Export Button */}
           <View style={styles.actionBox}>
             <LiquidGlassButton
-              title={generating ? 'COMPILING DOSSIER...' : `⚡ GENERATE OFFICIAL ${selectedFormat}`}
+              title={generating ? 'COMPILING DOSSIER...' : `GENERATE OFFICIAL ${selectedFormat}`}
               onPress={handleGenerate}
               disabled={generating}
             />

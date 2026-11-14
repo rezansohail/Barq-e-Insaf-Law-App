@@ -23,6 +23,9 @@ import {
   fetchSchedule 
 } from './MockStore';
 import { getCurrentLawyerId } from '../../constants/authStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -49,6 +52,9 @@ export default function Schedule() {
   const [newDay, setNewDay] = useState('Monday');
   const [newTime, setNewTime] = useState('10:00 AM - 01:00 PM');
   const [showDayDropdown, setShowDayDropdown] = useState(false);
+
+  // Hardware back returns to LawyerHome
+  useAppNavigation({ isHome: false, homeRoute: '/(lawyer)/LawyerHome' });
 
   useEffect(() => {
     let isMounted = true;
@@ -182,22 +188,20 @@ export default function Schedule() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
       
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>My Schedule ({timingSlots.length})</Text>
-        </View>
-        <TouchableOpacity style={styles.addBtn} onPress={handleOpenAddModal}>
-          <Text style={styles.addBtnText}>+ Add</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Top Header */}
+      <AppHeader
+        title={`Schedule (${timingSlots.length})`}
+        showBack={true}
+        homeRoute="/(lawyer)/LawyerHome"
+        role="lawyer"
+        rightElement={
+          <TouchableOpacity style={styles.addBtn} onPress={handleOpenAddModal} activeOpacity={0.8}>
+            <Text style={styles.addBtnText}>+ Add</Text>
+          </TouchableOpacity>
+        }
+      />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
         <Text style={styles.sectionTitle}>Office Hours</Text>
@@ -383,27 +387,14 @@ export default function Schedule() {
         </View>
       </Modal>
 
-      {/* FOOTER */}
-      <View style={styles.bottomNav}>
-        {['Dashboard', 'Requests', 'Cases', 'Schedule', 'Profile'].map((lbl, idx) => {
-          const ids = ['home', 'requests', 'cases', 'schedule', 'profile'];
-          return (
-            <TouchableOpacity
-              key={lbl}
-              style={styles.navItem}
-              onPress={() => handleNav(ids[idx])}
-            >
-              <Text style={[styles.navLabel, ids[idx] === 'schedule' && styles.navLabelActive]}>{lbl}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {/* Unified Bottom Navigation */}
+      <BottomNavBar role="lawyer" activeTab="schedule" />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F2744' },
+  safe: { flex: 1, backgroundColor: '#060201' },
   header: {
     flexDirection: 'row',
     alignItems: 'center',

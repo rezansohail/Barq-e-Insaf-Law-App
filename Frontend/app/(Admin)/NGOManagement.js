@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  TextInput, StatusBar, StyleSheet, Dimensions,
+  TextInput, StatusBar, StyleSheet, Dimensions, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
@@ -160,7 +161,7 @@ function NGODetail({ ngo: n, onBack }) {
           <View style={{ flex: 1 }}>
             <Text style={s.heroName}>{n.name}</Text>
             <Text style={s.heroSub}>{n.id} · {n.type}</Text>
-            <Text style={s.heroSubMuted}>📍 {n.city} · Reg: {n.registrationNo}</Text>
+            <Text style={s.heroSubMuted}>{n.city} · Reg: {n.registrationNo}</Text>
           </View>
         </View>
 
@@ -183,7 +184,7 @@ function NGODetail({ ngo: n, onBack }) {
 
         {tab === 'Organization' && (
           <>
-            <DSec title="🏢 Organization Details">
+            <DSec title="Organization Details">
               <IR label="NGO ID"           value={n.id} />
               <IR label="Registration No." value={n.registrationNo} />
               <IR label="Registered On"    value={n.registeredOn} />
@@ -192,7 +193,7 @@ function NGODetail({ ngo: n, onBack }) {
               <IR label="Contact Person"   value={n.contactPerson} />
             </DSec>
 
-            <DSec title="📞 Contact & Headquarters">
+            <DSec title="Contact & Headquarters">
               <IR label="Official Email"   value={n.email} />
               <IR label="Phone"            value={n.phone} />
               <IR label="Office Address"   value={n.officeAddress} />
@@ -200,7 +201,7 @@ function NGODetail({ ngo: n, onBack }) {
               <IR label="Country"          value={n.country} />
             </DSec>
 
-            <DSec title="🎯 Mission & Scope">
+            <DSec title="Mission & Scope">
               <IR label="Areas of Work"     value={n.areasOfWork} />
               <IR label="Operating Regions" value={n.operatingRegions} />
               <Text style={s.missionLabel}>Mission Statement:</Text>
@@ -210,12 +211,14 @@ function NGODetail({ ngo: n, onBack }) {
         )}
 
         {tab === 'Verification' && (
-          <DSec title="✅ Accreditation & Documents">
+          <DSec title="Accreditation & Documents">
             <IR label="Verification Status" value={n.verificationStatus} highlight />
             <Text style={s.docTitle}>Uploaded Compliance Documents</Text>
             {(n.documents || []).map((d, i) => (
               <View key={i} style={s.docRow}>
-                <Text style={s.docIcon}>📄</Text>
+                <View style={s.docIcon}>
+                  <Text style={{ fontSize: 10, color: '#FF9500', fontWeight: '800' }}>DOC</Text>
+                </View>
                 <Text style={s.docText}>{d}</Text>
               </View>
             ))}
@@ -223,7 +226,7 @@ function NGODetail({ ngo: n, onBack }) {
         )}
 
         {tab === 'Statistics' && (
-          <DSec title="📊 Impact Metrics">
+          <DSec title="Impact Metrics">
             <View style={s.perfGrid}>
               {[
                 { l: 'Cases Assisted',     v: n.totalCases },
@@ -242,18 +245,18 @@ function NGODetail({ ngo: n, onBack }) {
 
         {tab === 'Account' && (
           <>
-            <DSec title="🔐 Account Status">
+            <DSec title="Account Status">
               <IR label="Current Status"  value={n.status} highlight />
               <IR label="Registered On"   value={n.registeredOn} />
               <IR label="Last Active"     value={n.lastLogin} />
             </DSec>
 
-            <DSec title="🛡️ Administrative Actions">
+            <DSec title="Administrative Actions">
               <TouchableOpacity style={s.actPrimary} activeOpacity={0.8}>
                 <Text style={s.actPrimaryTxt}>✓ VERIFY & APPROVE NGO</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.actWarn} activeOpacity={0.8}>
-                <Text style={s.actWarnTxt}>⏸ Suspend Operations</Text>
+                <Text style={s.actWarnTxt}>Suspend Operations</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.actDanger} activeOpacity={0.8}>
                 <Text style={s.actDangerTxt}>✕ Delete Registry Entry</Text>
@@ -346,7 +349,9 @@ export default function NGOManagement() {
 
         {/* Search */}
         <View style={s.searchBox}>
-          <Text style={{ color: '#FF9500', fontSize: 16 }}>🔍</Text>
+          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+            <Path d="M21 21l-4.35-4.35M19 11a8 8 0 11-16 0 8 8 0 0116 0z" stroke="#FF9500" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          </Svg>
           <TextInput
             style={s.searchInput}
             placeholder="Search NGO name, ID, city..."
@@ -472,7 +477,14 @@ export default function NGOManagement() {
               disabled={page === 1}
               onPress={() => setPage(p => p - 1)}
             >
-              <Text style={s.pageBtnTxt}>← Prev</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Image
+                  source={require('../../assets/images/backarrow.png')}
+                  style={{ width: 14, height: 10 }}
+                  resizeMode="contain"
+                />
+                <Text style={s.pageBtnTxt}>Prev</Text>
+              </View>
             </TouchableOpacity>
             {Array.from({ length: totalPages }, (_, i) => i + 1).map(pg => (
               <TouchableOpacity
@@ -488,7 +500,14 @@ export default function NGOManagement() {
               disabled={page === totalPages}
               onPress={() => setPage(p => p + 1)}
             >
-              <Text style={s.pageBtnTxt}>Next →</Text>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={s.pageBtnTxt}>Next</Text>
+                <Image
+                  source={require('../../assets/images/arrow.png')}
+                  style={{ width: 14, height: 10 }}
+                  resizeMode="contain"
+                />
+              </View>
             </TouchableOpacity>
           </View>
         )}

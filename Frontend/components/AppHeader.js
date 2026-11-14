@@ -2,6 +2,7 @@ import React from 'react';
 import {
   View,
   Text,
+  Image,
   StyleSheet,
   TouchableOpacity,
   Platform,
@@ -69,7 +70,11 @@ export default function AppHeader({
                 tint="dark"
                 style={styles.backBlur}
               >
-                <Text style={styles.backChevron}>&lt;</Text>
+                <Image
+                  source={require('../assets/images/backarrow.png')}
+                  style={styles.backArrowImg}
+                  resizeMode="contain"
+                />
               </BlurView>
             </TouchableOpacity>
           )}
@@ -148,12 +153,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  backChevron: {
-    color: '#FFEED6',
-    fontSize: 18,
-    fontWeight: '600',
-    marginTop: -2,
-    marginLeft: -1,
+  backArrowImg: {
+    width: 20,
+    height: 14,
   },
   titleColumn: {
     flex: 1,

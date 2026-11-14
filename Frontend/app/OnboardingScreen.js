@@ -125,9 +125,26 @@ export default function OnboardingScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* Top Header */}
         <View style={styles.topRow}>
-          <Text style={styles.brandTitle}>
-            BARQ-E-INSAF <Text style={styles.boltSymbol}>⚡</Text>
-          </Text>
+          {currentIndex > 0 ? (
+            <TouchableOpacity
+              onPress={() => {
+                slidesRef.current?.scrollToIndex({ index: currentIndex - 1, animated: true });
+              }}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={{ padding: 6 }}
+            >
+              <Image
+                source={require('../assets/images/backarrow.png')}
+                style={{ width: 22, height: 15 }}
+                contentFit="contain"
+              />
+            </TouchableOpacity>
+          ) : (
+            <View style={{ width: 34 }} />
+          )}
+
+          <Text style={styles.brandTitle}>BARQ-E-INSAF</Text>
+
           {currentIndex < slides.length - 1 ? (
             <TouchableOpacity
               onPress={() => router.push('/RoleSelectScreen')}
@@ -136,7 +153,7 @@ export default function OnboardingScreen() {
               <Text style={styles.skipText}>SKIP</Text>
             </TouchableOpacity>
           ) : (
-            <View style={{ width: 44 }} />
+            <View style={{ width: 34 }} />
           )}
         </View>
 
@@ -255,9 +272,16 @@ export default function OnboardingScreen() {
                   style={styles.actionGradient}
                 >
                   <View style={styles.actionSheen} />
-                  <Text style={styles.actionBtnText}>
-                    {currentIndex === slides.length - 1 ? 'GET STARTED' : 'CONTINUE'}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                    <Text style={styles.actionBtnText}>
+                      {currentIndex === slides.length - 1 ? 'GET STARTED' : 'CONTINUE'}
+                    </Text>
+                    <Image
+                      source={require('../assets/images/arrow.png')}
+                      style={{ width: 18, height: 13 }}
+                      contentFit="contain"
+                    />
+                  </View>
                 </LinearGradient>
               </BlurView>
             </TouchableOpacity>

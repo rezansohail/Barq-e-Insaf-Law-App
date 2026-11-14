@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -40,7 +41,11 @@ export default function CaseDetail() {
             onPress={() => router.back()}
             hitSlop={{ top: 14, bottom: 14, left: 14, right: 14 }}
           >
-            <Text style={styles.simpleBackText}>&lt;</Text>
+            <Image
+              source={require('../../assets/images/backarrow.png')}
+              style={{ width: 22, height: 15 }}
+              resizeMode="contain"
+            />
           </TouchableOpacity>
           <Text style={styles.headerTitle}>Case Details</Text>
         </View>
@@ -118,7 +123,7 @@ export default function CaseDetail() {
             <View style={styles.visitBox}>
               <Text style={styles.visitLabel}>SCHEDULED CONSULTATION VISIT</Text>
               <Text style={styles.visitTime}>{sig.consultancyTime}</Text>
-              <Text style={styles.visitAddress}>📍 {sig.chamberAddress}</Text>
+              <Text style={styles.visitAddress}>Chamber: {sig.chamberAddress}</Text>
             </View>
 
             {/* Signature Stamp Display */}
@@ -199,12 +204,12 @@ export default function CaseDetail() {
           <Text style={styles.cardHeader}>Client Contact Information</Text>
           {caseData?.contact ? (
             <TouchableOpacity style={styles.contactBtn} onPress={handleContactClient} activeOpacity={0.84}>
-              <Text style={styles.contactBtnText}>📞 Call Client: {caseData.contact}</Text>
+              <Text style={styles.contactBtnText}>Call Client: {caseData.contact}</Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.securedNotice}>
               <Text style={styles.securedNoticeText}>
-                🔒 Client contact is protected. Accept the request with your digital signature to reveal details.
+                Client contact is protected. Accept the request with your digital signature to reveal details.
               </Text>
             </View>
           )}
@@ -215,12 +220,12 @@ export default function CaseDetail() {
           <Text style={styles.cardHeader}>Case Evidence Documents</Text>
           {caseData?.evidence ? (
             <TouchableOpacity style={styles.evidenceBtn} onPress={handleViewEvidence} activeOpacity={0.84}>
-              <Text style={styles.evidenceBtnText}>📁 View Attached Evidence Documents</Text>
+              <Text style={styles.evidenceBtnText}>View Attached Evidence Documents</Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.securedNotice}>
               <Text style={styles.securedNoticeText}>
-                🔒 Evidence documents are hidden until request acceptance.
+                Evidence documents are hidden until request acceptance.
               </Text>
             </View>
           )}

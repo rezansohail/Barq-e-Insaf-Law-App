@@ -14,10 +14,12 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -58,7 +60,7 @@ export default function AIChatFloatingButton() {
     })
   ).current;
 
-  // 🛑 HIDE FLOATING BUTTON ON SPLASH & STARTUP SCREENS
+  // Hide floating button on splash & startup screens
   const hiddenRoutes = ['/', '/SplashScreen', '/StartScreen', '/OnboardingScreen'];
   if (hiddenRoutes.includes(pathname)) {
     return null;
@@ -97,7 +99,7 @@ export default function AIChatFloatingButton() {
 
   return (
     <>
-      {/* ⚡ ULTRA-ATTRACTIVE DRAGGABLE FLOATING BUTTON ⚡ */}
+      {/* Draggable Floating Button */}
       <Animated.View
         style={[styles.draggableFab, { transform: [{ translateX: pan.x }, { translateY: pan.y }] }]}
         {...panResponder.panHandlers}
@@ -111,7 +113,9 @@ export default function AIChatFloatingButton() {
           >
             {/* Inner Glow Circle & Lightning Symbol */}
             <View style={styles.glowCircle}>
-              <Text style={styles.fabIcon}>⚡</Text>
+              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+                <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#FFD700" />
+              </Svg>
             </View>
 
             {/* AI Assistant Label Tag */}
@@ -131,7 +135,9 @@ export default function AIChatFloatingButton() {
             <View style={styles.modalHeader}>
               <View style={styles.headerTitleRow}>
                 <View style={styles.headerBadge}>
-                  <Text style={styles.headerIcon}>⚡</Text>
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                    <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#FFD700" />
+                  </Svg>
                 </View>
                 <View>
                   <Text style={styles.headerTitle}>Barq-e-Insaf AI Assistant</Text>
@@ -181,7 +187,11 @@ export default function AIChatFloatingButton() {
                 onSubmitEditing={sendMessage}
               />
               <TouchableOpacity style={styles.sendBtn} onPress={sendMessage} disabled={loading}>
-                <Text style={styles.sendBtnText}>➔</Text>
+                <Image
+                  source={require('../assets/images/arrow.png')}
+                  style={{ width: 18, height: 13 }}
+                  resizeMode="contain"
+                />
               </TouchableOpacity>
             </View>
 

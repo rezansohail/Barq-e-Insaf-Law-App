@@ -1,0 +1,97 @@
+import { StyleSheet } from 'react-native';
+
+export default StyleSheet.create({
+  safe: { flex: 1, backgroundColor: '#080402' },
+  header: {
+    paddingHorizontal: 20,
+    paddingTop: 16,
+    paddingBottom: 18,
+    borderBottomWidth: 1,
+  },
+  headerRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  brand: { flexDirection: 'column' },
+  brandName: { fontSize: 18, fontWeight: '800', letterSpacing: -0.2 },
+  brandSub: { fontSize: 10.5, marginTop: 1, fontWeight: '600' },
+  headerRight: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  orgName: { fontSize: 16, fontWeight: '800', marginTop: 14 },
+  orgSub: { fontSize: 11, marginTop: 2 },
+  statsRow: { flexDirection: 'row', gap: 8, marginTop: 14 },
+  statChip: {
+    flex: 1,
+    borderRadius: 12,
+    padding: 10,
+    borderWidth: 1,
+  },
+  statNum: { fontSize: 16, fontWeight: '800' },
+  statLabel: { fontSize: 10, marginTop: 2, fontWeight: '600' },
+  scroll: { flex: 1 },
+  scrollContent: { padding: 14, paddingBottom: 110 },
+  sectionHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 18,
+    marginBottom: 10,
+  },
+  sectionLabel: {
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  seeAllText: { fontSize: 11, fontWeight: '700', color: '#FF9500' },
+  breakdownCard: {
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    gap: 10,
+  },
+  barRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  barLabel: {
+    width: 110,
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  barTrack: {
+    flex: 1,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  barVal: {
+    width: 28,
+    textAlign: 'right',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  insightGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  insightCard: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 14,
+    alignItems: 'center',
+  },
+  insightNum: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  insightLabel: {
+    fontSize: 10,
+    marginTop: 4,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+});

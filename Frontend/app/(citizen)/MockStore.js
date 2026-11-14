@@ -214,7 +214,7 @@ export const fetchCitizenDashboard = async (targetId) => {
 
   try {
     const res = await api.get(`/citizens/${id}`);
-    const data = res.data;
+    const data = typeof res.data === 'object' && res.data !== null ? res.data : {};
 
     userData.id = data.id || id;
     userData.name = data.fullName || data.name || userData.name || 'Citizen';
@@ -376,26 +376,28 @@ export const fetchLawyersList = async (specialty = '') => {
  */
 export const fetchNgosList = async (filter = {}) => {
   try {
-    const res = await api.get('/ngos', { params: filter });
-    const data = res.data || [];
-    ngos.length = 0;
-    data.forEach((n) => {
-      ngos.push({
-        id: String(n.id),
-        name: n.fullName || n.name,
-        fullName: n.fullName || n.name,
-        type: n.organizationType || 'NGO / Media',
-        organizationType: n.organizationType || 'NGO / Media',
-        district: n.district || 'Sindh',
-        phone: n.phone || '',
-        email: n.email || '',
-        isVerified: Boolean(n.isVerified),
-        initials: n.initials || 'N',
+    const res = await api.get('/citizens/ngos', { params: filter });
+    const data = Array.isArray(res.data) ? res.data : (Array.isArray(res.data?.data) ? res.data.data : []);
+    if (data.length > 0) {
+      ngos.length = 0;
+      data.forEach((n) => {
+        ngos.push({
+          id: String(n.id),
+          name: n.fullName || n.name,
+          fullName: n.fullName || n.name,
+          type: n.organizationType || 'NGO / Media',
+          organizationType: n.organizationType || 'NGO / Media',
+          district: n.district || 'Sindh',
+          phone: n.phone || '',
+          email: n.email || '',
+          isVerified: Boolean(n.isVerified),
+          initials: n.initials || 'N',
+        });
       });
-    });
-    notify();
+      notify();
+    }
   } catch (err) {
-    console.error('[CITIZEN] Error fetching NGOs:', err.response?.data || err.message);
+    console.warn('[CITIZEN] Note on fetching NGOs:', err.response?.data || err.message);
   }
 };
 

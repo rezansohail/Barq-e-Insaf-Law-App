@@ -12,24 +12,21 @@ import { useRouter } from 'expo-router';
 import styles from './OtherLawyers.styles';
 import { useMockStore, otherLawyers, fetchOtherLawyers } from './MockStore';
 import { getCurrentLawyerId } from '../../constants/authStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 export default function OtherLawyers() {
   useMockStore();
   const router = useRouter();
+  useAppNavigation({ isHome: false, homeRoute: '/(lawyer)/LawyerHome' });
+
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
 
   React.useEffect(() => {
     fetchOtherLawyers(getCurrentLawyerId());
   }, []);
-
-  const handleNav = (lbl) => {
-    if (lbl === 'home') router.push('/(lawyer)/LawyerHome');
-    if (lbl === 'requests') router.push('/(lawyer)/CaseRequests');
-    if (lbl === 'cases') router.push('/(lawyer)/MyCases');
-    if (lbl === 'schedule') router.push('/(lawyer)/Schedule');
-    if (lbl === 'profile') router.push('/(lawyer)/LawyerProfile');
-  };
 
   const handleLawyerPress = (lawyer) => {
     setSelectedLawyer(lawyer);
@@ -38,23 +35,20 @@ export default function OtherLawyers() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
+      <StatusBar barStyle="light-content" backgroundColor="#080402" />
       
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>Other Lawyers</Text>
-        </View>
-      </View>
+      <AppHeader 
+        title="Peer Advocates" 
+        showBack={true} 
+        homeRoute="/(lawyer)/LawyerHome"
+        role="lawyer"
+      />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {otherLawyers.length === 0 && (
-          <Text style={styles.lawyerSpec}>No other lawyers found</Text>
+          <View style={{ padding: 24, alignItems: 'center' }}>
+            <Text style={{ color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>No other advocates registered yet.</Text>
+          </View>
         )}
         {otherLawyers.map((lawyer, index) => (
           <TouchableOpacity 
@@ -62,7 +56,7 @@ export default function OtherLawyers() {
             style={styles.lawyerCard}
             onPress={() => handleLawyerPress(lawyer)}
           >
-            <View style={[styles.avatarLarge, { backgroundColor: lawyer.color }]}>
+            <View style={[styles.avatarLarge, { backgroundColor: lawyer.color || '#E65100' }]}>
               <Text style={styles.avatarText}>{lawyer.initials}</Text>
             </View>
             <View style={styles.lawyerInfo}>
@@ -74,7 +68,7 @@ export default function OtherLawyers() {
               </View>
               <View style={styles.statusRow}>
                 <View style={[styles.statusDot, { backgroundColor: lawyer.isAvailable ? '#4ade80' : '#ef4444' }]} />
-                <Text style={styles.statusText}>{lawyer.isAvailable ? 'Available' : 'Not Available'}</Text>
+                <Text style={styles.statusText}>{lawyer.isAvailable ? 'Available for Counsel' : 'Chamber Busy'}</Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -99,7 +93,7 @@ export default function OtherLawyers() {
 
             {selectedLawyer && (
               <>
-                <View style={[styles.modalAvatar, { backgroundColor: selectedLawyer.color }]}>
+                <View style={[styles.modalAvatar, { backgroundColor: selectedLawyer.color || '#E65100' }]}>
                   <Text style={styles.modalAvatarText}>{selectedLawyer.initials}</Text>
                 </View>
                 
@@ -156,21 +150,8 @@ export default function OtherLawyers() {
         </View>
       </Modal>
 
-      {/* FOOTER */}
-      <View style={styles.bottomNav}>
-        {['Dashboard', 'Requests', 'Cases', 'Schedule', 'Profile'].map((lbl, idx) => {
-          const ids = ['home', 'requests', 'cases', 'schedule', 'profile'];
-          return (
-            <TouchableOpacity
-              key={lbl}
-              style={styles.navItem}
-              onPress={() => handleNav(ids[idx])}
-            >
-              <Text style={[styles.navLabel, ids[idx] === 'profile' && styles.navLabelActive]}>{lbl}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {/* Shared bottom navigation */}
+      <BottomNavBar role="lawyer" activeTab="cases" />
     </SafeAreaView>
   );
 }

@@ -75,6 +75,19 @@ export default function LandingScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* ── 1. HEADER NAV BAR ── */}
         <View style={styles.headerNav}>
+          <TouchableOpacity
+            style={styles.headerBackBtn}
+            onPress={() => router.replace('/StartScreen')}
+            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+            accessibilityLabel="Back to Start Screen"
+          >
+            <Image
+              source={require('../assets/images/backarrow.png')}
+              style={{ width: 22, height: 15 }}
+              resizeMode="contain"
+            />
+          </TouchableOpacity>
+
           <View style={styles.brandGroup}>
             <Image
               source={require('../assets/images/logo.png')}
@@ -147,7 +160,14 @@ export default function LandingScreen() {
                     start={{ x: 0, y: 0 }}
                     end={{ x: 1, y: 0 }}
                   >
-                    <Text style={styles.askAiText}>Ask AI →</Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                      <Text style={styles.askAiText}>Ask AI</Text>
+                      <Image
+                        source={require('../assets/images/arrow.png')}
+                        style={{ width: 14, height: 10 }}
+                        resizeMode="contain"
+                      />
+                    </View>
                   </LinearGradient>
                 </TouchableOpacity>
               </View>
@@ -269,7 +289,14 @@ export default function LandingScreen() {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 0 }}
                 >
-                  <Text style={styles.ctaBtnText}>GET STARTED →</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                    <Text style={styles.ctaBtnText}>GET STARTED</Text>
+                    <Image
+                      source={require('../assets/images/arrow.png')}
+                      style={{ width: 18, height: 13 }}
+                      resizeMode="contain"
+                    />
+                  </View>
                 </LinearGradient>
               </TouchableOpacity>
             </LinearGradient>

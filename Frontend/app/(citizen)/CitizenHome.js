@@ -5,42 +5,36 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  Modal,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import Svg, { Path, Rect } from 'react-native-svg';
 import styles from './CitizenHome.styles';
 import {
   useMockStore,
   userData,
   lawyers,
-  ngos,
   activeCases,
   fetchCitizenDashboard,
   fetchLawyersList,
   fetchNgosList,
-  fetchCitizenCases,
 } from './MockStore';
 import { getCurrentCitizenId } from '../../constants/authStore';
-
-const navItems = [
-  { id: 'home',     label: 'Home'    },
-  { id: 'cases',    label: 'Cases'   },
-  { id: 'lawyers',  label: 'Lawyers' },
-  { id: 'profile',  label: 'Profile' },
-];
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 export default function CitizenHome() {
   useMockStore();
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { isDarkMode, theme } = useAppTheme();
   const currentCitizenId = params.citizenId || params.id || getCurrentCitizenId();
 
-  const [activeNav, setActiveNav] = useState('home');
-  const [showCasePopup, setShowCasePopup] = useState(false);
-  const [showLawyerProfile, setShowLawyerProfile] = useState(false);
-  const [selectedLawyer, setSelectedLawyer] = useState(null);
-  const [showScheduleModal, setShowScheduleModal] = useState(false);
+  // Root screen: back button confirms exit, does not back to login screen
+  useAppNavigation({ isHome: true, homeRoute: '/(citizen)/CitizenHome' });
 
   useEffect(() => {
     fetchLawyersList();
@@ -50,29 +44,15 @@ export default function CitizenHome() {
     }
   }, [currentCitizenId]);
 
-  const handleNav = (id) => {
-    setActiveNav(id);
-    if (id === 'cases')   router.push('/(citizen)/MyCases');
-    if (id === 'lawyers') router.push('/(citizen)/FindLawyer');
-    if (id === 'home')    router.push('/(citizen)/CitizenHome');
-    if (id === 'profile') router.push('/(citizen)/Profile');
-  };
-
   const handleBuildCase = () => {
-    setShowCasePopup(true);
-  };
-
-  const handleCaseTypeSelect = (type) => {
-    setShowCasePopup(false);
-    router.push({
-      pathname: '/(citizen)/CaseForm',
-      params: { caseType: type }
-    });
+    router.push('/(citizen)/CaseForm');
   };
 
   const handleLawyerPress = (lawyer) => {
-    setSelectedLawyer(lawyer);
-    setShowLawyerProfile(true);
+    router.push({
+      pathname: '/(citizen)/RequestConsultation',
+      params: { lawyerId: lawyer.id }
+    });
   };
 
   const handleCasePress = (caseItem) => {
@@ -82,7 +62,6 @@ export default function CitizenHome() {
     });
   };
 
-  // Show verified lawyers: prioritize citizen district if available, otherwise display all verified advocates
   const localLawyers = lawyers.filter(
     (l) => userData.district && l.district && l.district.toLowerCase() === userData.district.toLowerCase()
   );
@@ -92,48 +71,83 @@ export default function CitizenHome() {
   const displayLawyers = localLawyers.length > 0 ? [...localLawyers, ...otherLawyers] : lawyers;
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: isDarkMode ? '#080402' : '#FAF8F5' }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={isDarkMode ? '#080402' : '#FAF8F5'} />
 
-      {/* HEADER */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={styles.brandRow}>
-            <View style={styles.logoBadge}>
-              <Text style={styles.logoBadgeText}>BI</Text>
-            </View>
-            <View style={styles.brand}>
-              <Text style={styles.brandName}>Barq-e-Insaf</Text>
-              <Text style={styles.brandSub}>Lightning Justice</Text>
-            </View>
-          </View>
-          <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.notifBtn}>
-              <Text style={styles.notifBtnText}>Notif</Text>
-            </TouchableOpacity>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{userData.dp}</Text>
-            </View>
-          </View>
-        </View>
-
-        <Text style={styles.greeting}>Asalam-u-Alaikum{userData.name ? `, ${userData.name}` : ''}</Text>
-      </View>
+      {/* Modern AppHeader with user greeting & menu */}
+      <AppHeader
+        title="Barq-e-Insaf"
+        showBack={false}
+        role="citizen"
+        avatarText={userData.dp || 'C'}
+      />
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* BUILD A CASE BUTTON */}
-        <TouchableOpacity style={styles.buildCaseBtn} onPress={handleBuildCase}>
-          <Text style={styles.buildCaseBtnText}>Build a Case</Text>
+        {/* WELCOME BANNER */}
+        <View style={styles.welcomeBanner}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greetingSub}>CITIZEN PORTAL</Text>
+            <Text style={styles.greetingName}>
+              Asalam-u-Alaikum{userData.name ? `, ${userData.name}` : ''}
+            </Text>
+            <Text style={styles.districtBadgeText}>
+              District: {userData.district || 'Sindh Province'} · Case Filing Active
+            </Text>
+          </View>
+        </View>
+
+        {/* BUILD A CASE PRIMARY CTA */}
+        <TouchableOpacity
+          style={styles.buildCaseBtn}
+          activeOpacity={0.85}
+          onPress={handleBuildCase}
+        >
+          <View style={styles.buildCaseContent}>
+            <View style={styles.buildCaseIconBox}>
+              <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+                  fill="#FF7A00"
+                  stroke="#FF7A00"
+                  strokeWidth={1.5}
+                />
+              </Svg>
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.buildCaseBtnText}>BUILD YOUR CASE</Text>
+              <Text style={styles.buildCaseBtnSub}>
+                Start legal intake with facts, sections & evidence
+              </Text>
+            </View>
+            <Image
+              source={require('../../assets/images/arrow.png')}
+              style={styles.buildCaseArrowImg}
+              resizeMode="contain"
+            />
+          </View>
         </TouchableOpacity>
 
         {/* VERIFIED LAWYERS NEAR YOU */}
-        <Text style={styles.sectionLabel}>
-          Verified Advocates Near You {localLawyers.length > 0 ? `(${userData.district})` : '(Sindh High Court)'}
-        </Text>
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionLabel}>
+            Verified Advocates {localLawyers.length > 0 ? `in ${userData.district}` : '(Sindh High Court)'}
+          </Text>
+          <TouchableOpacity onPress={() => router.push('/(citizen)/FindLawyer')}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={styles.seeAllText}>View All</Text>
+              <Image
+                source={require('../../assets/images/arrow.png')}
+                style={styles.inlineArrowImg}
+                resizeMode="contain"
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
+
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
@@ -141,276 +155,171 @@ export default function CitizenHome() {
         >
           {displayLawyers.length > 0 ? (
             displayLawyers.map((l, i) => (
-              <TouchableOpacity 
-                key={i} 
-                style={styles.lawyerBubble}
+              <TouchableOpacity
+                key={l.id || i}
+                style={styles.lawyerCard}
+                activeOpacity={0.84}
                 onPress={() => handleLawyerPress(l)}
               >
-                <View style={[styles.lawyerAvatar, { backgroundColor: l.color }]}>
-                  <Text style={styles.lawyerAvatarText}>{l.initials}</Text>
+                <View style={styles.lawyerCardTop}>
+                  <View style={[styles.lawyerAvatar, { backgroundColor: 'rgba(255, 149, 0, 0.18)' }]}>
+                    <Text style={styles.lawyerAvatarText}>{l.initials || 'ADV'}</Text>
+                  </View>
+                  <View style={styles.sbcPill}>
+                    <Text style={styles.sbcPillText}>{l.sbc ? `SBC ${l.sbc}` : 'SBC VERIFIED'}</Text>
+                  </View>
                 </View>
+
                 <Text style={styles.lawyerName} numberOfLines={1}>{l.name}</Text>
-                <Text style={styles.lawyerSpec}>{l.spec}</Text>
-                <View style={styles.ratingContainer}>
-                  <Text style={styles.ratingText}>Rating: {l.rating}</Text>
+                <Text style={styles.lawyerSpec} numberOfLines={1}>{l.spec || 'Legal Counsel'}</Text>
+
+                <View style={styles.lawyerCardFooter}>
+                  <Text style={styles.ratingText}>⭐ {l.rating || '5.0'}</Text>
+                  <Text style={styles.consultFee}>{l.fee || 'Pro Bono'}</Text>
                 </View>
-                <Text style={styles.sbcBadge}>{l.sbc ? `SBC ${l.sbc}` : 'SBC Approved'}</Text>
               </TouchableOpacity>
             ))
           ) : (
-            <Text style={styles.emptyText}>Loading verified advocates...</Text>
+            <View style={styles.emptyCard}>
+              <Text style={styles.emptyText}>Loading verified advocates...</Text>
+            </View>
           )}
         </ScrollView>
 
         {/* ACTIVE CASES */}
-        <Text style={styles.sectionLabel}>My Active Cases</Text>
-        {activeCases.length === 0 && (
-          <Text style={styles.emptyText}>No active cases yet. Tap 'Build a Case' to register one.</Text>
-        )}
-        {activeCases.map((c, i) => (
-          <TouchableOpacity
-            key={i}
-            style={styles.caseItem}
-            onPress={() => handleCasePress(c)}
-          >
-            <View style={[styles.caseDot, { backgroundColor: c.status === 'Active' ? '#4ade80' : '#f59e0b' }]} />
-            <View style={styles.caseInfo}>
-              <Text style={styles.caseTitle}>{c.title}</Text>
-              <Text style={styles.caseSub}>{c.type} Law · {c.district}</Text>
-            </View>
-            <Text style={styles.badgeText}>{c.status}</Text>
-          </TouchableOpacity>
-        ))}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionLabel}>My Active Cases</Text>
+          {activeCases.length > 0 && (
+            <TouchableOpacity onPress={() => router.push('/(citizen)/MyCases')}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <Text style={styles.seeAllText}>All Cases</Text>
+                <Image
+                  source={require('../../assets/images/arrow.png')}
+                  style={styles.inlineArrowImg}
+                  resizeMode="contain"
+                />
+              </View>
+            </TouchableOpacity>
+          )}
+        </View>
 
-        {/* VERIFIED NGOS & MEDIA SECTION */}
-        {ngos.length > 0 && (
-          <>
-            <Text style={[styles.sectionLabel, { marginTop: 20 }]}>Legal Aid NGOs & Media</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.lawyerRow}>
-              {ngos.map((ngo, ni) => (
-                <View key={ngo.id || ni} style={[styles.lawyerBubble, { minWidth: 140, borderColor: '#eedcd0' }]}>
-                  <View style={[styles.lawyerAvatar, { backgroundColor: '#5C1A1A' }]}>
-                    <Text style={styles.lawyerAvatarText}>{ngo.initials || 'NGO'}</Text>
-                  </View>
-                  <Text style={styles.lawyerName} numberOfLines={1}>{ngo.name}</Text>
-                  <Text style={styles.lawyerSpec}>{ngo.type}</Text>
-                  <Text style={[styles.sbcBadge, { backgroundColor: '#e2f0d9', color: '#276738' }]}>
-                    {ngo.district}
-                  </Text>
-                </View>
-              ))}
-            </ScrollView>
-          </>
+        {activeCases.length === 0 ? (
+          <TouchableOpacity style={styles.noCaseCard} onPress={handleBuildCase} activeOpacity={0.8}>
+            <View style={{ marginBottom: 8 }}>
+              <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
+                <Rect x={4} y={3} width={16} height={18} rx={2} stroke="#FFB74D" strokeWidth={1.8} />
+                <Path d="M8 8h8M8 12h8M8 16h5" stroke="#FFB74D" strokeWidth={1.8} strokeLinecap="round" />
+              </Svg>
+            </View>
+            <Text style={styles.noCaseTitle}>No Active Cases Yet</Text>
+            <Text style={styles.noCaseSub}>
+              Tap here or 'Build Your Case' above to start your first legal dossier.
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          activeCases.slice(0, 3).map((c, i) => (
+            <TouchableOpacity
+              key={c.id || i}
+              style={styles.caseItem}
+              activeOpacity={0.84}
+              onPress={() => handleCasePress(c)}
+            >
+              <View style={[styles.caseDot, { backgroundColor: c.status === 'Active' ? '#4ade80' : '#f59e0b' }]} />
+              <View style={styles.caseInfo}>
+                <Text style={styles.caseTitle} numberOfLines={1}>{c.title}</Text>
+                <Text style={styles.caseSub}>{c.type || 'Legal Matter'} · {c.district || userData.district || 'Sindh'}</Text>
+              </View>
+              <View style={[styles.statusBadge, { backgroundColor: c.status === 'Active' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)' }]}>
+                <Text style={[styles.badgeText, { color: c.status === 'Active' ? '#4ade80' : '#f59e0b' }]}>
+                  {c.status || 'Active'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))
         )}
+
+        {/* INSTITUTIONAL PARTNERS: NGO & MEDIA */}
+        <Text style={[styles.sectionLabel, { marginTop: 20 }]}>
+          Institutional Legal Aid & Media Support
+        </Text>
+        <View style={styles.partnerCardsContainer}>
+          {/* NCHD Card */}
+          <TouchableOpacity
+            style={styles.partnerCard}
+            activeOpacity={0.84}
+            onPress={() => router.push('/NCHDInfo')}
+          >
+            <View style={styles.partnerTop}>
+              <View style={styles.partnerAvatar}>
+                <Image
+                  source={require('../../assets/images/ngo.png')}
+                  style={{ width: 34, height: 34 }}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={styles.partnerPill}>
+                  <Text style={styles.partnerPillText}>GOVT / NGO LEGAL AID</Text>
+                </View>
+                <Text style={styles.partnerTitle}>
+                  National Commission for Human Development (NCHD)
+                </Text>
+                <Text style={styles.partnerSub}>
+                  Grassroots legal aid, adult literacy & community relief
+                </Text>
+              </View>
+            </View>
+            <View style={styles.partnerBottomRow}>
+              <Text style={styles.partnerActionText}>View Info, Mission & Contact Email</Text>
+              <Image
+                source={require('../../assets/images/arrow.png')}
+                style={styles.inlineArrowImg}
+                resizeMode="contain"
+              />
+            </View>
+          </TouchableOpacity>
+
+          {/* KTN News Card */}
+          <TouchableOpacity
+            style={styles.partnerCard}
+            activeOpacity={0.84}
+            onPress={() => router.push('/KTNNewsInfo')}
+          >
+            <View style={styles.partnerTop}>
+              <View style={styles.partnerAvatar}>
+                <Image
+                  source={require('../../assets/images/media.png')}
+                  style={{ width: 34, height: 34 }}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={[styles.partnerPill, { backgroundColor: 'rgba(245, 158, 11, 0.18)', borderColor: 'rgba(245, 158, 11, 0.35)' }]}>
+                  <Text style={[styles.partnerPillText, { color: '#F59E0B' }]}>24/7 BROADCAST JOURNALISM</Text>
+                </View>
+                <Text style={styles.partnerTitle}>
+                  KTN News (Kawish Television Network)
+                </Text>
+                <Text style={styles.partnerSub}>
+                  Court reporting, investigative journalism & public grievance desk
+                </Text>
+              </View>
+            </View>
+            <View style={styles.partnerBottomRow}>
+              <Text style={styles.partnerActionText}>View Info, Mission & Contact Email</Text>
+              <Image
+                source={require('../../assets/images/arrow.png')}
+                style={styles.inlineArrowImg}
+                resizeMode="contain"
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
+
       </ScrollView>
 
-      {/* BOTTOM NAV */}
-      <View style={styles.bottomNav}>
-        {navItems.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.navItem}
-            onPress={() => handleNav(item.id)}
-          >
-            <Text style={[
-              styles.navLabel,
-              activeNav === item.id && styles.navLabelActive,
-            ]}>
-              {item.label}
-            </Text>
-            {activeNav === item.id && <View style={styles.navActiveDot} />}
-          </TouchableOpacity>
-        ))}
-      </View>
-
-      {/* CASE TYPE POPUP */}
-      <Modal
-        transparent={true}
-        visible={showCasePopup}
-        animationType="fade"
-        onRequestClose={() => setShowCasePopup(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.popupContainer}>
-            <Text style={styles.popupTitle}>Choose Case Type</Text>
-            <Text style={styles.popupSubtitle}>
-              Select the type of case you want to build. Each type has specific requirements and documentation needs.
-            </Text>
-            
-            <TouchableOpacity 
-              style={styles.caseTypeOption}
-              onPress={() => handleCaseTypeSelect('property')}
-            >
-              <View style={styles.caseTypeInfo}>
-                <Text style={styles.caseTypeTitle}>🏠 Property & Land Dispute</Text>
-                <Text style={styles.caseTypeDesc}>
-                  Ownership, inheritance, illegal possession, tenancy disputes, and KMC/LDA registry matters.
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.caseTypeOption}
-              onPress={() => handleCaseTypeSelect('family')}
-            >
-              <View style={styles.caseTypeInfo}>
-                <Text style={styles.caseTypeTitle}>👨‍👩‍👦 Family & Custody Case</Text>
-                <Text style={styles.caseTypeDesc}>
-                  Khula/Divorce, child custody, monthly maintenance, and dowry restitution under Family Courts Act.
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.caseTypeOption}
-              onPress={() => handleCaseTypeSelect('inheritance')}
-            >
-              <View style={styles.caseTypeInfo}>
-                <Text style={styles.caseTypeTitle}>📜 Inheritance & Succession</Text>
-                <Text style={styles.caseTypeDesc}>
-                  Legal heirship certificates, succession certificates under Act 1925, and Shariat distribution.
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.caseTypeOption}
-              onPress={() => handleCaseTypeSelect('civil')}
-            >
-              <View style={styles.caseTypeInfo}>
-                <Text style={styles.caseTypeTitle}>⚖️ Civil & Contract Breach</Text>
-                <Text style={styles.caseTypeDesc}>
-                  Breach of agreement, financial recovery, cheque bounce (PPC 489-F), and civil injunctions.
-                </Text>
-              </View>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.popupCloseBtn}
-              onPress={() => setShowCasePopup(false)}
-            >
-              <Text style={styles.popupCloseBtnText}>Cancel</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
-
-      {/* LAWYER PROFILE MODAL */}
-      <Modal
-        transparent={true}
-        visible={showLawyerProfile}
-        animationType="slide"
-        onRequestClose={() => setShowLawyerProfile(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.lawyerProfileContainer}>
-            <TouchableOpacity 
-              style={styles.closeProfileBtn}
-              onPress={() => setShowLawyerProfile(false)}
-            >
-              <Text style={styles.closeProfileText}>Close</Text>
-            </TouchableOpacity>
-            
-            {selectedLawyer && (
-              <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={[styles.profileAvatarLarge, { backgroundColor: selectedLawyer.color }]}>
-                  <Text style={styles.profileAvatarText}>{selectedLawyer.initials}</Text>
-                </View>
-                
-                <Text style={styles.profileName}>{selectedLawyer.name}</Text>
-                <Text style={styles.profileSpec}>{selectedLawyer.spec}</Text>
-                
-                <View style={styles.profileDetails}>
-                  <View style={styles.profileDetailItem}>
-                    <Text style={styles.profileDetailLabel}>Location</Text>
-                    <Text style={styles.profileDetailValue}>{selectedLawyer.location}</Text>
-                  </View>
-                  <View style={styles.profileDetailItem}>
-                    <Text style={styles.profileDetailLabel}>Rating</Text>
-                    <Text style={styles.profileDetailValue}>{selectedLawyer.rating}</Text>
-                  </View>
-                  <View style={styles.profileDetailItem}>
-                    <Text style={styles.profileDetailLabel}>Successful Cases</Text>
-                    <Text style={styles.profileDetailValue}>{selectedLawyer.cases}</Text>
-                  </View>
-                  <View style={styles.profileDetailItem}>
-                    <Text style={styles.profileDetailLabel}>Experience</Text>
-                    <Text style={styles.profileDetailValue}>{selectedLawyer.experience}</Text>
-                  </View>
-                  <View style={styles.profileDetailItem}>
-                    <Text style={styles.profileDetailLabel}>SBC Number</Text>
-                    <Text style={styles.profileDetailValue}>{selectedLawyer.sbc} (Approved)</Text>
-                  </View>
-                </View>
-                
-                <Text style={styles.profileAbout}>{selectedLawyer.about}</Text>
-                
-                {/* OFFICE SCHEDULE BUTTON */}
-                <TouchableOpacity 
-                  style={styles.scheduleBtn} 
-                  onPress={() => setShowScheduleModal(true)}
-                >
-                  <Text style={styles.scheduleBtnText}>View Office Schedule</Text>
-                </TouchableOpacity>
-
-                {/* REVIEWS LIST */}
-                <Text style={styles.reviewsTitle}>Client Reviews</Text>
-                {selectedLawyer.reviews.map((r, ri) => (
-                  <View key={ri} style={styles.reviewCard}>
-                    <Text style={styles.reviewUser}>{r.user} (Rating: {r.rating})</Text>
-                    <Text style={styles.reviewComment}>{r.comment}</Text>
-                  </View>
-                ))}
-                
-                {requestSent ? (
-                  <View style={styles.requestSentContainer}>
-                    <Text style={styles.requestSentText}>Request Sent Successfully</Text>
-                  </View>
-                ) : (
-                  <TouchableOpacity 
-                    style={styles.sendRequestBtn}
-                    onPress={() => {
-                      setShowLawyerProfile(false);
-                      router.push({
-                        pathname: '/(citizen)/RequestConsultation',
-                        params: { lawyerId: selectedLawyer.id }
-                      });
-                    }}
-                  >
-                    <Text style={styles.sendRequestBtnText}>Request Consultation</Text>
-                  </TouchableOpacity>
-                )}
-              </ScrollView>
-            )}
-          </View>
-        </View>
-      </Modal>
-
-      {/* SCHEDULE MODAL */}
-      <Modal
-        transparent={true}
-        visible={showScheduleModal}
-        animationType="fade"
-        onRequestClose={() => setShowScheduleModal(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.popupContainer}>
-            <Text style={styles.popupTitle}>Office Schedule</Text>
-            {selectedLawyer && selectedLawyer.schedule.map((item, idx) => (
-              <View key={idx} style={styles.scheduleItemRow}>
-                <Text style={styles.scheduleDay}>{item.day}</Text>
-                <Text style={styles.scheduleTime}>{item.time}</Text>
-              </View>
-            ))}
-            <TouchableOpacity 
-              style={styles.popupCloseBtn}
-              onPress={() => setShowScheduleModal(false)}
-            >
-              <Text style={styles.popupCloseBtnText}>Close</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </Modal>
+      {/* Unified, civilized Bottom Navigation */}
+      <BottomNavBar role="citizen" activeTab="home" />
     </SafeAreaView>
   );
 }

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StatusBar, StyleSheet, Dimensions, Alert,
+  StatusBar, StyleSheet, Dimensions, Alert, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -13,16 +13,16 @@ import { useAppNavigation } from '../../hooks/useAppNavigation';
 const { width } = Dimensions.get('window');
 
 const STATS = [
-  { label: 'Total Lawyers',       value: '0', delta: '',             color: '#5C1A1A', icon: '⚖️' },
-  { label: 'Verified Lawyers',    value: '0', delta: '',             color: '#0F2744', icon: '✅' },
-  { label: 'Pending Verifications', value: '0', delta: 'Needs review', color: '#92400e', icon: '⏳' },
-  { label: 'Total Citizens',      value: '0', delta: '',             color: '#1B4332', icon: '👥' },
-  { label: 'Total NGOs',          value: '0', delta: '',             color: '#1e40af', icon: '🏢' },
-  { label: 'Active Cases',        value: '0', delta: '',             color: '#166534', icon: '📁' },
-  { label: 'Resolved Cases',      value: '0', delta: 'All time',     color: '#FF9500', icon: '✔️' },
-  { label: 'Pending Cases',       value: '0', delta: 'Needs action', color: '#7c3aed', icon: '🕐' },
-  { label: 'Total Appointments',  value: '0', delta: '',             color: '#0e7490', icon: '📅' },
-  { label: 'Monthly Registrations', value: '0', delta: '',           color: '#065f46', icon: '📈' },
+  { label: 'Total Lawyers',       value: '0', delta: '',             color: '#5C1A1A', tag: 'LAW' },
+  { label: 'Verified Lawyers',    value: '0', delta: '',             color: '#0F2744', tag: 'VER' },
+  { label: 'Pending Verifications', value: '0', delta: 'Needs review', color: '#92400e', tag: 'PND' },
+  { label: 'Total Citizens',      value: '0', delta: '',             color: '#1B4332', tag: 'CIT' },
+  { label: 'Total NGOs',          value: '0', delta: '',             color: '#1e40af', tag: 'NGO' },
+  { label: 'Active Cases',        value: '0', delta: '',             color: '#166534', tag: 'ACT' },
+  { label: 'Resolved Cases',      value: '0', delta: 'All time',     color: '#FF9500', tag: 'RES' },
+  { label: 'Pending Cases',       value: '0', delta: 'Needs action', color: '#7c3aed', tag: 'PEN' },
+  { label: 'Total Appointments',  value: '0', delta: '',             color: '#0e7490', tag: 'APT' },
+  { label: 'Monthly Registrations', value: '0', delta: '',           color: '#065f46', tag: 'REG' },
 ];
 
 const RECENT_ACTIVITIES = [];
@@ -34,11 +34,11 @@ const LATEST_APPOINTMENTS = [];
 const NOTIFICATIONS = [];
 
 const BOTTOM_NAV = [
-  { id: 'dashboard', icon: '📊', label: 'Dashboard' },
-  { id: 'users',     icon: '👥', label: 'Users'     },
-  { id: 'lawyers',   icon: '⚖️', label: 'Lawyers'   },
-  { id: 'reports',   icon: '🚩', label: 'Reports'   },
-  { id: 'settings',  icon: '⚙️', label: 'Settings'  },
+  { id: 'dashboard', label: 'Dashboard' },
+  { id: 'users',     label: 'Users'     },
+  { id: 'lawyers',   label: 'Lawyers'   },
+  { id: 'reports',   label: 'Reports'   },
+  { id: 'settings',  label: 'Settings'  },
 ];
 
 const notifColors = {
@@ -74,7 +74,7 @@ export default function AdminHome() {
       {/* HEADER */}
       <View style={s.header}>
         <View>
-          <Text style={s.headerTitle}>Barq-e-Insaf ⚡</Text>
+          <Text style={s.headerTitle}>Barq-e-Insaf</Text>
           <Text style={s.headerSub}>Admin Control Panel</Text>
         </View>
         <View style={s.headerRight}>
@@ -100,12 +100,12 @@ export default function AdminHome() {
         </View>
 
         {/* ── STATS GRID ── */}
-        <Text style={s.secTitle}>📊 Dashboard Overview</Text>
+        <Text style={s.secTitle}>Dashboard Overview</Text>
         <View style={s.statsGrid}>
           {STATS.map((st, i) => (
             <View key={i} style={s.statCard}>
               <View style={[s.statAccent, { backgroundColor: st.color }]} />
-              <Text style={s.statIcon}>{st.icon}</Text>
+              <Text style={s.statIcon}>{st.tag}</Text>
               <Text style={s.statValue}>{st.value}</Text>
               <Text style={s.statLabel}>{st.label}</Text>
               <Text style={s.statDelta}>{st.delta}</Text>
@@ -114,15 +114,15 @@ export default function AdminHome() {
         </View>
 
         {/* ── QUICK ACTIONS ── */}
-        <Text style={s.secTitle}>⚡ Quick Actions</Text>
+        <Text style={s.secTitle}>Quick Actions</Text>
         <View style={s.quickGrid}>
           {[
-            { icon: '⚖️', label: 'Lawyer Management',  sub: 'Verify & manage',  screen: 'LawyerManagement',  color: '#FF9500' },
-            { icon: '👥', label: 'Citizen Management', sub: 'View & manage',    screen: 'CitizenManagement', color: '#FFA726' },
-            { icon: '🏢', label: 'NGO Management',     sub: 'Verify & manage',  screen: 'NGOManagement',     color: '#FF7043' },
-            { icon: '🚩', label: 'Reports Queue',      sub: 'Review flags',     screen: null, info: '0 flagged reports in moderation queue. System healthy.', color: '#FFB74D' },
-            { icon: '🗃️', label: 'Legal Database',     sub: 'Update laws',      screen: null, info: '4,280 PPC sections & Sindh High Court precedents synchronized.', color: '#FF9800' },
-            { icon: '⚙️', label: 'System Config',      sub: 'App settings',     screen: null, info: 'Barq-e-Insaf v2.4 Live. Cloud DB connected.', color: '#FFA000' },
+            { tag: 'LAW', label: 'Lawyer Management',  sub: 'Verify & manage',  screen: 'LawyerManagement',  color: '#FF9500' },
+            { tag: 'CIT', label: 'Citizen Management', sub: 'View & manage',    screen: 'CitizenManagement', color: '#FFA726' },
+            { tag: 'NGO', label: 'NGO Management',     sub: 'Verify & manage',  screen: 'NGOManagement',     color: '#FF7043' },
+            { tag: 'MOD', label: 'Reports Queue',      sub: 'Review flags',     screen: null, info: '0 flagged reports in moderation queue. System healthy.', color: '#FFB74D' },
+            { tag: 'LAW', label: 'Legal Database',     sub: 'Update laws',      screen: null, info: '4,280 PPC sections & Sindh High Court precedents synchronized.', color: '#FF9800' },
+            { tag: 'SYS', label: 'System Config',      sub: 'App settings',     screen: null, info: 'Barq-e-Insaf v2.4 Live. Cloud DB connected.', color: '#FFA000' },
           ].map((item, i) => (
             <TouchableOpacity
               key={i} style={s.quickCard}
@@ -136,18 +136,22 @@ export default function AdminHome() {
               }}
             >
               <View style={[s.quickIconBox, { backgroundColor: item.color + '22' }]}>
-                <Text style={s.quickIcon}>{item.icon}</Text>
+                <Text style={[s.quickTagText, { color: item.color }]}>{item.tag}</Text>
               </View>
               <Text style={s.quickLabel}>{item.label}</Text>
               <Text style={s.quickSub}>{item.sub}</Text>
-              <Text style={[s.quickArrow, { color: item.color }]}>→</Text>
+              <Image
+                source={require('../../assets/images/arrow.png')}
+                style={s.quickArrowImg}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
           ))}
         </View>
 
         {/* ── NOTIFICATIONS ── */}
         <View style={s.section}>
-          <Text style={s.sectionTitle}>🔔 Notifications</Text>
+          <Text style={s.sectionTitle}>Notifications</Text>
           {NOTIFICATIONS.length === 0 && <Text style={s.emptyText}>No notifications</Text>}
           {NOTIFICATIONS.map((n, i) => {
             const c = notifColors[n.type];
@@ -164,8 +168,15 @@ export default function AdminHome() {
         {/* ── LATEST COMPLAINTS ── */}
         <View style={s.section}>
           <View style={s.secRow}>
-            <Text style={s.sectionTitle}>📋 Latest Complaints</Text>
-            <TouchableOpacity><Text style={s.seeAll}>See All →</Text></TouchableOpacity>
+            <Text style={s.sectionTitle}>Latest Complaints</Text>
+            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={s.seeAll}>See All</Text>
+              <Image
+                source={require('../../assets/images/arrow.png')}
+                style={s.seeAllArrowImg}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
           </View>
           {LATEST_COMPLAINTS.length === 0 && <Text style={s.emptyText}>No complaints yet</Text>}
           {LATEST_COMPLAINTS.map((c, i) => {
@@ -188,8 +199,15 @@ export default function AdminHome() {
         {/* ── LATEST APPOINTMENTS ── */}
         <View style={s.section}>
           <View style={s.secRow}>
-            <Text style={s.sectionTitle}>📅 Latest Appointments</Text>
-            <TouchableOpacity><Text style={s.seeAll}>See All →</Text></TouchableOpacity>
+            <Text style={s.sectionTitle}>Latest Appointments</Text>
+            <TouchableOpacity style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={s.seeAll}>See All</Text>
+              <Image
+                source={require('../../assets/images/arrow.png')}
+                style={s.seeAllArrowImg}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
           </View>
           {LATEST_APPOINTMENTS.length === 0 && <Text style={s.emptyText}>No appointments yet</Text>}
           {LATEST_APPOINTMENTS.map((a, i) => {
@@ -198,7 +216,15 @@ export default function AdminHome() {
               <View key={i} style={s.rowItem}>
                 <View style={s.rowLeft}>
                   <Text style={s.rowId}>{a.id}</Text>
-                  <Text style={s.rowMain}>{a.citizen} → {a.lawyer}</Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <Text style={s.rowMain}>{a.citizen}</Text>
+                    <Image
+                      source={require('../../assets/images/arrow.png')}
+                      style={{ width: 12, height: 8 }}
+                      resizeMode="contain"
+                    />
+                    <Text style={s.rowMain}>{a.lawyer}</Text>
+                  </View>
                   <Text style={s.rowSub}>{a.date}</Text>
                 </View>
                 <View style={[s.pill, { backgroundColor: sc?.bg || '#f3f4f6' }]}>
@@ -211,13 +237,13 @@ export default function AdminHome() {
 
         {/* ── RECENT ACTIVITY ── */}
         <View style={[s.section, { marginBottom: 100 }]}>
-          <Text style={s.sectionTitle}>🕐 Recent Activity</Text>
+          <Text style={s.sectionTitle}>Recent Activity</Text>
           {RECENT_ACTIVITIES.length === 0 && <Text style={s.emptyText}>No recent activity</Text>}
           {RECENT_ACTIVITIES.map((item, i) => (
             <View key={i} style={s.activityItem}>
               <View style={[s.activityDot, { backgroundColor: item.color }]} />
               <View style={{ flex: 1 }}>
-                <Text style={s.activityTitle}>{item.icon} {item.title}</Text>
+                <Text style={s.activityTitle}>{item.title}</Text>
                 <Text style={s.activitySub}>{item.sub}</Text>
               </View>
             </View>
@@ -253,17 +279,19 @@ const s = StyleSheet.create({
   statsGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   statCard:      { backgroundColor: '#170905', borderRadius: 16, padding: 14, width: (width - 42) / 2, borderWidth: 1, borderColor: 'rgba(255, 149, 0, 0.18)', overflow: 'hidden' },
   statAccent:    { position: 'absolute', top: 0, left: 0, right: 0, height: 3, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
-  statIcon:      { fontSize: 18, marginTop: 8, marginBottom: 4 },
+  statIcon:      { fontSize: 11, fontWeight: '800', color: '#FF9500', marginTop: 8, marginBottom: 4, letterSpacing: 0.5 },
   statValue:     { fontSize: 22, fontWeight: '800', color: '#FFEED6', letterSpacing: -0.5 },
   statLabel:     { fontSize: 10, color: 'rgba(255, 235, 215, 0.65)', marginTop: 4, fontWeight: '500' },
   statDelta:     { fontSize: 10, color: '#FF9500', marginTop: 4, fontWeight: '700' },
   quickGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
   quickCard:     { backgroundColor: '#170905', borderRadius: 16, padding: 14, width: (width - 42) / 2, borderWidth: 1, borderColor: 'rgba(255, 149, 0, 0.18)' },
   quickIconBox:  { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  quickIcon:     { fontSize: 20 },
+  quickTagText:  { fontSize: 12, fontWeight: '800' },
   quickLabel:    { fontSize: 12, fontWeight: '800', color: '#FFEED6' },
   quickSub:      { fontSize: 10, color: 'rgba(255, 235, 215, 0.55)', marginTop: 2 },
   quickArrow:    { fontSize: 16, fontWeight: '800', marginTop: 8 },
+  quickArrowImg: { width: 18, height: 13, marginTop: 8 },
+  seeAllArrowImg: { width: 14, height: 10 },
   section:       { backgroundColor: '#170905', borderRadius: 18, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: 'rgba(255, 149, 0, 0.18)' },
   sectionTitle:  { fontSize: 13, fontWeight: '800', color: '#FFEED6', marginBottom: 12 },
   secRow:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },

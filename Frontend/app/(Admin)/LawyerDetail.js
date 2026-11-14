@@ -108,11 +108,11 @@ export default function LawyerDetail() {
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>{displayName}</Text>
             <Text style={styles.profileSub}>{data.licenseNumber || data.license || 'SBC Verified'} · {data.specialty || 'Advocate'}</Text>
-            <Text style={styles.profileSubMuted}>📍 {data.city || 'Karachi, Sindh'} · {data.experience ?? '8'} yrs exp</Text>
+            <Text style={styles.profileSubMuted}>{data.city || 'Karachi, Sindh'} · {data.experience ?? '8'} yrs exp</Text>
           </View>
           {data.rating > 0 && (
             <View style={styles.ratingBox}>
-              <Text style={styles.ratingVal}>⭐ {data.rating}</Text>
+              <Text style={styles.ratingVal}>{data.rating} / 5.0</Text>
               <Text style={styles.ratingCount}>{data.totalReviews || 0} reviews</Text>
             </View>
           )}
@@ -138,7 +138,7 @@ export default function LawyerDetail() {
         {/* ── PERSONAL TAB ── */}
         {activeTab === 'Personal' && (
           <>
-            <Section title="👤 Personal Information">
+            <Section title="Personal Information">
               <InfoRow label="Full Name"          value={displayName} />
               <InfoRow label="Gender"             value={data.gender || 'Not specified'} />
               <InfoRow label="Date of Birth"      value={data.dob || '—'} />
@@ -146,7 +146,7 @@ export default function LawyerDetail() {
               <InfoRow label="CNIC (SBC Verify)"  value={data.cnic || '42101-*******-*'} highlight />
             </Section>
 
-            <Section title="📞 Contact Information">
+            <Section title="Contact Information">
               <InfoRow label="Email"          value={data.email || 'advocate@sindhbar.gov.pk'} />
               <InfoRow label="Phone"          value={data.phone || '+92 300 0000000'} />
               <InfoRow label="Office Address" value={data.officeAddress || 'High Court Chamber, Sindh'} />
@@ -159,7 +159,7 @@ export default function LawyerDetail() {
         {/* ── PROFESSIONAL TAB ── */}
         {activeTab === 'Professional' && (
           <>
-            <Section title="⚖️ Professional Credentials">
+            <Section title="Professional Credentials">
               <InfoRow label="License Number"          value={data.licenseNumber || data.license || 'SBC-4421'} />
               <InfoRow label="Bar Council Reg. No."   value={data.barCouncil || 'SBC/KHI/2019'} />
               <InfoRow label="Specialization"          value={data.specialty || 'Constitutional & Civil'} />
@@ -170,13 +170,13 @@ export default function LawyerDetail() {
               <InfoRow label="Languages"               value={data.languages || 'English, Urdu, Sindhi'} />
             </Section>
 
-            <Section title="🗓️ Practice Information">
+            <Section title="Practice Information">
               <InfoRow label="Consultation Fee"      value={data.fee || 'Pro Bono / Subsidized'} />
               <InfoRow label="Available Days"        value={data.availableDays || 'Mon – Fri'} />
               <InfoRow label="Courts of Practice"    value={data.courts || 'High Court of Sindh, City Courts'} />
             </Section>
 
-            <Section title="📝 Professional Bio">
+            <Section title="Professional Bio">
               <Text style={styles.bioText}>{data.bio || 'Advocate High Court practicing constitutional, human rights, and civil litigation across Sindh tribunals.'}</Text>
             </Section>
           </>
@@ -185,13 +185,13 @@ export default function LawyerDetail() {
         {/* ── PERFORMANCE TAB ── */}
         {activeTab === 'Performance' && (
           <>
-            <Section title="📊 Case Statistics">
+            <Section title="Case Statistics">
               <View style={styles.perfGrid}>
                 {[
                   { label: 'Total Cases',   value: data.totalCases || data.cases || 42 },
                   { label: 'Active Matters',value: data.activeCases || 11 },
                   { label: 'Disposed/Won',  value: data.completedCases || 31 },
-                  { label: 'Rating',        value: data.rating > 0 ? `⭐ ${data.rating}` : '⭐ 4.8' },
+                  { label: 'Rating',        value: data.rating > 0 ? `${data.rating} / 5.0` : '4.8 / 5.0' },
                   { label: 'Reviews',       value: data.totalReviews || 19 },
                 ].map((item, i) => (
                   <View key={i} style={styles.perfCard}>
@@ -207,19 +207,19 @@ export default function LawyerDetail() {
         {/* ── ACCOUNT TAB ── */}
         {activeTab === 'Account' && (
           <>
-            <Section title="🔐 Account Management">
+            <Section title="Account Management">
               <InfoRow label="Username"         value={data.username || (displayName.toLowerCase().replace(/\s+/g, '.') + '.sbc')} />
               <InfoRow label="Account Status"   value={data.status || 'Active'} highlight />
               <InfoRow label="Registered On"    value={data.registeredOn || '12 Oct 2024'} />
               <InfoRow label="Verification"     value="SBC Bar License Valid" />
             </Section>
 
-            <Section title="🛡️ Administrative Actions">
+            <Section title="Administrative Actions">
               <TouchableOpacity style={styles.actionBtnPrimary} activeOpacity={0.8}>
                 <Text style={styles.actionBtnPrimaryTxt}>✓ VERIFY SBC CREDENTIALS</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionBtnWarn} activeOpacity={0.8}>
-                <Text style={styles.actionBtnWarnTxt}>⏸ Suspend License</Text>
+                <Text style={styles.actionBtnWarnTxt}>Suspend License</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionBtnDanger} activeOpacity={0.8}>
                 <Text style={styles.actionBtnDangerTxt}>✕ Revoke & Remove Record</Text>

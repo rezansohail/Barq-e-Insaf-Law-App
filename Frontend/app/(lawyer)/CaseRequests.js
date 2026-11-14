@@ -16,6 +16,9 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import styles from './CaseRequests.styles';
 import { useMockStore, caseRequests, declineRequest, acceptRequest, fetchRequests } from './MockStore';
 import { getCurrentLawyerId } from '../../constants/authStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 const QUICK_REASONS = [
   'Schedule is currently full for new consultations.',
@@ -35,6 +38,9 @@ export default function CaseRequests() {
   const [declineModalVisible, setDeclineModalVisible] = useState(false);
   const [declineReason, setDeclineReason] = useState('');
   const [actionInProgress, setActionInProgress] = useState(false);
+
+  // Hardware back returns to LawyerHome
+  useAppNavigation({ isHome: false, homeRoute: '/(lawyer)/LawyerHome' });
 
   useEffect(() => {
     if (currentLawyerId) {
@@ -110,20 +116,15 @@ export default function CaseRequests() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>Case Requests ({pendingRequests.length})</Text>
-        </View>
-      </View>
+      {/* Top Header matching app standard */}
+      <AppHeader
+        title={`Requests (${pendingRequests.length})`}
+        showBack={true}
+        homeRoute="/(lawyer)/LawyerHome"
+        role="lawyer"
+      />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {pendingRequests.length > 0 ? (
@@ -247,21 +248,8 @@ export default function CaseRequests() {
         </View>
       </Modal>
 
-      {/* FOOTER */}
-      <View style={styles.bottomNav}>
-        {['Dashboard', 'Requests', 'Cases', 'Schedule', 'Profile'].map((lbl, idx) => {
-          const ids = ['home', 'requests', 'cases', 'schedule', 'profile'];
-          return (
-            <TouchableOpacity
-              key={lbl}
-              style={styles.navItem}
-              onPress={() => handleNav(ids[idx])}
-            >
-              <Text style={[styles.navLabel, ids[idx] === 'requests' && styles.navLabelActive]}>{lbl}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {/* Unified Bottom Navigation */}
+      <BottomNavBar role="lawyer" activeTab="requests" />
     </SafeAreaView>
   );
 }

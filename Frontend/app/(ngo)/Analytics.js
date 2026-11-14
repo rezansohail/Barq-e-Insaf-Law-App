@@ -165,7 +165,7 @@ export default function NGOAnalytics() {
           {/* Export Action */}
           <View style={styles.actionBox}>
             <LiquidGlassButton
-              title="📄 EXPORT COMPLETE REPORT"
+              title="EXPORT COMPLETE REPORT"
               onPress={() => router.push('/(ngo)/ExportReports')}
             />
           </View>

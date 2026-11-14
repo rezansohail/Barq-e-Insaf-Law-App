@@ -12,6 +12,7 @@ import {
   StatusBar,
   useWindowDimensions,
   Alert,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -19,6 +20,9 @@ import { BlurView } from 'expo-blur';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
 import api from '../constants/api';
+import { saveSession } from '../constants/authStore';
+import { setLawyerProfileFromUser } from './(lawyer)/MockStore';
+import { setCitizenProfileFromUser } from './(citizen)/MockStore';
 
 const roleConfig = {
   citizen: {
@@ -149,9 +153,11 @@ const PasswordInput = ({ label, value, onChangeText, color }) => {
           autoCapitalize="none"
         />
         <TouchableOpacity onPress={() => setShow(!show)} style={styles.eyeBtn}>
-          <Text style={{ fontSize: 16, color: color || '#FFB800' }}>
-            {show ? '👁️' : '🚫'}
-          </Text>
+          <Image
+            source={show ? require('../assets/images/show.png') : require('../assets/images/hide.png')}
+            style={{ width: 22, height: 22, tintColor: color || '#FFB800' }}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </View>
       <View style={[styles.inputUnderline, { backgroundColor: color || 'rgba(255, 210, 140, 0.3)' }]} />
@@ -271,9 +277,12 @@ export default function LoginScreen() {
       } else if (currentRole === 'admin') {
         endpoint = '/admin/login';
         targetRoute = '/(Admin)';
-      } else if (currentRole === 'ngo' || currentRole === 'media') {
+      } else if (currentRole === 'ngo') {
         endpoint = '/ngo/login';
         targetRoute = '/(ngo)/NGOHome';
+      } else if (currentRole === 'media') {
+        endpoint = '/ngo/login';
+        targetRoute = '/(media)/MediaHome';
       }
 
       console.log(`[AUTH] Logging in to ${endpoint} with ${email.trim()}`);
@@ -285,6 +294,18 @@ export default function LoginScreen() {
       console.log('[AUTH] Login response:', response.data);
 
       if (response.data && (response.data.token || response.data.success !== false)) {
+        try {
+          const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.admin || response.data.user;
+          saveSession({
+            token: response.data.token,
+            role: currentRole,
+            user: userObj,
+            id: userObj?.id,
+          });
+          if (currentRole === 'lawyer' && userObj) setLawyerProfileFromUser(userObj);
+          if (currentRole === 'citizen' && userObj) setCitizenProfileFromUser(userObj);
+        } catch (_) {}
+
         Alert.alert(
           'Login Successful',
           `Welcome back to ${config.label}!`,
@@ -385,7 +406,20 @@ export default function LoginScreen() {
           email: email.trim(),
           password: password,
           confirmPassword: retypePass,
-          organizationType: 'NGO / Media',
+          organizationType: 'NGO',
+        };
+      } else if (currentRole === 'media') {
+        endpoint = '/ngo/register';
+        targetRoute = '/(media)/MediaHome';
+        payload = {
+          fullName: name.trim(),
+          phone: phone.trim(),
+          cnic: cnic.trim() || null,
+          district: district.trim(),
+          email: email.trim(),
+          password: password,
+          confirmPassword: retypePass,
+          organizationType: 'Media',
         };
       }
 
@@ -394,6 +428,18 @@ export default function LoginScreen() {
       console.log('[AUTH] Register response:', response.data);
 
       if (response.data && (response.data.token || response.data.success !== false)) {
+        try {
+          const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.admin || response.data.user;
+          saveSession({
+            token: response.data.token,
+            role: currentRole,
+            user: userObj,
+            id: userObj?.id,
+          });
+          if (currentRole === 'lawyer' && userObj) setLawyerProfileFromUser(userObj);
+          if (currentRole === 'citizen' && userObj) setCitizenProfileFromUser(userObj);
+        } catch (_) {}
+
         const successMsg = response.data.message || 'Registration successful! Welcome to Barq-e-Insaf.';
         Alert.alert('Registration Successful', successMsg, [
           {
@@ -483,7 +529,11 @@ export default function LoginScreen() {
               hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
               accessibilityLabel="Back to Role Selection"
             >
-              <Text style={styles.simpleBackText}>&lt;</Text>
+              <Image
+                source={require('../assets/images/backarrow.png')}
+                style={styles.backArrowImg}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
 
             {/* Glowing Liquid Glass Brand Orb */}
@@ -828,7 +878,7 @@ export default function LoginScreen() {
                   {/* GENERAL ERROR BANNER */}
                   {errors.general && (
                     <View style={styles.generalErrorBox}>
-                      <Text style={styles.generalErrorText}>⚠️ {errors.general}</Text>
+                      <Text style={styles.generalErrorText}>{errors.general}</Text>
                     </View>
                   )}
 
@@ -913,11 +963,9 @@ const styles = StyleSheet.create({
     zIndex: 20,
     padding: 8,
   },
-  simpleBackText: {
-    fontSize: 26,
-    fontWeight: '300',
-    color: '#FF9500',
-    lineHeight: 28,
+  backArrowImg: {
+    width: 24,
+    height: 17,
   },
   portalSubText: {
     fontSize: 11.5,

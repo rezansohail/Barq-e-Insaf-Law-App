@@ -348,13 +348,13 @@ export default function DigitalSignatureModal({
                       {drawnPaths.length === 0 && (
                         <View style={styles.canvasPlaceholder} pointerEvents="none">
                           <Text style={styles.canvasPlaceholderText}>
-                            ✍️ Sign with finger or stylus here
+                            Sign with finger or stylus here
                           </Text>
                         </View>
                       )}
                     </View>
                     <Text style={styles.canvasSecurityNote}>
-                      🔒 Hardware-encrypted biometric touch signature certificate
+                      Hardware-encrypted biometric touch signature certificate
                     </Text>
                   </View>
                 )}
@@ -362,7 +362,7 @@ export default function DigitalSignatureModal({
                 {/* Legal Attestation */}
                 <View style={styles.attestationBox}>
                   <Text style={styles.attestationText}>
-                    ⚖️ By signing, I confirm that the citizen is scheduled to visit at the designated time, and I authorize sharing my chamber contact details for consultation arrangement.
+                    By signing, I confirm that the citizen is scheduled to visit at the designated time, and I authorize sharing my chamber contact details for consultation arrangement.
                   </Text>
                 </View>
               </ScrollView>
