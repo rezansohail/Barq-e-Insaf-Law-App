@@ -1,21 +1,19 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './MyCases.styles';
 import { useMockStore, activeCases } from './MockStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 export default function MyCases() {
   useMockStore();
   const router = useRouter();
 
-  const handleNav = (lbl) => {
-    if (lbl === 'home') router.push('/(lawyer)/LawyerHome');
-    if (lbl === 'requests') router.push('/(lawyer)/CaseRequests');
-    if (lbl === 'cases') router.push('/(lawyer)/MyCases');
-    if (lbl === 'schedule') router.push('/(lawyer)/Schedule');
-    if (lbl === 'profile') router.push('/(lawyer)/LawyerProfile');
-  };
+  // Hardware back returns to LawyerHome
+  useAppNavigation({ isHome: false, homeRoute: '/(lawyer)/LawyerHome' });
 
   const handleCasePress = (caseId) => {
     router.push({
@@ -26,36 +24,32 @@ export default function MyCases() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>My Active Cases</Text>
-        </View>
-      </View>
+      {/* Modern '< My Active Cases' Header */}
+      <AppHeader
+        title="My Active Cases"
+        showBack={true}
+        homeRoute="/(lawyer)/LawyerHome"
+        role="lawyer"
+      />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {activeCases.length === 0 && (
-          <Text style={styles.caseMeta}>No active cases</Text>
+          <Text style={styles.emptyText}>No active cases currently represented.</Text>
         )}
         {activeCases.map((c, i) => (
           <TouchableOpacity 
             key={i} 
             style={styles.caseCard} 
             onPress={() => handleCasePress(c.id)}
+            activeOpacity={0.78}
           >
             <View style={styles.caseTop}>
               <Text style={styles.caseTitle}>{c.title}</Text>
               <Text style={styles.activeBadge}>Active</Text>
             </View>
-            <Text style={styles.caseMeta}>Client Name: {c.clientName}</Text>
+            <Text style={styles.caseMeta}>Client: {c.clientName || 'Assigned Citizen'}</Text>
             
             <View style={styles.problemBox}>
               <Text style={styles.problemLabel}>Problem Statement:</Text>
@@ -63,27 +57,14 @@ export default function MyCases() {
             </View>
             
             <View style={styles.caseFooter}>
-              <Text style={styles.caseFooterText}>Tap to view case details</Text>
+              <Text style={styles.caseFooterText}>Tap to review case evidence & updates &gt;</Text>
             </View>
           </TouchableOpacity>
         ))}
       </ScrollView>
 
-      {/* FOOTER */}
-      <View style={styles.bottomNav}>
-        {['Dashboard', 'Requests', 'Cases', 'Schedule', 'Profile'].map((lbl, idx) => {
-          const ids = ['home', 'requests', 'cases', 'schedule', 'profile'];
-          return (
-            <TouchableOpacity
-              key={lbl}
-              style={styles.navItem}
-              onPress={() => handleNav(ids[idx])}
-            >
-              <Text style={[styles.navLabel, ids[idx] === 'cases' && styles.navLabelActive]}>{lbl}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {/* Consistent Bottom Nav */}
+      <BottomNavBar role="lawyer" activeTab="cases" />
     </SafeAreaView>
   );
 }

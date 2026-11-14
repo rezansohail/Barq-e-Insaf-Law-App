@@ -12,6 +12,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './FindLawyer.styles';
 import { useMockStore, lawyers } from './MockStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import LiquidGlassButton from '../../components/LiquidGlassButton';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 const specialties = ['All', 'Property', 'Family', 'Civil', 'Criminal'];
 
@@ -24,18 +28,14 @@ export default function FindLawyer() {
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
 
+  // Hardware back button returns to CitizenHome
+  useAppNavigation({ isHome: false, homeRoute: '/(citizen)/CitizenHome' });
+
   const filtered = lawyers.filter(l => {
     const matchSpec = activeFilter === 'All' || (l.spec && l.spec.toLowerCase().includes(activeFilter.toLowerCase()));
     const matchSearch = l.name.toLowerCase().includes(search.toLowerCase()) || (l.district && l.district.toLowerCase().includes(search.toLowerCase()));
     return matchSpec && matchSearch;
   });
-
-  const handleNav = (id) => {
-    if (id === 'home')    router.push('/(citizen)/CitizenHome');
-    if (id === 'cases')   router.push('/(citizen)/MyCases');
-    if (id === 'lawyers') router.push('/(citizen)/FindLawyer');
-    if (id === 'profile') router.push('/(citizen)/Profile');
-  };
 
   const handleLawyerPress = (lawyer) => {
     setSelectedLawyer(lawyer);
@@ -44,32 +44,27 @@ export default function FindLawyer() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>Find a Lawyer</Text>
-        </View>
-      </View>
+      {/* Modern '< Find Lawyers' Header */}
+      <AppHeader
+        title="Find Lawyers"
+        showBack={true}
+        homeRoute="/(citizen)/CitizenHome"
+        role="citizen"
+      />
 
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* SEARCH */}
+        {/* SEARCH BAR */}
         <View style={styles.searchBar}>
           <TextInput
             style={styles.searchInput}
-            placeholder="Search by name..."
-            placeholderTextColor="#bbb"
+            placeholder="Search by advocate name or district..."
+            placeholderTextColor="rgba(255, 220, 180, 0.35)"
             value={search}
             onChangeText={setSearch}
           />
@@ -86,6 +81,7 @@ export default function FindLawyer() {
               key={s}
               style={[styles.filterChip, activeFilter === s && styles.filterChipActive]}
               onPress={() => setActiveFilter(s)}
+              activeOpacity={0.75}
             >
               <Text style={[styles.filterText, activeFilter === s && styles.filterTextActive]}>
                 {s}
@@ -96,33 +92,36 @@ export default function FindLawyer() {
 
         {/* LAWYER CARDS */}
         {filtered.length === 0 && (
-          <Text style={styles.lawyerSpec}>No lawyers found</Text>
+          <Text style={[styles.lawyerSpec, { textAlign: 'center', marginTop: 30 }]}>
+            No advocates found matching your query.
+          </Text>
         )}
+
         {filtered.map((l, i) => (
-          <TouchableOpacity 
-            key={i} 
-            style={styles.lawyerCard}
-            onPress={() => handleLawyerPress(l)}
-          >
-            <View style={[styles.lawyerAvatar, { backgroundColor: l.color }]}>
-              <Text style={styles.lawyerAvatarText}>{l.initials}</Text>
+          <View key={i} style={styles.lawyerCard}>
+            <View style={[styles.lawyerAvatar, { backgroundColor: l.color || '#2A1206' }]}>
+              <Text style={styles.lawyerAvatarText}>{l.initials || l.name?.slice(0, 2).toUpperCase()}</Text>
             </View>
+
             <View style={styles.lawyerInfo}>
               <Text style={styles.lawyerName}>{l.name}</Text>
-              <Text style={styles.lawyerSpec}>{l.spec} · {l.location}</Text>
+              <Text style={styles.lawyerSpec}>{l.spec}</Text>
+
               <View style={styles.lawyerMeta}>
-                <Text style={styles.sbcBadge}>SBC Approved</Text>
-                <Text style={styles.ratingText}>Rating: {l.rating} ({l.cases} cases)</Text>
+                <Text style={styles.sbcBadge}>{l.sbc || 'SBC Verified'}</Text>
+                <Text style={styles.ratingText}>★ {l.rating || '4.9'}</Text>
               </View>
-              
+
               <View style={styles.actionButtonsRow}>
-                <TouchableOpacity 
-                  style={[styles.actionBtn, styles.profileBtn]} 
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.profileBtn]}
                   onPress={() => handleLawyerPress(l)}
+                  activeOpacity={0.75}
                 >
-                  <Text style={styles.profileBtnText}>View Profile</Text>
+                  <Text style={styles.profileBtnText}>VIEW PROFILE</Text>
                 </TouchableOpacity>
-                <TouchableOpacity 
+
+                <TouchableOpacity
                   style={[styles.actionBtn, styles.requestBtn]}
                   onPress={() => {
                     router.push({
@@ -130,27 +129,18 @@ export default function FindLawyer() {
                       params: { lawyerId: l.id }
                     });
                   }}
+                  activeOpacity={0.75}
                 >
-                  <Text style={styles.requestBtnText}>Request Consultation</Text>
+                  <Text style={styles.requestBtnText}>CONSULT</Text>
                 </TouchableOpacity>
               </View>
             </View>
-          </TouchableOpacity>
+          </View>
         ))}
       </ScrollView>
 
-      {/* BOTTOM NAV */}
-      <View style={styles.bottomNav}>
-        {['Home', 'Cases', 'Lawyers', 'Profile'].map((lbl) => (
-          <TouchableOpacity
-            key={lbl}
-            style={styles.navItem}
-            onPress={() => handleNav(lbl.toLowerCase())}
-          >
-            <Text style={[styles.navLabel, lbl === 'Lawyers' && styles.navLabelActive]}>{lbl}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Consistent Bottom Nav */}
+      <BottomNavBar role="citizen" activeTab="lawyers" />
 
       {/* LAWYER PROFILE MODAL */}
       <Modal
@@ -164,14 +154,15 @@ export default function FindLawyer() {
             <TouchableOpacity 
               style={styles.closeProfileBtn}
               onPress={() => setShowLawyerProfile(false)}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <Text style={styles.closeProfileText}>Close</Text>
+              <Text style={styles.closeProfileText}>✕ Close</Text>
             </TouchableOpacity>
             
             {selectedLawyer && (
               <ScrollView showsVerticalScrollIndicator={false}>
-                <View style={[styles.profileAvatarLarge, { backgroundColor: selectedLawyer.color }]}>
-                  <Text style={styles.profileAvatarText}>{selectedLawyer.initials}</Text>
+                <View style={[styles.profileAvatarLarge, { backgroundColor: selectedLawyer.color || '#2A1206' }]}>
+                  <Text style={styles.profileAvatarText}>{selectedLawyer.initials || selectedLawyer.name?.slice(0, 2).toUpperCase()}</Text>
                 </View>
                 
                 <Text style={styles.profileName}>{selectedLawyer.name}</Text>
@@ -179,54 +170,58 @@ export default function FindLawyer() {
                 
                 <View style={styles.profileDetails}>
                   <View style={styles.profileDetailItem}>
-                    <Text style={styles.profileDetailLabel}>District</Text>
-                    <Text style={styles.profileDetailValue}>{selectedLawyer.location}</Text>
+                    <Text style={styles.profileDetailLabel}>District / Court</Text>
+                    <Text style={styles.profileDetailValue}>{selectedLawyer.location || selectedLawyer.district}</Text>
                   </View>
                   <View style={styles.profileDetailItem}>
-                    <Text style={styles.profileDetailLabel}>Rating</Text>
-                    <Text style={styles.profileDetailValue}>{selectedLawyer.rating} / 5.0</Text>
+                    <Text style={styles.profileDetailLabel}>Client Rating</Text>
+                    <Text style={styles.profileDetailValue}>★ {selectedLawyer.rating} / 5.0</Text>
                   </View>
                   <View style={styles.profileDetailItem}>
                     <Text style={styles.profileDetailLabel}>Successful Cases</Text>
-                    <Text style={styles.profileDetailValue}>{selectedLawyer.cases}</Text>
+                    <Text style={styles.profileDetailValue}>{selectedLawyer.cases || selectedLawyer.casesWon || '150+'}</Text>
                   </View>
                   <View style={styles.profileDetailItem}>
-                    <Text style={styles.profileDetailLabel}>SBC License</Text>
-                    <Text style={styles.profileDetailValue}>{selectedLawyer.sbc} (Approved)</Text>
+                    <Text style={styles.profileDetailLabel}>SBC Bar License</Text>
+                    <Text style={styles.profileDetailValue}>{selectedLawyer.sbc || 'Verified SBC Advocate'}</Text>
                   </View>
                 </View>
                 
-                <Text style={styles.profileAbout}>{selectedLawyer.about}</Text>
+                <Text style={styles.profileAbout}>{selectedLawyer.about || 'Certified advocate authorized by the Sindh Bar Council to practice across high courts and district civil/criminal benches.'}</Text>
                 
                 {/* OFFICE SCHEDULE BUTTON */}
                 <TouchableOpacity 
                   style={styles.scheduleBtn} 
                   onPress={() => setShowScheduleModal(true)}
+                  activeOpacity={0.75}
                 >
-                  <Text style={styles.scheduleBtnText}>View Office Schedule</Text>
+                  <Text style={styles.scheduleBtnText}>View Office Availability</Text>
                 </TouchableOpacity>
 
                 {/* REVIEWS */}
                 <Text style={styles.reviewsHeader}>Client Reviews</Text>
-                {selectedLawyer.reviews.map((r, ri) => (
+                {(selectedLawyer.reviews || [
+                  { user: 'Rezan S.', rating: '5.0', comment: 'Very professional, resolved our land matter with prompt court filings.' },
+                  { user: 'Bilal A.', rating: '4.8', comment: 'Thorough guidance on civil disputes.' },
+                ]).map((r, ri) => (
                   <View key={ri} style={styles.reviewCard}>
-                    <Text style={styles.reviewUser}>{r.user} (Rating: {r.rating})</Text>
+                    <Text style={styles.reviewUser}>{r.user} · ★ {r.rating}</Text>
                     <Text style={styles.reviewComment}>{r.comment}</Text>
                   </View>
                 ))}
 
-                <TouchableOpacity 
-                  style={styles.sendRequestBtn}
-                  onPress={() => {
-                    setShowLawyerProfile(false);
-                    router.push({
-                      pathname: '/(citizen)/RequestConsultation',
-                      params: { lawyerId: selectedLawyer.id }
-                    });
-                  }}
-                >
-                  <Text style={styles.sendRequestBtnText}>Send Consultation Request</Text>
-                </TouchableOpacity>
+                <View style={{ marginTop: 14, marginBottom: 12 }}>
+                  <LiquidGlassButton
+                    title="BOOK CONSULTATION"
+                    onPress={() => {
+                      setShowLawyerProfile(false);
+                      router.push({
+                        pathname: '/(citizen)/RequestConsultation',
+                        params: { lawyerId: selectedLawyer.id }
+                      });
+                    }}
+                  />
+                </View>
               </ScrollView>
             )}
           </View>
@@ -242,8 +237,12 @@ export default function FindLawyer() {
       >
         <View style={styles.modalOverlay}>
           <View style={styles.popupContainer}>
-            <Text style={styles.popupTitle}>Office Schedule</Text>
-            {selectedLawyer && selectedLawyer.schedule.map((item, idx) => (
+            <Text style={styles.popupTitle}>Office Availability</Text>
+            {(selectedLawyer?.schedule || [
+              { day: 'Mon - Thu', time: '10:00 AM - 02:00 PM' },
+              { day: 'Friday',    time: '10:00 AM - 12:30 PM' },
+              { day: 'Saturday',  time: '11:00 AM - 01:00 PM' },
+            ]).map((item, idx) => (
               <View key={idx} style={styles.scheduleItemRow}>
                 <Text style={styles.scheduleDay}>{item.day}</Text>
                 <Text style={styles.scheduleTime}>{item.time}</Text>

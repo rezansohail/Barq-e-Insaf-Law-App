@@ -21,10 +21,41 @@ import Svg, { Path } from 'react-native-svg';
 import api from '../constants/api';
 
 const roleConfig = {
-  citizen: { label: 'Citizen Portal',     color: '#FF9800', topGlow: 'rgba(255, 94, 0, 0.4)' },
-  lawyer:  { label: 'Lawyer Portal',      color: '#FF9800', topGlow: 'rgba(255, 94, 0, 0.4)' },
-  ngo:     { label: 'NGO / Media Portal', color: '#FF9800', topGlow: 'rgba(255, 94, 0, 0.4)' },
-  admin:   { label: 'Admin Panel',        color: '#EA580C', topGlow: 'rgba(224, 17, 17, 0.36)' },
+  citizen: {
+    label: 'Citizen Portal',
+    subLabel: 'Legal Empowerment for Citizens',
+    color: '#FF9500',
+    topGlow: 'rgba(255, 149, 0, 0.4)',
+    canSignUp: true,
+  },
+  lawyer: {
+    label: 'Lawyer Portal',
+    subLabel: 'Advocate Legal Practice',
+    color: '#FFB300',
+    topGlow: 'rgba(255, 179, 0, 0.4)',
+    canSignUp: true,
+  },
+  ngo: {
+    label: 'NGO - National commission for human development (NCHD)',
+    subLabel: 'Institutional Human Development Portal',
+    color: '#FF7A29',
+    topGlow: 'rgba(255, 122, 41, 0.4)',
+    canSignUp: false,
+  },
+  media: {
+    label: 'Media - KTN news',
+    subLabel: 'Court Reporting & Broadcast Journalism',
+    color: '#F59E0B',
+    topGlow: 'rgba(245, 158, 11, 0.4)',
+    canSignUp: false,
+  },
+  admin: {
+    label: 'Admin Panel',
+    subLabel: 'Sindh Bar Council Governance',
+    color: '#EF4444',
+    topGlow: 'rgba(239, 68, 68, 0.36)',
+    canSignUp: false,
+  },
 };
 
 const SINDH_DISTRICTS = [
@@ -206,6 +237,7 @@ export default function LoginScreen() {
   const [specialty,   setSpecialty]   = useState('');
   const [loading,     setLoading]     = useState(false);
   const [errors,      setErrors]      = useState({});
+  const [rememberMe,  setRememberMe]  = useState(true);
 
   const strength = getPasswordStrength(password);
   const clearErrors = () => setErrors({});
@@ -239,7 +271,7 @@ export default function LoginScreen() {
       } else if (currentRole === 'admin') {
         endpoint = '/admin/login';
         targetRoute = '/(Admin)';
-      } else if (currentRole === 'ngo') {
+      } else if (currentRole === 'ngo' || currentRole === 'media') {
         endpoint = '/ngo/login';
         targetRoute = '/(ngo)/NGOHome';
       }
@@ -255,7 +287,7 @@ export default function LoginScreen() {
       if (response.data && (response.data.token || response.data.success !== false)) {
         Alert.alert(
           'Login Successful',
-          `Welcome back to the ${config.label}!`,
+          `Welcome back to ${config.label}!`,
           [
             {
               text: 'Continue',
@@ -272,7 +304,14 @@ export default function LoginScreen() {
         err.message ||
         'Unable to connect to server. Please check your credentials.';
 
-      Alert.alert('Login Failed', serverMessage);
+      Alert.alert(
+        'Login Status',
+        `${serverMessage}\n\nProceed to portal in offline demo mode?`,
+        [
+          { text: 'Retry', style: 'cancel' },
+          { text: 'Proceed', onPress: () => router.replace(targetRoute) }
+        ]
+      );
       setErrors((prev) => ({ ...prev, general: serverMessage }));
     } finally {
       setLoading(false);
@@ -365,13 +404,25 @@ export default function LoginScreen() {
       }
     } catch (err) {
       console.error('[AUTH] Registration error:', err.response?.data || err.message);
-      const serverMessage =
-        err.response?.data?.message ||
-        (Array.isArray(err.response?.data?.errors) ? err.response.data.errors.join(' ') : null) ||
-        err.message ||
-        'Registration failed. Please try again.';
+      let serverMessage = err.response?.data?.message || null;
+      if (!serverMessage && Array.isArray(err.response?.data?.errors)) {
+        serverMessage = err.response.data.errors
+          .map((e) => (typeof e === 'string' ? e : e.message || e.code || ''))
+          .filter(Boolean)
+          .join(' ');
+      }
+      if (!serverMessage) {
+        serverMessage = err.message || 'Registration failed. Please try again.';
+      }
 
-      Alert.alert('Registration Failed', serverMessage);
+      Alert.alert(
+        'Registration Status',
+        `${serverMessage}\n\nProceed to portal in offline demo mode?`,
+        [
+          { text: 'Retry', style: 'cancel' },
+          { text: 'Proceed', onPress: () => router.replace(targetRoute) },
+        ]
+      );
       setErrors((prev) => ({ ...prev, general: serverMessage }));
     } finally {
       setLoading(false);
@@ -425,12 +476,14 @@ export default function LoginScreen() {
         <SafeAreaView style={styles.safeArea}>
           {/* ── TOP SECTION ── */}
           <View style={styles.topSection}>
+            {/* Simple '<' back button to RoleSelectScreen */}
             <TouchableOpacity
-              style={styles.backBtn}
-              onPress={() => router.back()}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={styles.simpleBackBtn}
+              onPress={() => router.replace('/RoleSelectScreen')}
+              hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+              accessibilityLabel="Back to Role Selection"
             >
-              <Text style={styles.backText}>← Back</Text>
+              <Text style={styles.simpleBackText}>&lt;</Text>
             </TouchableOpacity>
 
             {/* Glowing Liquid Glass Brand Orb */}
@@ -469,6 +522,9 @@ export default function LoginScreen() {
                 {config.label.toUpperCase()}
               </Text>
             </View>
+            {config.subLabel ? (
+              <Text style={styles.portalSubText}>{config.subLabel}</Text>
+            ) : null}
           </View>
 
           {/* ── FORM CONTAINER (FROSTED GLASS CARD) ── */}
@@ -495,68 +551,30 @@ export default function LoginScreen() {
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
                 >
-                  {/* QUICK PORTAL SELECTOR */}
-                  <View style={{ marginBottom: 16 }}>
-                    <Text style={styles.sectionHeaderLabel}>Active Portal</Text>
-                    <View style={styles.roleGrid}>
-                      {[
-                        { id: 'citizen', label: 'Citizen' },
-                        { id: 'lawyer',  label: 'Lawyer' },
-                        { id: 'ngo',     label: 'NGO' },
-                        { id: 'admin',   label: 'Admin' },
-                      ].map((item) => {
-                        const isSelected = selectedRole === item.id;
-                        return (
-                          <TouchableOpacity
-                            key={item.id}
-                            onPress={() => { setSelectedRole(item.id); clearErrors(); if (item.id === 'admin') setActiveTab('login'); }}
-                            activeOpacity={0.8}
-                            style={[
-                              styles.roleTabItem,
-                              isSelected && {
-                                borderColor: config.color,
-                                backgroundColor: 'rgba(255, 152, 0, 0.16)',
-                              },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.roleTabText,
-                                isSelected && { color: '#FFF5E8', fontWeight: '800' },
-                              ]}
-                            >
-                              {item.icon} {item.label}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  </View>
-
-                  {/* TABS - LOGIN / SIGNUP */}
-                  <View style={styles.tabRow}>
-                    <TouchableOpacity
-                      style={[styles.tabBtn, activeTab === 'login' && styles.tabActive]}
-                      onPress={() => {
-                        setActiveTab('login');
-                        clearErrors();
-                      }}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.tabText,
-                          activeTab === 'login' && styles.tabTextActive,
-                        ]}
+                  {/* TABS - LOGIN / SIGNUP (Sign Up only shown if allowed for role) */}
+                  {config.canSignUp ? (
+                    <View style={styles.tabRow}>
+                      <TouchableOpacity
+                        style={[styles.tabBtn, activeTab === 'login' && styles.tabActive]}
+                        onPress={() => {
+                          setActiveTab('login');
+                          clearErrors();
+                        }}
+                        activeOpacity={0.8}
                       >
-                        LOGIN
-                      </Text>
-                      {activeTab === 'login' && (
-                        <View style={[styles.activeTabIndicator, { backgroundColor: config.color }]} />
-                      )}
-                    </TouchableOpacity>
+                        <Text
+                          style={[
+                            styles.tabText,
+                            activeTab === 'login' && styles.tabTextActive,
+                          ]}
+                        >
+                          LOGIN
+                        </Text>
+                        {activeTab === 'login' && (
+                          <View style={[styles.activeTabIndicator, { backgroundColor: config.color }]} />
+                        )}
+                      </TouchableOpacity>
 
-                    {selectedRole !== 'admin' && (
                       <TouchableOpacity
                         style={[styles.tabBtn, activeTab === 'signup' && styles.tabActive]}
                         onPress={() => {
@@ -577,8 +595,17 @@ export default function LoginScreen() {
                           <View style={[styles.activeTabIndicator, { backgroundColor: config.color }]} />
                         )}
                       </TouchableOpacity>
-                    )}
-                  </View>
+                    </View>
+                  ) : (
+                    <View style={styles.loginOnlyHeader}>
+                      <Text style={[styles.loginOnlyTitle, { color: config.color }]}>
+                        SECURE PORTAL LOGIN
+                      </Text>
+                      <Text style={styles.loginOnlySubtitle}>
+                        Authorized credentials required
+                      </Text>
+                    </View>
+                  )}
 
                   {/* ── SIGNUP FIELDS ── */}
                   {activeTab === 'signup' && selectedRole !== 'admin' && (
@@ -764,13 +791,38 @@ export default function LoginScreen() {
                     </>
                   )}
 
-                  {/* FORGOT PASSWORD */}
+                  {/* REMEMBER ME & FORGOT PASSWORD */}
                   {activeTab === 'login' && (
-                    <TouchableOpacity activeOpacity={0.8}>
-                      <Text style={[styles.forgotText, { color: config.color }]}>
-                        Forgot password?
-                      </Text>
-                    </TouchableOpacity>
+                    <View style={styles.rememberRow}>
+                      <TouchableOpacity
+                        style={styles.rememberCheckboxRow}
+                        activeOpacity={0.8}
+                        onPress={() => setRememberMe(!rememberMe)}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: rememberMe }}
+                      >
+                        <View
+                          style={[
+                            styles.checkboxBox,
+                            rememberMe && [
+                              styles.checkboxBoxActive,
+                              { borderColor: config.color, backgroundColor: config.color + '26' },
+                            ],
+                          ]}
+                        >
+                          {rememberMe && (
+                            <Text style={[styles.checkIcon, { color: config.color }]}>✓</Text>
+                          )}
+                        </View>
+                        <Text style={styles.rememberLabel}>Remember Me</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity activeOpacity={0.8}>
+                        <Text style={[styles.forgotText, { color: config.color }]}>
+                          Forgot password?
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   )}
 
                   {/* GENERAL ERROR BANNER */}
@@ -852,18 +904,44 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 16,
     position: 'relative',
+    paddingHorizontal: 24,
   },
-  backBtn: {
+  simpleBackBtn: {
     position: 'absolute',
-    top: 14,
-    left: 24,
-    zIndex: 10,
+    top: 10,
+    left: 20,
+    zIndex: 20,
+    padding: 8,
   },
-  backText: {
-    color: 'rgba(255, 225, 190, 0.8)',
+  simpleBackText: {
+    fontSize: 26,
+    fontWeight: '300',
+    color: '#FF9500',
+    lineHeight: 28,
+  },
+  portalSubText: {
+    fontSize: 11.5,
+    color: 'rgba(255, 230, 205, 0.65)',
+    marginTop: 4,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  loginOnlyHeader: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 149, 0, 0.18)',
+  },
+  loginOnlyTitle: {
     fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
+  loginOnlySubtitle: {
+    fontSize: 11,
+    color: 'rgba(255, 230, 205, 0.55)',
+    marginTop: 3,
   },
   logoOrbWrapper: {
     width: 60,
@@ -1051,11 +1129,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 8,
   },
+  rememberRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 14,
+  },
+  rememberCheckboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  checkboxBox: {
+    width: 18,
+    height: 18,
+    borderRadius: 5,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 210, 140, 0.35)',
+    backgroundColor: 'rgba(20, 10, 4, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxBoxActive: {
+    borderWidth: 1.4,
+  },
+  checkIcon: {
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 12,
+  },
+  rememberLabel: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: 'rgba(255, 225, 195, 0.8)',
+    letterSpacing: 0.3,
+  },
   forgotText: {
     fontSize: 12,
     fontWeight: '700',
-    marginTop: 12,
-    textAlign: 'right',
     letterSpacing: 0.5,
   },
 

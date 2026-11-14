@@ -15,6 +15,10 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import styles from './CaseForm.styles';
 import { useMockStore, addCase } from './MockStore';
+import LiquidGlassButton from '../../components/LiquidGlassButton';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 const sindhCities = {
   Karachi: ['Karachi Central', 'Karachi East', 'Karachi South', 'Karachi West', 'Malir', 'Korangi', 'Keamari'],
@@ -52,6 +56,9 @@ export default function CaseForm() {
 
   const [evidenceList, setEvidenceList] = useState([]);
   const [pickingLoading, setPickingLoading] = useState(false);
+
+  // Hardware back returns to CitizenHome
+  useAppNavigation({ isHome: false, homeRoute: '/(citizen)/CitizenHome' });
 
   useEffect(() => {
     if (params.newFileName && params.newFileType) {
@@ -252,20 +259,15 @@ export default function CaseForm() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
       
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backBtnText}>Back</Text>
-        </TouchableOpacity>
-        <View style={styles.brandBadgeRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>Build Your Case</Text>
-        </View>
-      </View>
+      {/* Modern '< Build Your Case' Header */}
+      <AppHeader
+        title="Build Your Case"
+        showBack={true}
+        homeRoute="/(citizen)/CitizenHome"
+        role="citizen"
+      />
 
       <ScrollView 
         style={styles.scroll}
@@ -448,14 +450,14 @@ export default function CaseForm() {
 
           {pickingLoading && (
             <View style={{ paddingVertical: 10, alignItems: 'center' }}>
-              <ActivityIndicator color="#5C1A1A" />
-              <Text style={{ fontSize: 11, color: '#666', marginTop: 4 }}>Accessing phone file system...</Text>
+              <ActivityIndicator color="#FF9500" />
+              <Text style={{ fontSize: 11, color: 'rgba(255, 220, 180, 0.6)', marginTop: 4 }}>Accessing phone file system...</Text>
             </View>
           )}
 
           {evidenceList.length === 0 && !pickingLoading && (
-            <View style={{ paddingVertical: 14, alignItems: 'center', backgroundColor: '#f9f8f6', borderRadius: 8, borderWidth: 1, borderColor: '#ece9e4', borderStyle: 'dashed' }}>
-              <Text style={{ fontSize: 12, color: '#888', fontWeight: '500' }}>
+            <View style={{ paddingVertical: 14, alignItems: 'center', backgroundColor: 'rgba(25, 12, 5, 0.65)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255, 149, 0, 0.25)', borderStyle: 'dashed' }}>
+              <Text style={{ fontSize: 12, color: 'rgba(255, 220, 180, 0.55)', fontWeight: '500' }}>
                 No evidence attached yet. Tap a button above to add files.
               </Text>
             </View>
@@ -463,7 +465,7 @@ export default function CaseForm() {
 
           {evidenceList.map((item, index) => (
             <View key={item.id || index} style={styles.evidenceItem}>
-              <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: item.type === 'Photo' ? '#e0f2fe' : '#fef3c7', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
+              <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: 'rgba(255, 149, 0, 0.15)', borderWidth: 1, borderColor: 'rgba(255, 160, 40, 0.3)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
                 <Text style={{ fontSize: 16 }}>{item.type === 'Photo' ? '🖼️' : '📄'}</Text>
               </View>
               <View style={styles.evidenceInfo}>
@@ -481,24 +483,17 @@ export default function CaseForm() {
           ))}
         </View>
 
-        {/* Submit Button */}
-        <TouchableOpacity style={styles.submitBtn} onPress={handleSubmit}>
-          <Text style={styles.submitBtnText}>Submit Case</Text>
-        </TouchableOpacity>
+        {/* Liquid Glass Submit Button */}
+        <View style={{ marginVertical: 18 }}>
+          <LiquidGlassButton
+            title="SUBMIT CASE FOR VERIFICATION"
+            onPress={handleSubmit}
+          />
+        </View>
       </ScrollView>
 
-      {/* FOOTER */}
-      <View style={styles.bottomNav}>
-        {navItems.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.navItem}
-            onPress={() => handleNav(item.id)}
-          >
-            <Text style={styles.navLabel}>{item.label}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Consistent Bottom Nav */}
+      <BottomNavBar role="citizen" activeTab="cases" />
     </SafeAreaView>
   );
 }

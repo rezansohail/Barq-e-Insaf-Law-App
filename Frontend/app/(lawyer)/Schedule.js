@@ -5,14 +5,17 @@ import {
   StyleSheet, 
   ScrollView, 
   TouchableOpacity, 
-  StatusBar,
-  TextInput,
-  Modal,
+  StatusBar, 
+  TextInput, 
+  Modal, 
   Alert 
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useMockStore, timingSlots, addTimingSlot, deleteTimingSlot, editTimingSlot } from './MockStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -26,25 +29,28 @@ export default function Schedule() {
   const [newTime, setNewTime] = useState('');
   const [showDayDropdown, setShowDayDropdown] = useState(false);
 
+  // Hardware back returns to LawyerHome
+  useAppNavigation({ isHome: false, homeRoute: '/(lawyer)/LawyerHome' });
+
   const handleAddSlot = () => {
-    if (!newTime) {
-      Alert.alert('Error', 'Please enter a time');
+    if (!newTime.trim()) {
+      Alert.alert('Error', 'Please enter consultation time (e.g. 10:00 AM - 01:00 PM)');
       return;
     }
-    addTimingSlot(newDay, newTime);
+    addTimingSlot(newDay, newTime.trim());
     setNewDay('Monday');
     setNewTime('');
     setShowAddModal(false);
-    Alert.alert('Success', 'Time slot added successfully');
+    Alert.alert('Success', 'Office hours updated successfully');
   };
 
   const handleDeleteSlot = (id) => {
     Alert.alert(
-      'Delete Slot',
-      'Are you sure you want to delete this time slot?',
+      'Remove Slot',
+      'Are you sure you want to remove this availability window?',
       [
-        { text: 'Yes', onPress: () => deleteTimingSlot(id) },
-        { text: 'No', style: 'cancel' }
+        { text: 'Yes, Remove', style: 'destructive', onPress: () => deleteTimingSlot(id) },
+        { text: 'Cancel', style: 'cancel' }
       ]
     );
   };
@@ -57,48 +63,42 @@ export default function Schedule() {
   };
 
   const handleUpdateSlot = () => {
-    if (!newTime) {
-      Alert.alert('Error', 'Please enter a time');
+    if (!newTime.trim()) {
+      Alert.alert('Error', 'Please enter a valid time window');
       return;
     }
-    editTimingSlot(editingSlot.id, newDay, newTime);
+    editTimingSlot(editingSlot.id, newDay, newTime.trim());
     setShowEditModal(false);
     setEditingSlot(null);
     setNewDay('Monday');
     setNewTime('');
-    Alert.alert('Success', 'Time slot updated successfully');
-  };
-
-  const handleNav = (lbl) => {
-    if (lbl === 'home') router.push('/(lawyer)/LawyerHome');
-    if (lbl === 'requests') router.push('/(lawyer)/CaseRequests');
-    if (lbl === 'cases') router.push('/(lawyer)/MyCases');
-    if (lbl === 'schedule') router.push('/(lawyer)/Schedule');
-    if (lbl === 'profile') router.push('/(lawyer)/LawyerProfile');
+    Alert.alert('Success', 'Availability window updated');
   };
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
       
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>←</Text>
-        </TouchableOpacity>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>My Schedule</Text>
-        </View>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setShowAddModal(true)}>
-          <Text style={styles.addBtnText}>+ Add</Text>
-        </TouchableOpacity>
-      </View>
+      {/* Modern '< Chamber Schedule' Header with + Add button on right */}
+      <AppHeader
+        title="Chamber Schedule"
+        showBack={true}
+        homeRoute="/(lawyer)/LawyerHome"
+        role="lawyer"
+        rightElement={
+          <TouchableOpacity 
+            style={styles.addBtn} 
+            onPress={() => setShowAddModal(true)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.addBtnText}>+ ADD</Text>
+          </TouchableOpacity>
+        }
+      />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>Office Hours</Text>
-        <Text style={styles.sectionSub}>Set your available consultation hours</Text>
+      <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+        <Text style={styles.sectionTitle}>Chamber Office Hours</Text>
+        <Text style={styles.sectionSub}>Set your weekly availability for citizen consultations</Text>
 
         {timingSlots.length > 0 ? (
           timingSlots.map((slot, i) => (
@@ -112,12 +112,14 @@ export default function Schedule() {
                   <TouchableOpacity 
                     style={styles.editBtn} 
                     onPress={() => handleEditSlot(slot)}
+                    activeOpacity={0.75}
                   >
                     <Text style={styles.editBtnText}>Edit</Text>
                   </TouchableOpacity>
                   <TouchableOpacity 
                     style={styles.deleteBtn} 
                     onPress={() => handleDeleteSlot(slot.id)}
+                    activeOpacity={0.75}
                   >
                     <Text style={styles.deleteBtnText}>Delete</Text>
                   </TouchableOpacity>
@@ -127,8 +129,8 @@ export default function Schedule() {
           ))
         ) : (
           <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No time slots added yet</Text>
-            <Text style={styles.emptySub}>Tap + Add to set your available hours</Text>
+            <Text style={styles.emptyText}>No availability slots configured</Text>
+            <Text style={styles.emptySub}>Tap "+ ADD" above to publish chamber consultation hours</Text>
           </View>
         )}
       </ScrollView>
@@ -141,27 +143,24 @@ export default function Schedule() {
         onRequestClose={() => setShowAddModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Add Time Slot</Text>
-              <TouchableOpacity onPress={() => setShowAddModal(false)}>
-                <Text style={styles.modalClose}>×</Text>
-              </TouchableOpacity>
-            </View>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Add Office Hours</Text>
 
-            <Text style={styles.modalLabel}>Day</Text>
+            <Text style={styles.inputLabel}>Select Day</Text>
             <TouchableOpacity 
-              style={styles.dropdownSelector}
+              style={styles.dropdownBtn}
               onPress={() => setShowDayDropdown(!showDayDropdown)}
+              activeOpacity={0.75}
             >
-              <Text style={styles.dropdownValue}>{newDay}</Text>
+              <Text style={styles.dropdownBtnText}>{newDay}</Text>
+              <Text style={styles.dropdownArrow}>▼</Text>
             </TouchableOpacity>
 
             {showDayDropdown && (
               <View style={styles.dropdownList}>
-                {daysOfWeek.map(day => (
-                  <TouchableOpacity 
-                    key={day} 
+                {daysOfWeek.map((day) => (
+                  <TouchableOpacity
+                    key={day}
                     style={styles.dropdownItem}
                     onPress={() => {
                       setNewDay(day);
@@ -174,17 +173,29 @@ export default function Schedule() {
               </View>
             )}
 
-            <Text style={styles.modalLabel}>Time</Text>
+            <Text style={styles.inputLabel}>Consultation Hours</Text>
             <TextInput
-              style={styles.modalInput}
-              placeholder="e.g. 02:00 PM - 05:00 PM"
+              style={styles.input}
+              placeholder="e.g. 10:00 AM - 01:00 PM"
+              placeholderTextColor="rgba(255, 220, 180, 0.35)"
               value={newTime}
               onChangeText={setNewTime}
             />
 
-            <TouchableOpacity style={styles.saveBtn} onPress={handleAddSlot}>
-              <Text style={styles.saveBtnText}>Add Slot</Text>
-            </TouchableOpacity>
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity 
+                style={styles.cancelBtn} 
+                onPress={() => setShowAddModal(false)}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.saveBtn} 
+                onPress={handleAddSlot}
+              >
+                <Text style={styles.saveBtnText}>Save Slot</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -197,217 +208,191 @@ export default function Schedule() {
         onRequestClose={() => setShowEditModal(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Edit Time Slot</Text>
-              <TouchableOpacity onPress={() => setShowEditModal(false)}>
-                <Text style={styles.modalClose}>×</Text>
-              </TouchableOpacity>
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Edit Consultation Hours</Text>
+
+            <Text style={styles.inputLabel}>Day of Week</Text>
+            <View style={styles.uneditableBox}>
+              <Text style={styles.uneditableText}>{newDay}</Text>
             </View>
 
-            <Text style={styles.modalLabel}>Day</Text>
-            <TouchableOpacity 
-              style={styles.dropdownSelector}
-              onPress={() => setShowDayDropdown(!showDayDropdown)}
-            >
-              <Text style={styles.dropdownValue}>{newDay}</Text>
-            </TouchableOpacity>
-
-            {showDayDropdown && (
-              <View style={styles.dropdownList}>
-                {daysOfWeek.map(day => (
-                  <TouchableOpacity 
-                    key={day} 
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setNewDay(day);
-                      setShowDayDropdown(false);
-                    }}
-                  >
-                    <Text style={styles.dropdownItemText}>{day}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
-
-            <Text style={styles.modalLabel}>Time</Text>
+            <Text style={styles.inputLabel}>Time Window</Text>
             <TextInput
-              style={styles.modalInput}
-              placeholder="e.g. 02:00 PM - 05:00 PM"
+              style={styles.input}
               value={newTime}
               onChangeText={setNewTime}
+              placeholderTextColor="rgba(255, 220, 180, 0.35)"
             />
 
-            <TouchableOpacity style={styles.saveBtn} onPress={handleUpdateSlot}>
-              <Text style={styles.saveBtnText}>Update Slot</Text>
-            </TouchableOpacity>
+            <View style={styles.modalBtnRow}>
+              <TouchableOpacity 
+                style={styles.cancelBtn} 
+                onPress={() => setShowEditModal(false)}
+              >
+                <Text style={styles.cancelBtnText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.saveBtn} 
+                onPress={handleUpdateSlot}
+              >
+                <Text style={styles.saveBtnText}>Update Slot</Text>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
 
-      {/* FOOTER */}
-      <View style={styles.bottomNav}>
-        {['Dashboard', 'Requests', 'Cases', 'Schedule', 'Profile'].map((lbl, idx) => {
-          const ids = ['home', 'requests', 'cases', 'schedule', 'profile'];
-          return (
-            <TouchableOpacity
-              key={lbl}
-              style={styles.navItem}
-              onPress={() => handleNav(ids[idx])}
-            >
-              <Text style={[styles.navLabel, ids[idx] === 'schedule' && styles.navLabelActive]}>{lbl}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {/* Consistent Bottom Nav */}
+      <BottomNavBar role="lawyer" activeTab="schedule" />
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#0F2744' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 16,
-    backgroundColor: '#0F2744',
-  },
-  backBtn: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  backText: { color: '#fff', fontSize: 16 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, marginLeft: 8 },
-  logoBadge: {
-    backgroundColor: '#fff', width: 32, height: 32, borderRadius: 8,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  logoBadgeText: { color: '#0F2744', fontSize: 14, fontWeight: '800' },
-  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  safe: { flex: 1, backgroundColor: '#060201' },
+  scroll: { flex: 1 },
+  content: { padding: 16, paddingBottom: 110, gap: 12 },
   addBtn: {
-    backgroundColor: '#fff',
+    backgroundColor: '#FF9500',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 10,
+    shadowColor: '#FF9500',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  addBtnText: {
+    color: '#0A0301',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#FFF5E8' },
+  sectionSub: { fontSize: 12, color: 'rgba(255, 220, 180, 0.6)', marginBottom: 6 },
+  card: {
+    backgroundColor: 'rgba(22, 10, 4, 0.78)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.22)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  dayText: { fontSize: 15, fontWeight: '800', color: '#FFF5E8' },
+  timeText: { fontSize: 13, color: '#FFB74D', marginTop: 4, fontWeight: '600' },
+  actionRow: { flexDirection: 'row', gap: 8 },
+  editBtn: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 200, 120, 0.25)',
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 8,
   },
-  addBtnText: {
-    color: '#0F2744',
-    fontSize: 12,
-    fontWeight: '700',
-  },
-  scroll: { flex: 1, backgroundColor: '#F5F3EF' },
-  content: { padding: 20, gap: 14 },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#0F2744' },
-  sectionSub: { fontSize: 12, color: '#888', marginBottom: 4 },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#ece9e4', elevation: 2 },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dayText: { fontSize: 15, fontWeight: '700', color: '#1a1a1a' },
-  timeText: { fontSize: 13, color: '#666', marginTop: 4 },
-  actionRow: { flexDirection: 'row', gap: 8 },
-  editBtn: {
-    backgroundColor: '#e0ebf5',
-    paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 6,
-  },
-  editBtnText: { color: '#0F2744', fontSize: 11, fontWeight: '700' },
+  editBtnText: { color: '#FFEED6', fontSize: 11, fontWeight: '700' },
   deleteBtn: {
-    backgroundColor: '#fee2e2',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.35)',
     paddingHorizontal: 12,
-    paddingVertical: 5,
-    borderRadius: 6,
+    paddingVertical: 6,
+    borderRadius: 8,
   },
-  deleteBtnText: { color: '#991b1b', fontSize: 11, fontWeight: '700' },
+  deleteBtnText: { color: '#ef4444', fontSize: 11, fontWeight: '700' },
   emptyCard: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(22, 10, 4, 0.65)',
     borderRadius: 16,
     padding: 30,
     borderWidth: 1,
-    borderColor: '#ece9e4',
+    borderColor: 'rgba(255, 160, 40, 0.18)',
     alignItems: 'center',
+    marginTop: 20,
   },
-  emptyText: { fontSize: 16, color: '#666', fontWeight: '600' },
-  emptySub: { fontSize: 13, color: '#999', marginTop: 4 },
+  emptyText: { fontSize: 14, fontWeight: '700', color: '#FFF5E8', marginBottom: 4 },
+  emptySub: { fontSize: 12, color: 'rgba(255, 220, 180, 0.5)', textAlign: 'center' },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0, 0, 0, 0.82)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
-  modalContent: {
-    backgroundColor: '#fff',
+  modalCard: {
+    backgroundColor: '#0E0603',
     borderRadius: 20,
-    padding: 24,
+    padding: 20,
     width: '100%',
-    maxWidth: 400,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.25)',
   },
-  modalHeader: {
+  modalTitle: { fontSize: 16, fontWeight: '800', color: '#FFF5E8', marginBottom: 16, textAlign: 'center' },
+  inputLabel: { fontSize: 11, fontWeight: '700', color: '#FFB74D', textTransform: 'uppercase', marginBottom: 6, letterSpacing: 0.5 },
+  dropdownBtn: {
+    backgroundColor: 'rgba(25, 12, 5, 0.75)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.25)',
+    padding: 12,
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 20,
+    marginBottom: 12,
   },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#1a1a1a' },
-  modalClose: { fontSize: 28, color: '#666', fontWeight: '300' },
-  modalLabel: { fontSize: 12, fontWeight: '700', color: '#aaa', textTransform: 'uppercase', marginBottom: 6, marginTop: 12 },
-  modalInput: {
-    backgroundColor: '#fff',
-    borderRadius: 12,
-    padding: 14,
-    fontSize: 14,
-    color: '#1a1a1a',
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-  },
-  dropdownSelector: {
-    borderWidth: 1,
-    borderColor: '#e0e0e0',
-    borderRadius: 12,
-    padding: 14,
-    backgroundColor: '#fff',
-  },
-  dropdownValue: { fontSize: 14, color: '#1a1a1a' },
+  dropdownBtnText: { color: '#FFF5E8', fontSize: 14, fontWeight: '600' },
+  dropdownArrow: { color: '#FF9500', fontSize: 10 },
   dropdownList: {
-    backgroundColor: '#fff',
+    backgroundColor: '#140803',
+    borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#ece9e4',
-    borderRadius: 12,
-    marginTop: 4,
-    maxHeight: 200,
+    borderColor: 'rgba(255, 160, 40, 0.3)',
+    marginBottom: 14,
+    maxHeight: 180,
+    overflow: 'hidden',
   },
-  dropdownItem: {
-    paddingHorizontal: 16,
+  dropdownItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.06)' },
+  dropdownItemText: { color: '#FFF5E8', fontSize: 13 },
+  input: {
+    backgroundColor: 'rgba(25, 12, 5, 0.75)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.25)',
+    padding: 12,
+    color: '#FFF5E8',
+    fontSize: 14,
+    marginBottom: 16,
+  },
+  uneditableBox: {
+    backgroundColor: 'rgba(15, 7, 3, 0.65)',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.15)',
+    padding: 12,
+    marginBottom: 16,
+  },
+  uneditableText: { color: '#C8A892', fontSize: 14, fontWeight: '600' },
+  modalBtnRow: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  cancelBtn: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 12,
     paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f5f3f0',
-  },
-  dropdownItemText: { fontSize: 14, color: '#333' },
-  saveBtn: {
-    backgroundColor: '#0F2744',
-    borderRadius: 12,
-    paddingVertical: 14,
     alignItems: 'center',
-    marginTop: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 200, 120, 0.25)',
   },
-  saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#ece9e4',
-    flexDirection: 'row',
-    height: 80,
-    paddingBottom: 24,
-    paddingTop: 10,
+  cancelBtnText: { color: '#FFE5C4', fontSize: 13, fontWeight: '700' },
+  saveBtn: {
+    flex: 1,
+    backgroundColor: '#FF9500',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
   },
-  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  navLabel: { fontSize: 11, fontWeight: '600', color: '#bbb' },
-  navLabelActive: { color: '#0F2744' },
+  saveBtnText: { color: '#0A0301', fontSize: 13, fontWeight: '900' },
 });

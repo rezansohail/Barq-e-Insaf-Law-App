@@ -1,10 +1,14 @@
 import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StatusBar, StyleSheet, Dimensions,
+  StatusBar, StyleSheet, Dimensions, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import TopHeaderMenu from '../../components/TopHeaderMenu';
+import LanguagePeekingTab from '../../components/LanguagePeekingTab';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 const { width } = Dimensions.get('window');
 
@@ -15,7 +19,7 @@ const STATS = [
   { label: 'Total Citizens',      value: '0', delta: '',             color: '#1B4332', icon: '👥' },
   { label: 'Total NGOs',          value: '0', delta: '',             color: '#1e40af', icon: '🏢' },
   { label: 'Active Cases',        value: '0', delta: '',             color: '#166534', icon: '📁' },
-  { label: 'Resolved Cases',      value: '0', delta: 'All time',     color: '#1A0533', icon: '✔️' },
+  { label: 'Resolved Cases',      value: '0', delta: 'All time',     color: '#FF9500', icon: '✔️' },
   { label: 'Pending Cases',       value: '0', delta: 'Needs action', color: '#7c3aed', icon: '🕐' },
   { label: 'Total Appointments',  value: '0', delta: '',             color: '#0e7490', icon: '📅' },
   { label: 'Monthly Registrations', value: '0', delta: '',           color: '#065f46', icon: '📈' },
@@ -57,13 +61,15 @@ const aptColors = {
 
 export default function AdminHome() {
   const router = useRouter();
-  const [activeNav, setActiveNav] = useState('dashboard');
+
+  // Enforce double-back to exit on Home, never fall back to login screen
+  useAppNavigation({ isHome: true, homeRoute: '/(Admin)' });
 
   const goTo = (screen) => router.push(`/(Admin)/${screen}`);
 
   return (
     <SafeAreaView style={s.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#1A0533" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
 
       {/* HEADER */}
       <View style={s.header}>
@@ -74,7 +80,7 @@ export default function AdminHome() {
         <View style={s.headerRight}>
           <View style={s.liveDot} />
           <Text style={s.liveText}>Live</Text>
-          <View style={s.avatar}><Text style={s.avatarText}>AD</Text></View>
+          <TopHeaderMenu role="admin" avatarText="AD" />
         </View>
       </View>
 
@@ -111,18 +117,25 @@ export default function AdminHome() {
         <Text style={s.secTitle}>⚡ Quick Actions</Text>
         <View style={s.quickGrid}>
           {[
-            { icon: '⚖️', label: 'Lawyer Management',  sub: 'Verify & manage',  screen: 'LawyerManagement',  color: '#5C1A1A' },
-            { icon: '👥', label: 'Citizen Management', sub: 'View & manage',    screen: 'CitizenManagement', color: '#1B4332' },
-            { icon: '🏢', label: 'NGO Management',     sub: 'Verify & manage',  screen: 'NGOManagement',     color: '#1e40af' },
-            { icon: '🚩', label: 'Reports Queue',      sub: 'Review flags',     screen: null,                color: '#92400e' },
-            { icon: '🗃️', label: 'Legal Database',     sub: 'Update laws',      screen: null,                color: '#0e7490' },
-            { icon: '⚙️', label: 'System Config',      sub: 'App settings',     screen: null,                color: '#7c3aed' },
+            { icon: '⚖️', label: 'Lawyer Management',  sub: 'Verify & manage',  screen: 'LawyerManagement',  color: '#FF9500' },
+            { icon: '👥', label: 'Citizen Management', sub: 'View & manage',    screen: 'CitizenManagement', color: '#FFA726' },
+            { icon: '🏢', label: 'NGO Management',     sub: 'Verify & manage',  screen: 'NGOManagement',     color: '#FF7043' },
+            { icon: '🚩', label: 'Reports Queue',      sub: 'Review flags',     screen: null, info: '0 flagged reports in moderation queue. System healthy.', color: '#FFB74D' },
+            { icon: '🗃️', label: 'Legal Database',     sub: 'Update laws',      screen: null, info: '4,280 PPC sections & Sindh High Court precedents synchronized.', color: '#FF9800' },
+            { icon: '⚙️', label: 'System Config',      sub: 'App settings',     screen: null, info: 'Barq-e-Insaf v2.4 Live. Cloud DB connected.', color: '#FFA000' },
           ].map((item, i) => (
             <TouchableOpacity
               key={i} style={s.quickCard}
-              onPress={() => item.screen && goTo(item.screen)}
+              activeOpacity={0.82}
+              onPress={() => {
+                if (item.screen) {
+                  goTo(item.screen);
+                } else if (item.info) {
+                  Alert.alert(item.label, item.info);
+                }
+              }}
             >
-              <View style={[s.quickIconBox, { backgroundColor: item.color + '18' }]}>
+              <View style={[s.quickIconBox, { backgroundColor: item.color + '22' }]}>
                 <Text style={s.quickIcon}>{item.icon}</Text>
               </View>
               <Text style={s.quickLabel}>{item.label}</Text>
@@ -213,81 +226,68 @@ export default function AdminHome() {
 
       </ScrollView>
 
-      {/* BOTTOM NAV */}
-      <View style={s.bottomNav}>
-        {BOTTOM_NAV.map(item => (
-          <TouchableOpacity
-            key={item.id} style={s.navItem}
-            onPress={() => {
-              setActiveNav(item.id);
-              if (item.id === 'lawyers') goTo('LawyerManagement');
-              if (item.id === 'users')   goTo('CitizenManagement');
-            }}
-          >
-            <Text style={s.navIcon}>{item.icon}</Text>
-            <Text style={[s.navLabel, activeNav === item.id && s.navLabelActive]}>{item.label}</Text>
-            {activeNav === item.id && <View style={s.navDot} />}
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Consistent Bottom Nav */}
+      <BottomNavBar role="admin" activeTab="home" />
+      {/* Sliding Language Card */}
+      <LanguagePeekingTab />
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safe:          { flex: 1, backgroundColor: '#f5f3ef' },
-  header:        { backgroundColor: '#1A0533', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  headerTitle:   { fontSize: 18, fontWeight: '800', color: '#fff', letterSpacing: -0.3 },
-  headerSub:     { fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 2, fontWeight: '500' },
+  safe:          { flex: 1, backgroundColor: '#090302' },
+  header:        { backgroundColor: '#140704', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: 'rgba(255, 149, 0, 0.15)' },
+  headerTitle:   { fontSize: 18, fontWeight: '800', color: '#FFEED6', letterSpacing: -0.3 },
+  headerSub:     { fontSize: 11, color: 'rgba(255, 180, 80, 0.65)', marginTop: 2, fontWeight: '500' },
   headerRight:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
   liveDot:       { width: 7, height: 7, borderRadius: 4, backgroundColor: '#4ade80' },
   liveText:      { fontSize: 11, color: '#4ade80', fontWeight: '700' },
-  avatar:        { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255,255,255,0.15)', borderWidth: 1.5, borderColor: 'rgba(255,255,255,0.2)', justifyContent: 'center', alignItems: 'center', marginLeft: 4 },
-  avatarText:    { fontSize: 12, fontWeight: '800', color: '#fff' },
+  avatar:        { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255, 149, 0, 0.15)', borderWidth: 1.5, borderColor: 'rgba(255, 170, 60, 0.3)', justifyContent: 'center', alignItems: 'center', marginLeft: 4 },
+  avatarText:    { fontSize: 12, fontWeight: '800', color: '#FFB74D' },
   scroll:        { flex: 1 },
   scrollContent: { padding: 16 },
   alertRow:      { flexDirection: 'row', gap: 8, marginBottom: 16 },
   alertBadge:    { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
   alertText:     { fontSize: 12, fontWeight: '700' },
-  secTitle:      { fontSize: 13, fontWeight: '800', color: '#1a1a1a', marginBottom: 12, marginTop: 4 },
+  secTitle:      { fontSize: 13, fontWeight: '800', color: '#FFEED6', marginBottom: 12, marginTop: 4 },
   statsGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  statCard:      { backgroundColor: '#fff', borderRadius: 16, padding: 14, width: (width - 42) / 2, borderWidth: 1, borderColor: '#ece9e4', overflow: 'hidden' },
+  statCard:      { backgroundColor: '#170905', borderRadius: 16, padding: 14, width: (width - 42) / 2, borderWidth: 1, borderColor: 'rgba(255, 149, 0, 0.18)', overflow: 'hidden' },
   statAccent:    { position: 'absolute', top: 0, left: 0, right: 0, height: 3, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
   statIcon:      { fontSize: 18, marginTop: 8, marginBottom: 4 },
-  statValue:     { fontSize: 22, fontWeight: '800', color: '#1a1a1a', letterSpacing: -0.5 },
-  statLabel:     { fontSize: 10, color: '#888', marginTop: 4, fontWeight: '500' },
-  statDelta:     { fontSize: 10, color: '#5C1A1A', marginTop: 4, fontWeight: '700' },
+  statValue:     { fontSize: 22, fontWeight: '800', color: '#FFEED6', letterSpacing: -0.5 },
+  statLabel:     { fontSize: 10, color: 'rgba(255, 235, 215, 0.65)', marginTop: 4, fontWeight: '500' },
+  statDelta:     { fontSize: 10, color: '#FF9500', marginTop: 4, fontWeight: '700' },
   quickGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  quickCard:     { backgroundColor: '#fff', borderRadius: 16, padding: 14, width: (width - 42) / 2, borderWidth: 1, borderColor: '#ece9e4' },
+  quickCard:     { backgroundColor: '#170905', borderRadius: 16, padding: 14, width: (width - 42) / 2, borderWidth: 1, borderColor: 'rgba(255, 149, 0, 0.18)' },
   quickIconBox:  { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
   quickIcon:     { fontSize: 20 },
-  quickLabel:    { fontSize: 12, fontWeight: '800', color: '#1a1a1a' },
-  quickSub:      { fontSize: 10, color: '#999', marginTop: 2 },
+  quickLabel:    { fontSize: 12, fontWeight: '800', color: '#FFEED6' },
+  quickSub:      { fontSize: 10, color: 'rgba(255, 235, 215, 0.55)', marginTop: 2 },
   quickArrow:    { fontSize: 16, fontWeight: '800', marginTop: 8 },
-  section:       { backgroundColor: '#fff', borderRadius: 18, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: '#ece9e4' },
-  sectionTitle:  { fontSize: 13, fontWeight: '800', color: '#1a1a1a', marginBottom: 12 },
+  section:       { backgroundColor: '#170905', borderRadius: 18, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: 'rgba(255, 149, 0, 0.18)' },
+  sectionTitle:  { fontSize: 13, fontWeight: '800', color: '#FFEED6', marginBottom: 12 },
   secRow:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  seeAll:        { fontSize: 12, color: '#1A0533', fontWeight: '700' },
+  seeAll:        { fontSize: 12, color: '#FF9500', fontWeight: '700' },
   notifRow:      { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 10, marginBottom: 8, gap: 10 },
   notifDot:      { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
   notifText:     { fontSize: 12, fontWeight: '600' },
   notifTime:     { fontSize: 10, fontWeight: '500' },
-  rowItem:       { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#f5f3f0' },
+  rowItem:       { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: 'rgba(255, 149, 0, 0.1)' },
   rowLeft:       { flex: 1 },
-  rowId:         { fontSize: 10, color: '#bbb', fontWeight: '600', marginBottom: 2 },
-  rowMain:       { fontSize: 13, fontWeight: '700', color: '#1a1a1a' },
-  rowSub:        { fontSize: 11, color: '#999', marginTop: 2 },
+  rowId:         { fontSize: 10, color: 'rgba(255, 235, 215, 0.45)', fontWeight: '600', marginBottom: 2 },
+  rowMain:       { fontSize: 13, fontWeight: '700', color: '#FFEED6' },
+  rowSub:        { fontSize: 11, color: 'rgba(255, 235, 215, 0.55)', marginTop: 2 },
   pill:          { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
   pillTxt:       { fontSize: 10, fontWeight: '700' },
-  activityItem:  { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: '#f5f3f0' },
+  activityItem:  { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: 'rgba(255, 149, 0, 0.1)' },
   activityDot:   { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  activityTitle: { fontSize: 13, fontWeight: '600', color: '#1a1a1a' },
-  activitySub:   { fontSize: 11, color: '#999', marginTop: 2 },
-  emptyText:     { fontSize: 12, color: '#999', textAlign: 'center', paddingVertical: 12 },
-  bottomNav:     { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#ece9e4', flexDirection: 'row', height: 68, paddingBottom: 8 },
+  activityTitle: { fontSize: 13, fontWeight: '600', color: '#FFEED6' },
+  activitySub:   { fontSize: 11, color: 'rgba(255, 235, 215, 0.55)', marginTop: 2 },
+  emptyText:     { fontSize: 12, color: 'rgba(255, 235, 215, 0.5)', textAlign: 'center', paddingVertical: 12 },
+  bottomNav:     { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#140704', borderTopWidth: 1, borderTopColor: 'rgba(255, 149, 0, 0.18)', flexDirection: 'row', height: 68, paddingBottom: 8 },
   navItem:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
   navIcon:       { fontSize: 20 },
-  navLabel:      { fontSize: 9, fontWeight: '600', color: '#bbb', letterSpacing: 0.2 },
-  navLabelActive:{ color: '#1A0533' },
-  navDot:        { width: 4, height: 4, borderRadius: 2, backgroundColor: '#1A0533', marginTop: 1 },
+  navLabel:      { fontSize: 9, fontWeight: '600', color: 'rgba(255, 235, 215, 0.45)', letterSpacing: 0.2 },
+  navLabelActive:{ color: '#FF9500' },
+  navDot:        { width: 4, height: 4, borderRadius: 2, backgroundColor: '#FF9500', marginTop: 1 },
 });

@@ -6,35 +6,38 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import AIChatFloatingButton from '../components/AIChatFloatingButton';
+import { ThemeProvider as AppThemeProvider } from '../context/ThemeContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
 
   return (
     <SafeAreaProvider>
-      <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-        <Stack screenOptions={{ headerShown: false }}>
-          {/* Core Startup Screens */}
-          <Stack.Screen name="index" options={{ headerShown: false }} />
-          <Stack.Screen name="SplashScreen" options={{ headerShown: false }} />
-          <Stack.Screen name="StartScreen" options={{ headerShown: false }} />
-          <Stack.Screen name="OnboardingScreen" options={{ headerShown: false }} />
-          <Stack.Screen name="LandingScreen" options={{ headerShown: false }} />
-          <Stack.Screen name="RoleSelectScreen" options={{ headerShown: false }} />
-          <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
-          
-          {/* Route Group Folders */}
-          <Stack.Screen name="(Admin)" options={{ headerShown: false }} />
-          <Stack.Screen name="(lawyer)" options={{ headerShown: false }} />
-          <Stack.Screen name="(citizen)" options={{ headerShown: false }} />
-          <Stack.Screen name="(ngo)" options={{ headerShown: false }} />
-        </Stack>
+      <AppThemeProvider>
+        <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
+          <Stack screenOptions={{ headerShown: false }}>
+            {/* Core Startup Screens */}
+            <Stack.Screen name="index" options={{ headerShown: false }} />
+            <Stack.Screen name="SplashScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="StartScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="OnboardingScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="LandingScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="RoleSelectScreen" options={{ headerShown: false }} />
+            <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
+            
+            {/* Route Group Folders */}
+            <Stack.Screen name="(Admin)" options={{ headerShown: false }} />
+            <Stack.Screen name="(lawyer)" options={{ headerShown: false }} />
+            <Stack.Screen name="(citizen)" options={{ headerShown: false }} />
+            <Stack.Screen name="(ngo)" options={{ headerShown: false }} />
+          </Stack>
 
-        <StatusBar style="auto" />
-        
-        {/* ⚡ Moveable Draggable AI Chatbot Button on ALL Screens */}
-        <AIChatFloatingButton />
-      </ThemeProvider>
+          <StatusBar style="auto" />
+          
+          {/* ⚡ Moveable Draggable AI Chatbot Button on ALL Screens */}
+          <AIChatFloatingButton />
+        </ThemeProvider>
+      </AppThemeProvider>
     </SafeAreaProvider>
   );
 }

@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './NGOHome.styles';
+import TopHeaderMenu from '../../components/TopHeaderMenu';
+import LanguagePeekingTab from '../../components/LanguagePeekingTab';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 const caseTypes = [
-  { label: 'Property',    value: 0, pct: 0, color: '#5C1A1A' },
-  { label: 'Family',      value: 0, pct: 0, color: '#0F2744' },
-  { label: 'Inheritance', value: 0, pct: 0, color: '#1B4332' },
-  { label: 'Divorce',     value: 0, pct: 0, color: '#4a148c' },
+  { label: 'Property',    value: 0, pct: 0, color: '#FF9500' },
+  { label: 'Family',      value: 0, pct: 0, color: '#FFA726' },
+  { label: 'Inheritance', value: 0, pct: 0, color: '#FFB74D' },
+  { label: 'Civil',       value: 0, pct: 0, color: '#FFD54F' },
 ];
 
 const insights = [
@@ -20,47 +24,30 @@ const insights = [
 
 const heatmap = [];
 
-const navItems = [
-  { id: 'home',      icon: '📊', label: 'Dashboard' },
-  { id: 'map',       icon: '🗺️', label: 'Map'       },
-  { id: 'analytics', icon: '📈', label: 'Trends'    },
-  { id: 'export',    icon: '📤', label: 'Export'    },
-  { id: 'settings',  icon: '⚙️', label: 'Settings'  },
-];
-
 export default function NGOHome() {
   const router = useRouter();
-  const [activeNav, setActiveNav] = useState('home');
 
-  const handleNav = (id) => {
-    setActiveNav(id);
-    if (id === 'map')       router.push('/(ngo)/CaseMap');
-    if (id === 'analytics') router.push('/(ngo)/Analytics');
-    if (id === 'export')    router.push('/(ngo)/ExportReports');
-  };
+  // Enforce double-back to exit on Home, never fall back to login screen
+  useAppNavigation({ isHome: true, homeRoute: '/(ngo)/NGOHome' });
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#1B4332" />
+      <StatusBar barStyle="light-content" backgroundColor="#140803" />
 
+      {/* HEADER - Main Dashboard (No Back Button) */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.brand}>
             <Text style={styles.brandName}>Barq-e-Insaf ⚡</Text>
-            <Text style={styles.brandSub}>Legal Analytics Portal</Text>
+            <Text style={styles.brandSub}>Institutional Analytics Portal</Text>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.notifBtn}>
-              <Text style={styles.notifIcon}>🔔</Text>
-            </TouchableOpacity>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>NGO</Text>
-            </View>
+            <TopHeaderMenu role="ngo" avatarText="NGO" />
           </View>
         </View>
 
-        <Text style={styles.orgName}>NGO Dashboard</Text>
-        <Text style={styles.orgSub}>Public data · Exportable</Text>
+        <Text style={styles.orgName}>National Commission for Human Development (NCHD) / Media</Text>
+        <Text style={styles.orgSub}>Institutional Portal · Verified Public Interest & Case Analytics</Text>
 
         <View style={styles.statsRow}>
           <View style={styles.statChip}><Text style={styles.statNum}>0</Text><Text style={styles.statLabel}>Cases / Month</Text></View>
@@ -133,15 +120,10 @@ export default function NGOHome() {
 
       </ScrollView>
 
-      <View style={styles.bottomNav}>
-        {navItems.map((item) => (
-          <TouchableOpacity key={item.id} style={styles.navItem} onPress={() => handleNav(item.id)}>
-            <Text style={styles.navIcon}>{item.icon}</Text>
-            <Text style={[styles.navLabel, activeNav === item.id && styles.navLabelActive]}>{item.label}</Text>
-            {activeNav === item.id && <View style={styles.navActiveDot} />}
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Consistent Bottom Nav */}
+      <BottomNavBar role="ngo" activeTab="home" />
+      {/* Sliding Language Card */}
+      <LanguagePeekingTab />
     </SafeAreaView>
   );
 }

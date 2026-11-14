@@ -6,6 +6,9 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import styles from './AddEvidence.styles';
 import { addEvidenceToCase, activeCases } from './MockStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 export default function AddEvidence() {
   const router = useRouter();
@@ -15,17 +18,13 @@ export default function AddEvidence() {
 
   const [loading, setLoading] = useState(false);
   const [vaultFiles, setVaultFiles] = useState([
-    { id: '1', name: 'CNIC_Front_Back.pdf', type: 'PDF', size: '1.2 MB', uri: '' },
-    { id: '2', name: 'Electricity_Bill_Latest.pdf', type: 'PDF', size: '820 KB', uri: '' },
+    { id: '1', name: 'Identity_Proof.pdf', type: 'PDF', size: '1.2 MB', uri: '' },
+    { id: '2', name: 'Utility_Bill_Latest.pdf', type: 'PDF', size: '820 KB', uri: '' },
     { id: '3', name: 'Property_Sale_Deed_Scanned.pdf', type: 'PDF', size: '3.4 MB', uri: '' },
   ]);
 
-  const handleNav = (id) => {
-    if (id === 'home')    router.push('/(citizen)/CitizenHome');
-    if (id === 'cases')   router.push('/(citizen)/MyCases');
-    if (id === 'lawyers') router.push('/(citizen)/FindLawyer');
-    if (id === 'profile') router.push('/(citizen)/Profile');
-  };
+  // Hardware back returns to CitizenHome
+  useAppNavigation({ isHome: false, homeRoute: '/(citizen)/CitizenHome' });
 
   // 1. Pick Document from Phone
   const handleBrowseFiles = async () => {
@@ -81,62 +80,55 @@ export default function AddEvidence() {
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const rawName = asset.fileName || asset.uri.split('/').pop() || 'Evidence_Photo.jpg';
-        const formattedSize = asset.fileSize
-          ? (asset.fileSize > 1048576
-              ? (asset.fileSize / 1048576).toFixed(1) + ' MB'
-              : Math.round(asset.fileSize / 1024) + ' KB')
-          : 'Photo';
-
-        const newPhoto = {
+        const fileName = asset.fileName || 'Photo_' + Date.now() + '.jpg';
+        const newImg = {
           id: 'img-' + Date.now(),
-          name: rawName,
-          type: 'Photo',
-          size: formattedSize,
+          name: fileName,
+          type: 'IMAGE',
+          size: 'Photo Asset',
           uri: asset.uri,
         };
 
-        setVaultFiles(prev => [newPhoto, ...prev]);
-        handleSelectFile(newPhoto);
+        setVaultFiles(prev => [newImg, ...prev]);
+        handleSelectFile(newImg);
       }
     } catch (err) {
-      Alert.alert('Error', 'Unable to pick photo: ' + (err.message || 'Please try again'));
+      Alert.alert('Error', 'Unable to pick image: ' + (err.message || 'Please try again'));
     } finally {
       setLoading(false);
     }
   };
 
-  // 3. Take Photo with Camera
-  const handleCaptureCamera = async () => {
+  // 3. Take Live Camera Photo
+  const handleTakePhoto = async () => {
     try {
       setLoading(true);
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Camera permission is required to capture evidence.');
+        Alert.alert('Permission Required', 'Please allow camera access to take document photos.');
         return;
       }
 
       const result = await ImagePicker.launchCameraAsync({
-        allowsEditing: false,
         quality: 0.8,
       });
 
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const rawName = 'Camera_Evidence_' + Date.now().toString().slice(-4) + '.jpg';
-        const newPhoto = {
+        const fileName = 'Camera_Capture_' + Date.now() + '.jpg';
+        const newImg = {
           id: 'cam-' + Date.now(),
-          name: rawName,
-          type: 'Photo',
+          name: fileName,
+          type: 'IMAGE',
           size: 'Camera Photo',
           uri: asset.uri,
         };
 
-        setVaultFiles(prev => [newPhoto, ...prev]);
-        handleSelectFile(newPhoto);
+        setVaultFiles(prev => [newImg, ...prev]);
+        handleSelectFile(newImg);
       }
     } catch (err) {
-      Alert.alert('Error', 'Unable to open camera: ' + (err.message || 'Please try again'));
+      Alert.alert('Error', 'Camera capture failed: ' + (err.message || 'Please try again'));
     } finally {
       setLoading(false);
     }
@@ -144,8 +136,15 @@ export default function AddEvidence() {
 
   const handleSelectFile = (file) => {
     if (caseId) {
-      addEvidenceToCase(caseId, file);
-      Alert.alert('Evidence Attached', `"${file.name}" has been added to your case evidence vault.`, [
+      addEvidenceToCase(caseId, {
+        id: file.id,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        uri: file.uri,
+        date: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
+      });
+      Alert.alert('Attached', `"${file.name}" has been linked to your case.`, [
         { text: 'OK', onPress: () => router.back() }
       ]);
       return;
@@ -165,23 +164,18 @@ export default function AddEvidence() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backBtnText}>Back</Text>
-        </TouchableOpacity>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>Evidence Vault</Text>
-        </View>
-      </View>
+      {/* Modern '< Add Evidence' Header */}
+      <AppHeader
+        title="Add Evidence"
+        showBack={true}
+        homeRoute="/(citizen)/CitizenHome"
+        role="citizen"
+      />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>Add Evidence from Phone</Text>
+        <Text style={styles.sectionTitle}>Upload Evidence Files</Text>
         <Text style={styles.subtitle}>Select photos, scanned documents, or PDFs from your device.</Text>
 
         {/* Action Cards Grid */}
@@ -189,101 +183,95 @@ export default function AddEvidence() {
           <TouchableOpacity 
             style={{
               flex: 1,
-              backgroundColor: '#5C1A1A',
+              backgroundColor: 'rgba(255, 149, 0, 0.15)',
+              borderWidth: 1,
+              borderColor: '#FF9500',
               padding: 14,
-              borderRadius: 12,
+              borderRadius: 14,
               alignItems: 'center',
               justifyContent: 'center',
             }}
             onPress={handleBrowseFiles}
+            activeOpacity={0.75}
             disabled={loading}
           >
-            <Text style={{ fontSize: 24, marginBottom: 4 }}>📄</Text>
-            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', textAlign: 'center' }}>
-              Browse Files (PDF)
-            </Text>
+            {loading ? (
+              <ActivityIndicator color="#FF9500" />
+            ) : (
+              <>
+                <Text style={{ fontSize: 20, marginBottom: 4 }}>📄</Text>
+                <Text style={{ color: '#FFEED6', fontSize: 12, fontWeight: '800' }}>Pick Document</Text>
+                <Text style={{ color: 'rgba(255, 220, 180, 0.5)', fontSize: 10, marginTop: 2 }}>PDF / Word</Text>
+              </>
+            )}
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={{
               flex: 1,
-              backgroundColor: '#0F2744',
+              backgroundColor: 'rgba(255, 255, 255, 0.08)',
+              borderWidth: 1,
+              borderColor: 'rgba(255, 200, 120, 0.25)',
               padding: 14,
-              borderRadius: 12,
+              borderRadius: 14,
               alignItems: 'center',
               justifyContent: 'center',
             }}
             onPress={handlePickFromGallery}
+            activeOpacity={0.75}
             disabled={loading}
           >
-            <Text style={{ fontSize: 24, marginBottom: 4 }}>🖼️</Text>
-            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', textAlign: 'center' }}>
-              Photo Gallery
-            </Text>
+            <Text style={{ fontSize: 20, marginBottom: 4 }}>🖼️</Text>
+            <Text style={{ color: '#FFE5C4', fontSize: 12, fontWeight: '800' }}>Gallery Photo</Text>
+            <Text style={{ color: 'rgba(255, 220, 180, 0.5)', fontSize: 10, marginTop: 2 }}>Images / JPEG</Text>
           </TouchableOpacity>
 
           <TouchableOpacity 
             style={{
               flex: 1,
-              backgroundColor: '#1B4332',
+              backgroundColor: 'rgba(25, 12, 5, 0.75)',
+              borderWidth: 1,
+              borderColor: 'rgba(255, 160, 40, 0.3)',
               padding: 14,
-              borderRadius: 12,
+              borderRadius: 14,
               alignItems: 'center',
               justifyContent: 'center',
             }}
-            onPress={handleCaptureCamera}
+            onPress={handleTakePhoto}
+            activeOpacity={0.75}
             disabled={loading}
           >
-            <Text style={{ fontSize: 24, marginBottom: 4 }}>📸</Text>
-            <Text style={{ color: '#fff', fontSize: 12, fontWeight: '700', textAlign: 'center' }}>
-              Snap Camera
-            </Text>
+            <Text style={{ fontSize: 20, marginBottom: 4 }}>📷</Text>
+            <Text style={{ color: '#FFB74D', fontSize: 12, fontWeight: '800' }}>Camera Scan</Text>
+            <Text style={{ color: 'rgba(255, 220, 180, 0.5)', fontSize: 10, marginTop: 2 }}>Instant Snap</Text>
           </TouchableOpacity>
         </View>
 
-        {loading && (
-          <View style={{ padding: 16, alignItems: 'center', marginBottom: 12 }}>
-            <ActivityIndicator color="#5C1A1A" size="small" />
-            <Text style={{ fontSize: 12, color: '#666', marginTop: 6 }}>Accessing storage...</Text>
-          </View>
-        )}
-
+        {/* Existing Vault Records */}
         <View style={styles.explorerBox}>
-          <Text style={styles.explorerHeader}>Available Vault Files ({vaultFiles.length})</Text>
-          
+          <Text style={styles.explorerHeader}>Device Vault Documents</Text>
           {vaultFiles.map((file) => (
             <TouchableOpacity 
               key={file.id} 
               style={styles.fileRow}
               onPress={() => handleSelectFile(file)}
+              activeOpacity={0.75}
             >
               <View style={styles.fileIconBox}>
-                <Text style={styles.fileIconText}>{file.type === 'Photo' ? '🖼️' : '📄'}</Text>
+                <Text style={styles.fileIconText}>{file.type}</Text>
               </View>
               <View style={styles.fileInfo}>
-                <Text style={styles.fileName} numberOfLines={1}>{file.name}</Text>
-                <Text style={styles.fileSize}>{file.type} • {file.size}</Text>
+                <Text style={styles.fileName}>{file.name}</Text>
+                <Text style={styles.fileSize}>{file.size}</Text>
               </View>
-              <View style={{ backgroundColor: '#5C1A1A', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 6 }}>
-                <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>Attach</Text>
-              </View>
+              <Text style={styles.importText}>Attach &gt;</Text>
             </TouchableOpacity>
           ))}
         </View>
       </ScrollView>
 
-      {/* FOOTER */}
-      <View style={styles.bottomNav}>
-        {['Home', 'Cases', 'Lawyers', 'Profile'].map((lbl) => (
-          <TouchableOpacity
-            key={lbl}
-            style={styles.navItem}
-            onPress={() => handleNav(lbl.toLowerCase())}
-          >
-            <Text style={styles.navLabel}>{lbl}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Consistent Bottom Nav */}
+      <BottomNavBar role="citizen" activeTab="cases" />
     </SafeAreaView>
   );
 }

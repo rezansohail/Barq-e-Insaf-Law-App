@@ -1,42 +1,53 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './CaseRequests.styles';
-import { useMockStore, caseRequests, declineRequest, acceptRequest } from './MockStore';
+import { useMockStore, caseRequests, declineRequest, acceptRequest, lawyerProfile } from './MockStore';
+import DigitalSignatureModal from '../../components/DigitalSignatureModal';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 export default function CaseRequests() {
   useMockStore();
   const router = useRouter();
+  const [signatureModalVisible, setSignatureModalVisible] = useState(false);
+  const [selectedCaseForSign, setSelectedCaseForSign] = useState(null);
 
-  const handleAccept = (id) => {
-    Alert.alert(
-      'Accept Case',
-      'By accepting this case, you will be able to view the client\'s contact information and evidence.',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: 'Accept', 
-          onPress: () => {
-            acceptRequest(id);
-            Alert.alert('Case Accepted', 'Case has been moved to Active Cases. Client contact and evidence are now visible.');
-          }
-        }
-      ]
-    );
+  // Hardware back returns to LawyerHome
+  useAppNavigation({ isHome: false, homeRoute: '/(lawyer)/LawyerHome' });
+
+  const handleOpenAcceptModal = (reqItem) => {
+    setSelectedCaseForSign(reqItem);
+    setSignatureModalVisible(true);
+  };
+
+  const handleConfirmSignature = (signaturePayload) => {
+    if (selectedCaseForSign) {
+      acceptRequest(selectedCaseForSign.id, signaturePayload);
+      setSignatureModalVisible(false);
+      Alert.alert(
+        'Case Accepted with Digital Signature',
+        `Representation agreed!\n\nClient Scheduled Visit: ${signaturePayload.consultancyTime}\nCertificate ID: ${signaturePayload.certificateId}\n\nYour chamber contact details have been dispatched to the client.`
+      );
+    }
   };
 
   const handleDecline = (id) => {
     Alert.alert(
       'Decline Request',
-      'Are you sure you want to decline and delete this request?',
+      'Are you sure you want to decline this client request?',
       [
-        { text: 'Yes', onPress: () => {
+        {
+          text: 'Yes, Decline',
+          style: 'destructive',
+          onPress: () => {
             declineRequest(id);
             Alert.alert('Request Declined', 'The case request has been removed.');
-          }
+          },
         },
-        { text: 'No', style: 'cancel' }
+        { text: 'Cancel', style: 'cancel' },
       ]
     );
   };
@@ -44,7 +55,7 @@ export default function CaseRequests() {
   const handleViewCase = (id) => {
     router.push({
       pathname: '/(lawyer)/CaseDetail',
-      params: { caseId: id }
+      params: { caseId: id },
     });
   };
 
@@ -58,75 +69,85 @@ export default function CaseRequests() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
-      
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>Case Requests</Text>
-        </View>
-      </View>
+      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      {/* Modern '< Client Requests' Header */}
+      <AppHeader
+        title="Client Requests"
+        showBack={true}
+        homeRoute="/(lawyer)/LawyerHome"
+        role="lawyer"
+      />
+
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+      >
         {caseRequests.length > 0 ? (
           caseRequests.map((r, i) => (
-            <View key={i} style={styles.reqCard}>
+            <View key={r.id || i} style={styles.reqCard}>
               <TouchableOpacity onPress={() => handleViewCase(r.id)}>
                 <View style={styles.reqTop}>
-                  <Text style={styles.reqName}>{r.name} - {r.spec}</Text>
+                  <Text style={styles.reqName}>
+                    {r.name} - {r.spec}
+                  </Text>
                   <Text style={styles.badgeNew}>Pending</Text>
                 </View>
-                <Text style={styles.reqMeta}>Location: {r.location} · {r.time}</Text>
-                
+                <Text style={styles.reqMeta}>
+                  Court: {r.court || 'Sindh High Court'} · {r.location || 'Karachi'}
+                </Text>
+
                 <View style={styles.problemBox}>
                   <Text style={styles.problemLabel}>Problem Statement:</Text>
-                  <Text style={styles.reqDesc}>{r.problemStatement || r.desc.substring(0, 80)}</Text>
+                  <Text style={styles.reqDesc}>
+                    {r.problemStatement || (r.desc && r.desc.substring(0, 100)) || ''}
+                  </Text>
                 </View>
-                
-                {/* Note detailing that contact and evidence are hidden until acceptance */}
+
+                {/* Secure Note */}
                 <View style={styles.securedNotice}>
                   <Text style={styles.securedNoticeText}>
-                    Contact and evidence are hidden until you accept this case.
+                    🔒 Contact details & evidence are revealed upon digital signature acceptance.
                   </Text>
                 </View>
               </TouchableOpacity>
 
               <View style={styles.btnRow}>
-                <TouchableOpacity style={styles.acceptBtn} onPress={() => handleAccept(r.id)}>
-                  <Text style={styles.acceptText}>Accept Case</Text>
+                <TouchableOpacity
+                  style={styles.acceptBtn}
+                  onPress={() => handleOpenAcceptModal(r)}
+                  activeOpacity={0.84}
+                >
+                  <Text style={styles.acceptText}>Accept & Digitally Sign</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.declineBtn} onPress={() => handleDecline(r.id)}>
+
+                <TouchableOpacity
+                  style={styles.declineBtn}
+                  onPress={() => handleDecline(r.id)}
+                  activeOpacity={0.84}
+                >
                   <Text style={styles.declineText}>Decline</Text>
                 </TouchableOpacity>
               </View>
             </View>
           ))
         ) : (
-          <Text style={styles.emptyText}>No pending requests.</Text>
+          <Text style={styles.emptyText}>No pending requests at this time.</Text>
         )}
       </ScrollView>
 
-      {/* FOOTER */}
-      <View style={styles.bottomNav}>
-        {['Dashboard', 'Requests', 'Cases', 'Schedule', 'Profile'].map((lbl, idx) => {
-          const ids = ['home', 'requests', 'cases', 'schedule', 'profile'];
-          return (
-            <TouchableOpacity
-              key={lbl}
-              style={styles.navItem}
-              onPress={() => handleNav(ids[idx])}
-            >
-              <Text style={[styles.navLabel, ids[idx] === 'requests' && styles.navLabelActive]}>{lbl}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {/* Consistent Bottom Nav */}
+      <BottomNavBar role="lawyer" activeTab="requests" />
+
+      {/* Digital Signature & Consultancy Appointment Modal */}
+      <DigitalSignatureModal
+        visible={signatureModalVisible}
+        caseItem={selectedCaseForSign}
+        lawyerProfile={lawyerProfile}
+        onClose={() => setSignatureModalVisible(false)}
+        onConfirmSign={handleConfirmSignature}
+      />
     </SafeAreaView>
   );
 }

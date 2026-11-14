@@ -5,27 +5,129 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 const { width } = Dimensions.get('window');
 const PER_PAGE = 5;
 
-const NGOS = [];
+const INITIAL_NGOS = [
+  {
+    id: 'NGO-001',
+    name: 'National Commission for Human Development (NCHD)',
+    registrationNo: 'NCHD-FED-2002',
+    registeredOn: '15 Jan 2022',
+    type: 'Human Rights',
+    status: 'Active',
+    verificationStatus: 'Verified',
+    city: 'Karachi',
+    country: 'Pakistan',
+    email: 'info@nchd.org.pk',
+    phone: '+92 21 99201234',
+    officeAddress: 'Sindh Provincial Office, Saddar, Karachi',
+    founder: 'Federal Govt / Board of Trustees',
+    contactPerson: 'Director Legal Affairs',
+    areasOfWork: 'Literacy, Legal Literacy, Civil Rights & Empowerment',
+    operatingRegions: 'Karachi, Hyderabad, Larkana, Sukkur',
+    mission: 'Empowering communities through grassroots human development and free legal support.',
+    totalCases: 284,
+    totalBeneficiaries: 1420,
+    totalLawyers: 38,
+    activePrograms: 6,
+    lastLogin: 'Today, 11:20 AM',
+    documents: ['NCHD_Charter.pdf', 'Sindh_Govt_MOU.pdf', 'Tax_Exemption_Cert.pdf'],
+  },
+  {
+    id: 'NGO-002',
+    name: 'Legal Aid Society (LAS) Sindh',
+    registrationNo: 'LAS-SND-1998',
+    registeredOn: '10 Mar 2022',
+    type: 'Legal Aid',
+    status: 'Active',
+    verificationStatus: 'Verified',
+    city: 'Karachi',
+    country: 'Pakistan',
+    email: 'contact@legalaidsociety.com.pk',
+    phone: '+92 21 35839900',
+    officeAddress: 'Clifton Block 5, Karachi',
+    founder: 'Justice (R) Nasir Aslam Zahid',
+    contactPerson: 'Adv. Mehmood Alam',
+    areasOfWork: 'Prisoner Support, Free Defense, Legal Awareness',
+    operatingRegions: 'All Sindh Districts',
+    mission: 'Ensuring equitable access to justice for the marginalized and undertrial prisoners.',
+    totalCases: 512,
+    totalBeneficiaries: 3100,
+    totalLawyers: 64,
+    activePrograms: 8,
+    lastLogin: 'Yesterday, 04:15 PM',
+    documents: ['LAS_Registration_Doc.pdf', 'High_Court_Permission.pdf'],
+  },
+  {
+    id: 'NGO-003',
+    name: 'Aurat Foundation Sindh Chapter',
+    registrationNo: 'AF-KHI-2005',
+    registeredOn: '22 Aug 2023',
+    type: 'Women Rights',
+    status: 'Active',
+    verificationStatus: 'Verified',
+    city: 'Hyderabad',
+    country: 'Pakistan',
+    email: 'sindh@auratfoundation.org',
+    phone: '+92 22 2781190',
+    officeAddress: 'Civil Lines, Hyderabad',
+    founder: 'Nigar Ahmad',
+    contactPerson: 'Regional Coordinator',
+    areasOfWork: 'Women Legal Aid, Domestic Violence Relief, Inheritance Rights',
+    operatingRegions: 'Hyderabad, Mirpurkhas, Badin',
+    mission: 'Promoting gender equity, combating discrimination, and offering shelter and legal advocacy.',
+    totalCases: 198,
+    totalBeneficiaries: 890,
+    totalLawyers: 22,
+    activePrograms: 4,
+    lastLogin: '3 days ago',
+    documents: ['Societies_Act_Cert.pdf', 'Audit_Report_2023.pdf'],
+  },
+  {
+    id: 'NGO-004',
+    name: 'Sindh Rural Support Organization (SRSO)',
+    registrationNo: 'SRSO-SUK-2009',
+    registeredOn: '04 Feb 2024',
+    type: 'Welfare',
+    status: 'Pending',
+    verificationStatus: 'Pending',
+    city: 'Sukkur',
+    country: 'Pakistan',
+    email: 'info@srso.org.pk',
+    phone: '+92 71 5627181',
+    officeAddress: 'SRSO Complex, Shikarpur Road, Sukkur',
+    founder: 'Community Board',
+    contactPerson: 'Project Lead',
+    areasOfWork: 'Rural Land Rights, Community Mediation, Legal Aid',
+    operatingRegions: 'Northern Sindh',
+    mission: 'Fostering grassroots community institutions and access to justice in rural Sindh.',
+    totalCases: 64,
+    totalBeneficiaries: 340,
+    totalLawyers: 12,
+    activePrograms: 3,
+    lastLogin: '1 week ago',
+    documents: ['Registration_Pending_Review.pdf'],
+  },
+];
 
-const STATUSES      = ['All', 'Active', 'Pending', 'Suspended'];
-const VERIFY_STATUS = ['All', 'Verified', 'Pending', 'Suspended'];
-const TYPES         = ['All', 'Legal Aid', 'Human Rights', 'Women Rights', 'Welfare'];
-const SORT_OPTIONS  = ['Name ↑', 'Name ↓', 'Cases ↓', 'Beneficiaries ↓', 'Date ↑'];
+const STATUSES = ['All', 'Active', 'Pending', 'Suspended'];
+const TYPES    = ['All', 'Legal Aid', 'Human Rights', 'Women Rights', 'Welfare'];
 
 const statusColors = {
-  Active:    { bg: '#dcfce7', text: '#166534' },
-  Pending:   { bg: '#fef3c7', text: '#92400e' },
-  Suspended: { bg: '#fee2e2', text: '#991b1b' },
-  Verified:  { bg: '#dbeafe', text: '#1e40af' },
+  Active:    { bg: 'rgba(34, 197, 94, 0.15)', border: 'rgba(74, 222, 128, 0.4)', text: '#4ade80' },
+  Pending:   { bg: 'rgba(245, 158, 11, 0.15)', border: 'rgba(245, 158, 11, 0.4)', text: '#f59e0b' },
+  Suspended: { bg: 'rgba(239, 68, 68, 0.15)', border: 'rgba(239, 68, 68, 0.4)', text: '#ef4444' },
+  Verified:  { bg: 'rgba(59, 130, 246, 0.15)', border: 'rgba(96, 165, 250, 0.4)', text: '#60a5fa' },
 };
 
 const DETAIL_TABS = ['Organization', 'Verification', 'Statistics', 'Account'];
 
-// ─── DETAIL ──────────────────────────────────────────────────────────────────
+// ─── DETAIL VIEW ──────────────────────────────────────────────────────────────
 function NGODetail({ ngo: n, onBack }) {
   const [tab, setTab] = useState('Organization');
   const sc = statusColors[n.status] || statusColors['Pending'];
@@ -33,84 +135,103 @@ function NGODetail({ ngo: n, onBack }) {
 
   return (
     <SafeAreaView style={s.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#1A0533" />
-      <View style={s.header}>
-        <TouchableOpacity onPress={onBack}><Text style={s.backText}>← Back</Text></TouchableOpacity>
-        <Text style={[s.headerTitle, { flex: 1, marginLeft: 10 }]}>NGO Profile</Text>
-        <View style={[s.statusBadge, { backgroundColor: sc.bg }]}>
-          <Text style={[s.statusTxt, { color: sc.text }]}>{n.status}</Text>
-        </View>
-      </View>
+      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
 
-      {/* Profile */}
-      <View style={[s.header, { paddingBottom: 18 }]}>
-        <View style={[s.avatar, { width: 52, height: 52, borderRadius: 14, marginRight: 14 }]}>
-          <Text style={[s.avatarTxt, { fontSize: 16 }]}>{initials}</Text>
-        </View>
-        <View style={{ flex: 1 }}>
-          <Text style={s.headerTitle}>{n.name}</Text>
-          <Text style={s.headerSub}>{n.id} · {n.type}</Text>
-          <Text style={s.headerSub}>📍 {n.city} · {n.registrationNo}</Text>
-        </View>
-        <View style={[s.statusBadge, { backgroundColor: statusColors[n.verificationStatus]?.bg || '#f3f4f6' }]}>
-          <Text style={{ fontSize: 10, fontWeight: '700', color: statusColors[n.verificationStatus]?.text || '#374151' }}>
-            {n.verificationStatus}
-          </Text>
-        </View>
-      </View>
+      {/* Modern Header */}
+      <AppHeader
+        title="NGO Profile"
+        showBack={true}
+        onBackPress={onBack}
+        role="admin"
+        rightElement={
+          <View style={[s.statusBadge, { backgroundColor: sc.bg, borderColor: sc.border }]}>
+            <Text style={[s.statusTxt, { color: sc.text }]}>{n.status}</Text>
+          </View>
+        }
+      />
 
-      <View style={s.tabBar}>
-        {DETAIL_TABS.map(t => (
-          <TouchableOpacity key={t} style={[s.tabItem, tab===t && s.tabActive]} onPress={() => setTab(t)}>
-            <Text style={[s.tabTxt, tab===t && s.tabTxtActive]}>{t}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
-      <ScrollView style={{ padding: 14 }}>
+        {/* Hero Card */}
+        <View style={s.heroCard}>
+          <View style={s.heroAvatar}>
+            <Text style={s.heroAvatarTxt}>{initials}</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={s.heroName}>{n.name}</Text>
+            <Text style={s.heroSub}>{n.id} · {n.type}</Text>
+            <Text style={s.heroSubMuted}>📍 {n.city} · Reg: {n.registrationNo}</Text>
+          </View>
+        </View>
+
+        {/* Tab Pills */}
+        <View style={s.tabBar}>
+          {DETAIL_TABS.map(t => {
+            const isActive = tab === t;
+            return (
+              <TouchableOpacity
+                key={t}
+                style={[s.tabItem, isActive && s.tabActive]}
+                onPress={() => setTab(t)}
+                activeOpacity={0.75}
+              >
+                <Text style={[s.tabTxt, isActive && s.tabTxtActive]}>{t}</Text>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
         {tab === 'Organization' && (
           <>
-            <DSec title="🏢 Organization Information">
-              {[['NGO ID', n.id], ['NGO Name', n.name], ['Registration No.', n.registrationNo],
-                ['Registration Date', n.registeredOn], ['NGO Type', n.type], ['Website', n.website || 'N/A']
-              ].map(([l,v]) => <IR key={l} label={l} value={v} />)}
+            <DSec title="🏢 Organization Details">
+              <IR label="NGO ID"           value={n.id} />
+              <IR label="Registration No." value={n.registrationNo} />
+              <IR label="Registered On"    value={n.registeredOn} />
+              <IR label="NGO Type"         value={n.type} />
+              <IR label="Founder / Board"  value={n.founder} />
+              <IR label="Contact Person"   value={n.contactPerson} />
             </DSec>
-            <DSec title="📞 Contact Details">
-              {[['Official Email', n.email], ['Phone', n.phone], ['Office Address', n.officeAddress],
-                ['City', n.city], ['Country', n.country]
-              ].map(([l,v]) => <IR key={l} label={l} value={v} />)}
+
+            <DSec title="📞 Contact & Headquarters">
+              <IR label="Official Email"   value={n.email} />
+              <IR label="Phone"            value={n.phone} />
+              <IR label="Office Address"   value={n.officeAddress} />
+              <IR label="City"             value={n.city} />
+              <IR label="Country"          value={n.country} />
             </DSec>
-            <DSec title="📋 Organization Details">
-              {[['Founder / Director', n.founder], ['Contact Person', n.contactPerson],
-                ['Areas of Work', n.areasOfWork], ['Operating Regions', n.operatingRegions]
-              ].map(([l,v]) => <IR key={l} label={l} value={v} />)}
-              <Text style={{ fontSize: 12, color: '#888', marginTop: 10 }}>Mission</Text>
-              <Text style={{ fontSize: 13, color: '#333', lineHeight: 20, marginTop: 4 }}>{n.mission}</Text>
+
+            <DSec title="🎯 Mission & Scope">
+              <IR label="Areas of Work"     value={n.areasOfWork} />
+              <IR label="Operating Regions" value={n.operatingRegions} />
+              <Text style={s.missionLabel}>Mission Statement:</Text>
+              <Text style={s.missionTxt}>{n.mission}</Text>
             </DSec>
           </>
         )}
+
         {tab === 'Verification' && (
-          <DSec title="✅ Verification">
-            {[['Verification Status', n.verificationStatus]].map(([l,v]) => <IR key={l} label={l} value={v} />)}
-            <Text style={{ fontSize: 12, color: '#888', marginTop: 14, marginBottom: 8 }}>Documents</Text>
-            {(n.documents || []).map((d,i) => (
-              <View key={i} style={{ paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#f5f3f0' }}>
-                <Text style={{ fontSize: 13, fontWeight: '600' }}>{d}</Text>
+          <DSec title="✅ Accreditation & Documents">
+            <IR label="Verification Status" value={n.verificationStatus} highlight />
+            <Text style={s.docTitle}>Uploaded Compliance Documents</Text>
+            {(n.documents || []).map((d, i) => (
+              <View key={i} style={s.docRow}>
+                <Text style={s.docIcon}>📄</Text>
+                <Text style={s.docText}>{d}</Text>
               </View>
             ))}
           </DSec>
         )}
+
         {tab === 'Statistics' && (
-          <DSec title="📊 Statistics">
+          <DSec title="📊 Impact Metrics">
             <View style={s.perfGrid}>
               {[
-                { l: 'Cases Assisted',     v: n.totalCases,         c: '#1A0533' },
-                { l: 'Beneficiaries',      v: n.totalBeneficiaries, c: '#0F2744' },
-                { l: 'Lawyers Associated', v: n.totalLawyers,       c: '#1B4332' },
-                { l: 'Active Programs',    v: n.activePrograms,     c: '#5C1A1A' },
+                { l: 'Cases Assisted',     v: n.totalCases },
+                { l: 'Beneficiaries',      v: n.totalBeneficiaries },
+                { l: 'Active Lawyers',     v: n.totalLawyers },
+                { l: 'Programs Run',       v: n.activePrograms },
               ].map(item => (
                 <View key={item.l} style={s.perfCard}>
-                  <View style={[s.perfAccent, { backgroundColor: item.c }]} />
                   <Text style={s.perfVal}>{item.v}</Text>
                   <Text style={s.perfLbl}>{item.l}</Text>
                 </View>
@@ -118,324 +239,525 @@ function NGODetail({ ngo: n, onBack }) {
             </View>
           </DSec>
         )}
+
         {tab === 'Account' && (
           <>
-            <DSec title="🔐 Account">
-              {[['Status', n.status], ['Registration Date', n.registeredOn], ['Last Login', n.lastLogin]
-              ].map(([l,v]) => <IR key={l} label={l} value={v} />)}
+            <DSec title="🔐 Account Status">
+              <IR label="Current Status"  value={n.status} highlight />
+              <IR label="Registered On"   value={n.registeredOn} />
+              <IR label="Last Active"     value={n.lastLogin} />
             </DSec>
-            <DSec title="🛡️ Admin Actions">
-              {[
-                { label: 'Approve / Verify NGO', color: '#dcfce7', txt: '#166534' },
-                { label: 'Edit NGO Profile',     color: '#dbeafe', txt: '#1e40af' },
-                { label: 'Reject Application',   color: '#fef3c7', txt: '#92400e' },
-                { label: 'Suspend NGO',          color: '#fef3c7', txt: '#92400e' },
-                { label: 'Delete NGO',           color: '#fee2e2', txt: '#991b1b' },
-              ].map(btn => (
-                <TouchableOpacity key={btn.label} style={[s.bigBtn, { backgroundColor: btn.color }]}>
-                  <Text style={[s.bigBtnTxt, { color: btn.txt }]}>{btn.label}</Text>
-                </TouchableOpacity>
-              ))}
+
+            <DSec title="🛡️ Administrative Actions">
+              <TouchableOpacity style={s.actPrimary} activeOpacity={0.8}>
+                <Text style={s.actPrimaryTxt}>✓ VERIFY & APPROVE NGO</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.actWarn} activeOpacity={0.8}>
+                <Text style={s.actWarnTxt}>⏸ Suspend Operations</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={s.actDanger} activeOpacity={0.8}>
+                <Text style={s.actDangerTxt}>✕ Delete Registry Entry</Text>
+              </TouchableOpacity>
             </DSec>
           </>
         )}
-        <View style={{ height: 30 }} />
+
       </ScrollView>
+
+      <BottomNavBar role="admin" activeTab="ngos" />
     </SafeAreaView>
   );
 }
 
 function DSec({ title, children }) {
   return (
-    <View style={{ backgroundColor: '#fff', borderRadius: 18, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#ece9e4' }}>
-      <Text style={{ fontSize: 13, fontWeight: '800', color: '#1a1a1a', marginBottom: 12 }}>{title}</Text>
+    <View style={s.dSec}>
+      <Text style={s.dSecTitle}>{title}</Text>
       {children}
     </View>
   );
 }
-function IR({ label, value }) {
+
+function IR({ label, value, highlight }) {
   return (
-    <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 9, borderBottomWidth: 1, borderBottomColor: '#f5f3f0' }}>
-      <Text style={{ fontSize: 12, color: '#888', fontWeight: '500', flex: 1 }}>{label}</Text>
-      <Text style={{ fontSize: 12, color: '#1a1a1a', fontWeight: '700', flex: 1.4, textAlign: 'right' }}>{String(value ?? '—')}</Text>
+    <View style={s.infoRow}>
+      <Text style={s.infoLabel}>{label}</Text>
+      <Text style={[s.infoValue, highlight && s.infoHighlight]}>{String(value ?? '—')}</Text>
     </View>
   );
 }
 
-// ─── MAIN ────────────────────────────────────────────────────────────────────
+// ─── MAIN LIST VIEW ──────────────────────────────────────────────────────────
 export default function NGOManagement() {
   const router = useRouter();
-  const [data, setData]         = useState(NGOS);
+  const [data, setData]         = useState(INITIAL_NGOS);
   const [search, setSearch]     = useState('');
   const [status, setStatus]     = useState('All');
   const [type, setType]         = useState('All');
-  const [sort, setSort]         = useState('Name ↑');
-  const [showSort, setShowSort] = useState(false);
   const [page, setPage]         = useState(1);
-  const [selected, setSelected] = useState([]);
   const [detail, setDetail]     = useState(null);
+
+  // Back returns to Admin Overview
+  useAppNavigation({ isHome: false, homeRoute: '/(Admin)' });
 
   let filtered = data.filter(n => {
     const q = search.toLowerCase();
-    const matchQ = (n.name || '').toLowerCase().includes(q) ||
+    const matchQ =
+      (n.name || '').toLowerCase().includes(q) ||
       (n.registrationNo || '').toLowerCase().includes(q) ||
-      (n.city || '').toLowerCase().includes(q) || String(n.id ?? '').toLowerCase().includes(q);
+      (n.city || '').toLowerCase().includes(q) ||
+      String(n.id ?? '').toLowerCase().includes(q);
     return matchQ && (status === 'All' || n.status === status) && (type === 'All' || n.type === type);
   });
 
-  filtered = [...filtered].sort((a, b) => {
-    if (sort === 'Name ↑') return (a.name || '').localeCompare(b.name || '');
-    if (sort === 'Name ↓') return (b.name || '').localeCompare(a.name || '');
-    if (sort === 'Cases ↓') return (b.totalCases || 0) - (a.totalCases || 0);
-    if (sort === 'Beneficiaries ↓') return (b.totalBeneficiaries || 0) - (a.totalBeneficiaries || 0);
-    return 0;
-  });
-
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
-  const paginated  = filtered.slice((page-1)*PER_PAGE, page*PER_PAGE);
+  const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
   const reset      = () => setPage(1);
 
   const handleDelete  = id => setData(p => p.filter(n => n.id !== id));
-  const handleSuspend = id => setData(p => p.map(n => n.id===id ? { ...n, status: 'Suspended' } : n));
-  const handleVerify  = id => setData(p => p.map(n => n.id===id ? { ...n, verificationStatus: 'Verified', status: 'Active' } : n));
+  const handleVerify  = id => setData(p => p.map(n => n.id === id ? { ...n, verificationStatus: 'Verified', status: 'Active' } : n));
 
-  const toggleSel = id => setSelected(p => p.includes(id) ? p.filter(x=>x!==id) : [...p, id]);
-  const bulkDel   = () => { setData(p => p.filter(n => !selected.includes(n.id))); setSelected([]); };
-  const bulkSusp  = () => { setData(p => p.map(n => selected.includes(n.id) ? { ...n, status: 'Suspended' } : n)); setSelected([]); };
+  if (detail) {
+    return <NGODetail ngo={detail} onBack={() => setDetail(null)} />;
+  }
 
-  if (detail) return <NGODetail ngo={detail} onBack={() => setDetail(null)} />;
+  const pendingCount = data.filter(n => n.verificationStatus === 'Pending').length;
 
   return (
     <SafeAreaView style={s.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#1A0533" />
+      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
 
-      <View style={s.header}>
-        <TouchableOpacity onPress={() => router.back()}><Text style={s.backText}>← Back</Text></TouchableOpacity>
-        <View style={{ flex: 1, marginLeft: 10 }}>
-          <Text style={s.headerTitle}>NGO Management</Text>
-          <Text style={s.headerSub}>{data.length} NGOs registered</Text>
-        </View>
-        <View style={[s.statusBadge, { backgroundColor: '#dbeafe' }]}>
-          <Text style={{ fontSize: 11, fontWeight: '700', color: '#1e40af' }}>
-            {data.filter(n=>n.verificationStatus==='Pending').length} Pending
-          </Text>
-        </View>
-      </View>
+      {/* Modern '< NGO Directory' Header */}
+      <AppHeader
+        title="NGO Directory"
+        showBack={true}
+        homeRoute="/(Admin)"
+        role="admin"
+        rightElement={
+          pendingCount > 0 ? (
+            <View style={s.pendingPill}>
+              <Text style={s.pendingPillTxt}>{pendingCount} Pending</Text>
+            </View>
+          ) : null
+        }
+      />
 
-      <ScrollView style={{ flex: 1, padding: 14 }} showsVerticalScrollIndicator={false}>
+      <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
+        {/* Search */}
         <View style={s.searchBox}>
-          <Text>🔍</Text>
-          <TextInput style={s.searchInput} placeholderTextColor="#bbb"
+          <Text style={{ color: '#FF9500', fontSize: 16 }}>🔍</Text>
+          <TextInput
+            style={s.searchInput}
             placeholder="Search NGO name, ID, city..."
-            value={search} onChangeText={t => { setSearch(t); reset(); }} />
-          {search ? <TouchableOpacity onPress={() => { setSearch(''); reset(); }}><Text style={s.clearX}>✕</Text></TouchableOpacity> : null}
+            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+            value={search}
+            onChangeText={t => { setSearch(t); reset(); }}
+          />
+          {search ? (
+            <TouchableOpacity onPress={() => { setSearch(''); reset(); }}>
+              <Text style={s.clearX}>✕</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
 
+        {/* Status Filter */}
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow}>
           {STATUSES.map(st => (
-            <TouchableOpacity key={st} style={[s.chip, status===st && s.chipActive]} onPress={() => { setStatus(st); reset(); }}>
-              <Text style={[s.chipTxt, status===st && s.chipTxtActive]}>{st}</Text>
+            <TouchableOpacity
+              key={st}
+              style={[s.chip, status === st && s.chipActive]}
+              onPress={() => { setStatus(st); reset(); }}
+              activeOpacity={0.75}
+            >
+              <Text style={[s.chipTxt, status === st && s.chipTxtActive]}>{st}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.filterRow, { marginTop: 4 }]}>
+        {/* Type Filter */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={[s.filterRow, { marginTop: -4 }]}>
           {TYPES.map(t => (
-            <TouchableOpacity key={t} style={[s.chip, type===t && s.chipType]} onPress={() => { setType(t); reset(); }}>
-              <Text style={[s.chipTxt, type===t && s.chipTxtActive]}>🏢 {t}</Text>
+            <TouchableOpacity
+              key={t}
+              style={[s.chip, type === t && s.chipActive]}
+              onPress={() => { setType(t); reset(); }}
+              activeOpacity={0.75}
+            >
+              <Text style={[s.chipTxt, type === t && s.chipTxtActive]}>{t}</Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
-        <View style={s.toolRow}>
-          <Text style={s.resultCount}>{filtered.length} results</Text>
-          <TouchableOpacity style={s.sortBtn} onPress={() => setShowSort(p=>!p)}>
-            <Text style={s.sortBtnTxt}>Sort: {sort} ▾</Text>
-          </TouchableOpacity>
-        </View>
-        {showSort && (
-          <View style={s.sortMenu}>
-            {SORT_OPTIONS.map(o => (
-              <TouchableOpacity key={o} style={s.sortOpt} onPress={() => { setSort(o); setShowSort(false); }}>
-                <Text style={[s.sortOptTxt, sort===o && { color: '#1A0533', fontWeight: '800' }]}>{o}</Text>
-              </TouchableOpacity>
-            ))}
+        {/* NGO List */}
+        {paginated.length === 0 ? (
+          <View style={s.empty}>
+            <Text style={s.emptyTxt}>No organizations found matching criteria.</Text>
           </View>
-        )}
-
-        {selected.length > 0 && (
-          <View style={s.bulkBar}>
-            <Text style={s.bulkCount}>{selected.length} selected</Text>
-            <TouchableOpacity style={s.bulkBtn} onPress={bulkSusp}><Text style={s.bulkBtnTxt}>Suspend</Text></TouchableOpacity>
-            <TouchableOpacity style={[s.bulkBtn, { backgroundColor: '#fee2e2' }]} onPress={bulkDel}>
-              <Text style={[s.bulkBtnTxt, { color: '#991b1b' }]}>Delete</Text>
-            </TouchableOpacity>
-            <TouchableOpacity onPress={() => setSelected([])}><Text style={s.bulkClear}>✕</Text></TouchableOpacity>
-          </View>
-        )}
-
-        {paginated.length === 0
-          ? <View style={s.empty}><Text style={s.emptyTxt}>No NGOs found</Text></View>
-          : paginated.map(n => {
-            const sc  = statusColors[n.status]             || { bg: '#f3f4f6', text: '#374151' };
-            const vc  = statusColors[n.verificationStatus] || { bg: '#f3f4f6', text: '#374151' };
-            const sel = selected.includes(n.id);
-            const ini = (n.name || '').split(' ').map(w=>w[0]).join('').slice(0,2);
+        ) : (
+          paginated.map(n => {
+            const sc = statusColors[n.status] || statusColors['Pending'];
+            const initials = (n.name || '').split(' ').map(w => w[0]).join('').slice(0, 2);
             return (
-              <View key={n.id} style={[s.card, sel && s.cardSel]}>
+              <View key={n.id} style={s.card}>
                 <View style={s.cardTop}>
-                  <TouchableOpacity onPress={() => toggleSel(n.id)} style={{ marginRight: 8, marginTop: 2 }}>
-                    <Text style={{ fontSize: 16 }}>{sel ? '☑' : '☐'}</Text>
-                  </TouchableOpacity>
                   <View style={s.avatar}>
-                    <Text style={s.avatarTxt}>{ini}</Text>
+                    <Text style={s.avatarTxt}>{initials}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
                     <Text style={s.cardName}>{n.name}</Text>
-                    <Text style={s.cardSub}>{n.id} · {n.type}</Text>
-                    <Text style={s.cardSub}>📍 {n.city}</Text>
+                    <Text style={s.cardSub}>{n.type} · {n.city}</Text>
+                    <Text style={s.cardReg}>Reg: {n.registrationNo}</Text>
                   </View>
-                  <View style={{ gap: 4, alignItems: 'flex-end' }}>
-                    <View style={[s.statusBadge, { backgroundColor: sc.bg }]}>
-                      <Text style={[s.statusTxt, { color: sc.text }]}>{n.status}</Text>
-                    </View>
-                    <View style={[s.statusBadge, { backgroundColor: vc.bg }]}>
-                      <Text style={[s.statusTxt, { color: vc.text }]}>{n.verificationStatus}</Text>
-                    </View>
+                  <View style={[s.statusBadge, { backgroundColor: sc.bg, borderColor: sc.border }]}>
+                    <Text style={[s.statusTxt, { color: sc.text }]}>{n.status}</Text>
                   </View>
                 </View>
 
+                {/* Metrics */}
                 <View style={s.statsRow}>
-                  {[
-                    { l: 'Cases',    v: n.totalCases },
-                    { l: 'People',   v: n.totalBeneficiaries },
-                    { l: 'Lawyers',  v: n.totalLawyers },
-                    { l: 'Programs', v: n.activePrograms },
-                  ].map((item, i) => (
-                    <React.Fragment key={i}>
-                      <View style={s.statItem}>
-                        <Text style={s.statVal}>{item.v}</Text>
-                        <Text style={s.statLbl}>{item.l}</Text>
-                      </View>
-                      {i < 3 && <View style={s.statDiv} />}
-                    </React.Fragment>
-                  ))}
+                  <View style={s.statItem}>
+                    <Text style={s.statVal}>{n.totalCases}</Text>
+                    <Text style={s.statLbl}>Cases</Text>
+                  </View>
+                  <View style={s.statDiv} />
+                  <View style={s.statItem}>
+                    <Text style={s.statVal}>{n.totalBeneficiaries}</Text>
+                    <Text style={s.statLbl}>Beneficiaries</Text>
+                  </View>
+                  <View style={s.statDiv} />
+                  <View style={s.statItem}>
+                    <Text style={s.statVal}>{n.totalLawyers}</Text>
+                    <Text style={s.statLbl}>Advocates</Text>
+                  </View>
                 </View>
 
+                {/* Actions */}
                 <View style={s.actions}>
-                  <TouchableOpacity style={s.actView} onPress={() => setDetail(n)}>
-                    <Text style={s.actViewTxt}>View</Text>
+                  <TouchableOpacity
+                    style={s.actView}
+                    onPress={() => setDetail(n)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={s.actViewTxt}>View Profile</Text>
                   </TouchableOpacity>
-                  {n.verificationStatus !== 'Verified' && (
-                    <TouchableOpacity style={s.actVerify} onPress={() => handleVerify(n.id)}>
-                      <Text style={s.actVerifyTxt}>✓ Verify</Text>
+
+                  {n.verificationStatus === 'Pending' && (
+                    <TouchableOpacity
+                      style={s.actVerify}
+                      onPress={() => handleVerify(n.id)}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={s.actVerifyTxt}>Verify</Text>
                     </TouchableOpacity>
                   )}
-                  <TouchableOpacity style={s.actSuspend} onPress={() => handleSuspend(n.id)}>
-                    <Text style={s.actSuspendTxt}>Suspend</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity style={s.actDelete} onPress={() => handleDelete(n.id)}>
-                    <Text style={s.actDeleteTxt}>✕</Text>
+
+                  <TouchableOpacity
+                    style={s.actDel}
+                    onPress={() => handleDelete(n.id)}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={s.actDelTxt}>Remove</Text>
                   </TouchableOpacity>
                 </View>
               </View>
             );
           })
-        }
+        )}
 
         {totalPages > 1 && (
           <View style={s.pager}>
-            <TouchableOpacity style={[s.pageBtn, page===1 && s.pageDis]} disabled={page===1} onPress={() => setPage(p=>p-1)}>
+            <TouchableOpacity
+              style={[s.pageBtn, page === 1 && s.pageDis]}
+              disabled={page === 1}
+              onPress={() => setPage(p => p - 1)}
+            >
               <Text style={s.pageBtnTxt}>← Prev</Text>
             </TouchableOpacity>
-            {Array.from({ length: totalPages }, (_,i) => i+1).map(pg => (
-              <TouchableOpacity key={pg} style={[s.pageNum, page===pg && s.pageNumAct]} onPress={() => setPage(pg)}>
-                <Text style={[s.pageNumTxt, page===pg && s.pageNumActTxt]}>{pg}</Text>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(pg => (
+              <TouchableOpacity
+                key={pg}
+                style={[s.pageNum, page === pg && s.pageNumAct]}
+                onPress={() => setPage(pg)}
+              >
+                <Text style={[s.pageNumTxt, page === pg && s.pageNumActTxt]}>{pg}</Text>
               </TouchableOpacity>
             ))}
-            <TouchableOpacity style={[s.pageBtn, page===totalPages && s.pageDis]} disabled={page===totalPages} onPress={() => setPage(p=>p+1)}>
+            <TouchableOpacity
+              style={[s.pageBtn, page === totalPages && s.pageDis]}
+              disabled={page === totalPages}
+              onPress={() => setPage(p => p + 1)}
+            >
               <Text style={s.pageBtnTxt}>Next →</Text>
             </TouchableOpacity>
           </View>
         )}
 
-        <View style={{ height: 30 }} />
       </ScrollView>
+
+      {/* Consistent Bottom Nav */}
+      <BottomNavBar role="admin" activeTab="ngos" />
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safe:         { flex: 1, backgroundColor: '#f5f3ef' },
-  header:       { backgroundColor: '#1A0533', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16, flexDirection: 'row', alignItems: 'center' },
-  backText:     { color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: '600' },
-  headerTitle:  { fontSize: 15, fontWeight: '800', color: '#fff' },
-  headerSub:    { fontSize: 10, color: 'rgba(255,255,255,0.45)', marginTop: 2 },
-  statusBadge:  { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 3 },
-  statusTxt:    { fontSize: 10, fontWeight: '700' },
-  searchBox:    { backgroundColor: '#fff', borderRadius: 14, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 14, marginBottom: 12, borderWidth: 1, borderColor: '#ece9e4' },
-  searchInput:  { flex: 1, fontSize: 13, color: '#1a1a1a', paddingVertical: 12, marginLeft: 8 },
-  clearX:       { fontSize: 14, color: '#bbb', paddingLeft: 8 },
-  filterRow:    { marginBottom: 8 },
-  chip:         { backgroundColor: '#fff', borderRadius: 20, paddingHorizontal: 14, paddingVertical: 6, marginRight: 8, borderWidth: 1, borderColor: '#ece9e4' },
-  chipActive:   { backgroundColor: '#1A0533', borderColor: '#1A0533' },
-  chipType:     { backgroundColor: '#0F2744', borderColor: '#0F2744' },
-  chipTxt:      { fontSize: 12, fontWeight: '600', color: '#666' },
-  chipTxtActive:{ color: '#fff' },
-  toolRow:      { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginVertical: 8 },
-  resultCount:  { fontSize: 11, color: '#999' },
-  sortBtn:      { backgroundColor: '#fff', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 6, borderWidth: 1, borderColor: '#ece9e4' },
-  sortBtnTxt:   { fontSize: 12, fontWeight: '600', color: '#1A0533' },
-  sortMenu:     { backgroundColor: '#fff', borderRadius: 14, padding: 8, marginBottom: 10, borderWidth: 1, borderColor: '#ece9e4' },
-  sortOpt:      { paddingVertical: 10, paddingHorizontal: 8, borderBottomWidth: 1, borderBottomColor: '#f5f3f0' },
-  sortOptTxt:   { fontSize: 13, color: '#555' },
-  bulkBar:      { backgroundColor: '#1A0533', borderRadius: 14, flexDirection: 'row', alignItems: 'center', padding: 12, marginBottom: 10, gap: 8 },
-  bulkCount:    { color: '#fff', fontSize: 12, fontWeight: '700', flex: 1 },
-  bulkBtn:      { backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 6 },
-  bulkBtnTxt:   { fontSize: 11, fontWeight: '700', color: '#fff' },
-  bulkClear:    { color: 'rgba(255,255,255,0.6)', fontSize: 16 },
-  empty:        { alignItems: 'center', padding: 40 },
-  emptyTxt:     { color: '#bbb', fontSize: 14 },
-  card:         { backgroundColor: '#fff', borderRadius: 18, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#ece9e4' },
-  cardSel:      { borderColor: '#1A0533', borderWidth: 2 },
-  cardTop:      { flexDirection: 'row', alignItems: 'flex-start', marginBottom: 12 },
-  avatar:       { width: 42, height: 42, borderRadius: 12, backgroundColor: '#e0f2fe', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  avatarTxt:    { fontSize: 13, fontWeight: '800', color: '#0F2744' },
-  cardName:     { fontSize: 14, fontWeight: '800', color: '#1a1a1a' },
-  cardSub:      { fontSize: 11, color: '#888', marginTop: 2 },
-  statsRow:     { flexDirection: 'row', backgroundColor: '#f9f8f6', borderRadius: 12, padding: 10, marginBottom: 12, alignItems: 'center' },
-  statItem:     { flex: 1, alignItems: 'center' },
-  statVal:      { fontSize: 13, fontWeight: '800', color: '#1a1a1a' },
-  statLbl:      { fontSize: 10, color: '#999', marginTop: 2 },
-  statDiv:      { width: 1, height: 24, backgroundColor: '#ece9e4' },
-  actions:      { flexDirection: 'row', gap: 8 },
-  actView:      { flex: 1, backgroundColor: '#f0ece8', borderRadius: 10, paddingVertical: 8, alignItems: 'center' },
-  actViewTxt:   { fontSize: 12, fontWeight: '700', color: '#5C1A1A' },
-  actVerify:    { flex: 1, backgroundColor: '#1A0533', borderRadius: 10, paddingVertical: 8, alignItems: 'center' },
-  actVerifyTxt: { fontSize: 12, fontWeight: '700', color: '#fff' },
-  actSuspend:   { flex: 1, backgroundColor: '#fef3c7', borderRadius: 10, paddingVertical: 8, alignItems: 'center' },
-  actSuspendTxt:{ fontSize: 12, fontWeight: '700', color: '#92400e' },
-  actDelete:    { backgroundColor: '#fee2e2', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 8, alignItems: 'center' },
-  actDeleteTxt: { fontSize: 14, fontWeight: '800', color: '#991b1b' },
-  pager:        { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginVertical: 16 },
-  pageBtn:      { backgroundColor: '#fff', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 7, borderWidth: 1, borderColor: '#ece9e4' },
-  pageDis:      { opacity: 0.4 },
-  pageBtnTxt:   { fontSize: 12, fontWeight: '600', color: '#1A0533' },
-  pageNum:      { width: 32, height: 32, borderRadius: 8, justifyContent: 'center', alignItems: 'center', backgroundColor: '#fff', borderWidth: 1, borderColor: '#ece9e4' },
-  pageNumAct:   { backgroundColor: '#1A0533', borderColor: '#1A0533' },
-  pageNumTxt:   { fontSize: 12, fontWeight: '700', color: '#666' },
-  pageNumActTxt:{ color: '#fff' },
-  tabBar:       { flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#ece9e4' },
-  tabItem:      { flex: 1, paddingVertical: 12, alignItems: 'center' },
-  tabActive:    { borderBottomWidth: 2, borderBottomColor: '#1A0533' },
-  tabTxt:       { fontSize: 11, fontWeight: '600', color: '#bbb' },
-  tabTxtActive: { color: '#1A0533' },
-  perfGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  perfCard:     { backgroundColor: '#f9f8f6', borderRadius: 14, padding: 14, width: (width - 76) / 2, borderWidth: 1, borderColor: '#ece9e4', overflow: 'hidden' },
-  perfAccent:   { position: 'absolute', top: 0, left: 0, right: 0, height: 3 },
-  perfVal:      { fontSize: 22, fontWeight: '800', color: '#1a1a1a', marginTop: 8 },
-  perfLbl:      { fontSize: 11, color: '#888', marginTop: 4 },
-  bigBtn:       { borderRadius: 12, paddingVertical: 12, alignItems: 'center', marginBottom: 8 },
-  bigBtnTxt:    { fontSize: 13, fontWeight: '700' },
+  safe: { flex: 1, backgroundColor: '#060201' },
+  scroll: { flex: 1 },
+  content: { padding: 16, paddingBottom: 110 },
+  pendingPill: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.4)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  pendingPillTxt: { fontSize: 10, fontWeight: '800', color: '#f59e0b' },
+  searchBox: {
+    backgroundColor: 'rgba(25, 12, 5, 0.75)',
+    borderRadius: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 14,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.25)',
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: 13,
+    color: '#FFF5E8',
+    paddingVertical: 12,
+    marginLeft: 8,
+  },
+  clearX: { fontSize: 14, color: 'rgba(255, 220, 180, 0.5)', paddingLeft: 8 },
+  filterRow: { marginBottom: 12 },
+  chip: {
+    backgroundColor: 'rgba(25, 12, 5, 0.72)',
+    borderRadius: 20,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    marginRight: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.22)',
+  },
+  chipActive: {
+    backgroundColor: '#FF9500',
+    borderColor: '#FFA726',
+  },
+  chipTxt: { fontSize: 12, fontWeight: '600', color: 'rgba(255, 220, 180, 0.65)' },
+  chipTxtActive: { color: '#0A0301', fontWeight: '800' },
+  empty: { alignItems: 'center', padding: 40 },
+  emptyTxt: { color: 'rgba(255, 220, 180, 0.5)', fontSize: 14 },
+  card: {
+    backgroundColor: 'rgba(22, 10, 4, 0.78)',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.22)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  cardTop: { flexDirection: 'row', alignItems: 'center' },
+  avatar: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    borderWidth: 1.5,
+    borderColor: '#FF9500',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  avatarTxt: { fontSize: 14, fontWeight: '800', color: '#FFEED6' },
+  cardName: { fontSize: 14, fontWeight: '800', color: '#FFF5E8' },
+  cardSub: { fontSize: 11, color: '#FFB74D', marginTop: 2, fontWeight: '600' },
+  cardReg: { fontSize: 10, color: 'rgba(255, 220, 180, 0.5)', marginTop: 2 },
+  statusBadge: {
+    borderRadius: 8,
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  statusTxt: { fontSize: 10, fontWeight: '700' },
+  statsRow: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(15, 7, 2, 0.85)',
+    borderRadius: 12,
+    padding: 10,
+    marginVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.15)',
+  },
+  statItem: { flex: 1, alignItems: 'center' },
+  statVal: { fontSize: 14, fontWeight: '800', color: '#FFF5E8' },
+  statLbl: { fontSize: 10, color: 'rgba(255, 220, 180, 0.5)', marginTop: 2 },
+  statDiv: { width: 1, height: 20, backgroundColor: 'rgba(255, 255, 255, 0.08)' },
+  actions: { flexDirection: 'row', gap: 8 },
+  actView: {
+    flex: 2,
+    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    borderRadius: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FF9500',
+  },
+  actViewTxt: { fontSize: 11, fontWeight: '800', color: '#FFB74D' },
+  actVerify: {
+    flex: 1.5,
+    backgroundColor: '#FF9500',
+    borderRadius: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+  },
+  actVerifyTxt: { fontSize: 11, fontWeight: '900', color: '#0A0301' },
+  actDel: {
+    flex: 1,
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderRadius: 10,
+    paddingVertical: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.35)',
+  },
+  actDelTxt: { fontSize: 11, fontWeight: '700', color: '#ef4444' },
+  pager: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginVertical: 16 },
+  pageBtn: {
+    backgroundColor: 'rgba(25, 12, 5, 0.75)',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.25)',
+  },
+  pageDis: { opacity: 0.3 },
+  pageBtnTxt: { fontSize: 12, fontWeight: '600', color: '#FFB74D' },
+  pageNum: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(25, 12, 5, 0.75)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.25)',
+  },
+  pageNumAct: { backgroundColor: '#FF9500', borderColor: '#FFA726' },
+  pageNumTxt: { fontSize: 12, fontWeight: '700', color: 'rgba(255, 220, 180, 0.65)' },
+  pageNumActTxt: { color: '#0A0301', fontWeight: '900' },
+  heroCard: {
+    backgroundColor: 'rgba(22, 10, 4, 0.82)',
+    borderRadius: 20,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.25)',
+  },
+  heroAvatar: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    borderWidth: 1.5,
+    borderColor: '#FF9500',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 14,
+  },
+  heroAvatarTxt: { fontSize: 17, fontWeight: '900', color: '#FFEED6' },
+  heroName: { fontSize: 15, fontWeight: '800', color: '#FFF5E8' },
+  heroSub: { fontSize: 12, color: '#FFB74D', marginTop: 2, fontWeight: '600' },
+  heroSubMuted: { fontSize: 11, color: 'rgba(255, 220, 180, 0.55)', marginTop: 2 },
+  tabBar: {
+    flexDirection: 'row',
+    backgroundColor: 'rgba(25, 12, 5, 0.72)',
+    borderRadius: 14,
+    padding: 4,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.2)',
+  },
+  tabItem: { flex: 1, paddingVertical: 10, alignItems: 'center', borderRadius: 10 },
+  tabActive: { backgroundColor: '#FF9500' },
+  tabTxt: { fontSize: 11, fontWeight: '700', color: 'rgba(255, 220, 180, 0.6)' },
+  tabTxtActive: { color: '#0A0301', fontWeight: '900' },
+  dSec: {
+    backgroundColor: 'rgba(22, 10, 4, 0.78)',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.22)',
+  },
+  dSecTitle: { fontSize: 13, fontWeight: '800', color: '#FFB74D', marginBottom: 12 },
+  infoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  infoLabel: { fontSize: 12, color: 'rgba(255, 220, 180, 0.6)', fontWeight: '600', flex: 1 },
+  infoValue: { fontSize: 12, color: '#FFF5E8', fontWeight: '700', flex: 1.4, textAlign: 'right' },
+  infoHighlight: { color: '#FF9500', fontWeight: '800' },
+  missionLabel: { fontSize: 12, color: '#FFB74D', marginTop: 12, fontWeight: '700' },
+  missionTxt: { fontSize: 13, color: 'rgba(255, 235, 215, 0.8)', lineHeight: 20, marginTop: 4 },
+  docTitle: { fontSize: 12, color: '#FFB74D', marginTop: 14, marginBottom: 8, fontWeight: '700' },
+  docRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
+  },
+  docIcon: { marginRight: 8, fontSize: 14 },
+  docText: { fontSize: 13, color: '#FFF5E8', fontWeight: '600' },
+  perfGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  perfCard: {
+    backgroundColor: 'rgba(15, 7, 2, 0.85)',
+    borderRadius: 14,
+    padding: 14,
+    width: (width - 64) / 2,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.2)',
+  },
+  perfVal: { fontSize: 20, fontWeight: '900', color: '#FFF5E8' },
+  perfLbl: { fontSize: 11, color: 'rgba(255, 220, 180, 0.55)', marginTop: 4, fontWeight: '600' },
+  actPrimary: {
+    backgroundColor: '#FF9500',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  actPrimaryTxt: { fontSize: 12, fontWeight: '900', color: '#0A0301', letterSpacing: 0.5 },
+  actWarn: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(245, 158, 11, 0.35)',
+  },
+  actWarnTxt: { fontSize: 12, fontWeight: '800', color: '#f59e0b' },
+  actDanger: {
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderRadius: 12,
+    paddingVertical: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.35)',
+  },
+  actDangerTxt: { fontSize: 12, fontWeight: '800', color: '#ef4444' },
 });

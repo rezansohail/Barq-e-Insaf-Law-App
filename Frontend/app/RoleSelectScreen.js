@@ -53,9 +53,9 @@ const roles = [
   },
   {
     id: 'ngo',
-    label: 'NGO / MEDIA',
-    tag: 'PUBLIC INTEREST',
-    subtitle: 'Legal aid tracking & case statistics',
+    label: 'NGO - NCHD',
+    tag: 'National Commission for Human Development (NCHD)',
+    subtitle: 'National Commission for Human Development (NCHD)',
     accentColor: '#FF7A29',
     accentBorder: 'rgba(255, 122, 41, 0.38)',
     accentGlow: 'rgba(255, 122, 41, 0.30)',
@@ -63,6 +63,19 @@ const roles = [
     image: require('../assets/images/ngo.png'),
     iconPath:
       'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z',
+  },
+  {
+    id: 'media',
+    label: 'MEDIA - KTN NEWS',
+    tag: 'KTN News Broadcast & Journalism',
+    subtitle: 'KTN News Broadcast & Journalism',
+    accentColor: '#F59E0B',
+    accentBorder: 'rgba(245, 158, 11, 0.40)',
+    accentGlow: 'rgba(245, 158, 11, 0.30)',
+    hasImage: true,
+    image: require('../assets/images/media.png'),
+    iconPath:
+      'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zm-5-6l-7 4V7z',
   },
   {
     id: 'admin',
@@ -386,7 +399,7 @@ const styles = StyleSheet.create({
     fontWeight: '800',
     color: '#FFFFFF',
     letterSpacing: -0.3,
-    marginBottom: 50,
+    marginBottom: 20,
     marginTop: 6,
   },
 
@@ -446,7 +459,7 @@ const styles = StyleSheet.create({
   cardContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 12,
+    padding: 8,
     gap: 30,
     position: 'relative',
   },
@@ -468,8 +481,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   roleImage: {
-    width: '120%',
-    height: '120%',
+    width: '110%',
+    height: '110%',
   },
 
   // Text: White & Lighter Colors

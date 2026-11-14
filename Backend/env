@@ -1,0 +1,33 @@
+# ==============================================================================
+# BARQ-E-INSAF - MASTER ENVIRONMENT CONFIGURATION
+# ==============================================================================
+
+# --- BACKEND SERVER ---
+PORT=5000
+
+# --- NEON POSTGRESQL DATABASE ---
+DATABASE_URL=postgresql://neondb_owner:npg_lojIUbmT31yZ@ep-small-water-b5avgt8p-pooler.c-7.us-east-2.aws.neon.tech/neondb?sslmode=require
+DB_HOST=ep-small-water-b5avgt8p-pooler.c-7.us-east-2.aws.neon.tech
+DB_PORT=5432
+DB_NAME=neondb
+DB_USER=neondb_owner
+DB_PASSWORD=npg_lojIUbmT31yZ
+
+# --- JWT SECURITY ---
+JWT_SECRET=super-secret-access
+JWT_ACCESS_SECRET=super-secret-access
+JWT_REFRESH_SECRET=super-secret-refresh
+JWT_ACCESS_EXPIRES=15m
+JWT_REFRESH_EXPIRES=30d
+
+# --- EMAIL (SMTP) ---
+SMTP_HOST=smtp.gmail.com
+SMTP_PORT=465
+SMTP_SECURE=true
+SMTP_USER=anjumsaif002@gmail.com
+SMTP_PASS=xtvtczpdfrukizwx
+SMTP_FROM_NAME="Barq-e-Insaf"
+
+# --- AI CHATBOT SERVICE ---
+CHATBOT_PORT=5001
+GROQ_API_KEY=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

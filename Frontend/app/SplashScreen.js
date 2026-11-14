@@ -1,45 +1,107 @@
 import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Image, Animated, StatusBar, Dimensions } from 'react-native';
+import {
+  View,
+  StyleSheet,
+  Image,
+  Animated,
+  StatusBar,
+  Easing,
+  Dimensions,
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
 
-const { width, height } = Dimensions.get('window');
+const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
 
 export default function SplashScreen() {
   const router = useRouter();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.85)).current;
+  const scaleAnim = useRef(new Animated.Value(0.88)).current;
+  const hoverAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
+    // Entrance fade and spring scale
     Animated.parallel([
-      Animated.timing(fadeAnim, { toValue: 1, duration: 1000, useNativeDriver: true }),
-      Animated.spring(scaleAnim, { toValue: 1, friction: 6, useNativeDriver: true }),
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 900,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        friction: 6,
+        tension: 40,
+        useNativeDriver: true,
+      }),
     ]).start();
 
+    // Smooth continuous floating / hovering loop
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(hoverAnim, {
+          toValue: -12,
+          duration: 1300,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(hoverAnim, {
+          toValue: 12,
+          duration: 1300,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
+
+    // Transition to StartScreen after 3000ms
     const timer = setTimeout(() => {
       router.replace('/StartScreen');
-    }, 2500);
+    }, 3000);
 
     return () => clearTimeout(timer);
   }, []);
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor="#140505" />
-      
-      {/* Background Image & Gradient */}
+      {/* Translucent Edge-to-Edge StatusBar so gradient covers entire top */}
+      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+
+      {/* Full-screen Background Image spanning absolute edge-to-edge */}
       <Image
         source={require('../assets/images/login-bg.jpeg')}
-        style={styles.bgImage}
+        style={[styles.bgImage, { width: SCREEN_WIDTH, height: SCREEN_HEIGHT }]}
         resizeMode="cover"
       />
+
+      {/* Warm Vibrant Amber & Orange Gradient spanning full screen */}
       <LinearGradient
-        colors={['rgba(20,5,5,0.4)', 'rgba(20,5,5,0.85)', '#140505']}
-        style={styles.gradient}
+        colors={[
+          'rgba(255, 120, 20, 0.28)',
+          'rgba(180, 70, 10, 0.22)',
+          'rgba(32, 13, 5, 0.72)',
+          'rgba(15, 6, 2, 0.94)',
+          '#0A0402',
+        ]}
+        locations={[0, 0.22, 0.55, 0.82, 1]}
+        start={{ x: 0.5, y: 0 }}
+        end={{ x: 0.5, y: 1 }}
+        style={StyleSheet.absoluteFill}
       />
 
-      {/* Animated Logo & Title */}
-      <Animated.View style={[styles.content, { opacity: fadeAnim, transform: [{ scale: scaleAnim }] }]}>
+      {/* Center Ambient Orange Glow Halo */}
+      <View style={styles.centerGlowHalo} pointerEvents="none" />
+
+      {/* Center Hovering Animated Logo Only */}
+      <Animated.View
+        style={[
+          styles.content,
+          {
+            opacity: fadeAnim,
+            transform: [{ scale: scaleAnim }, { translateY: hoverAnim }],
+          },
+        ]}
+      >
         <Image
           source={require('../assets/images/logo.png')}
           style={styles.logo}
@@ -51,11 +113,38 @@ export default function SplashScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#140505', justifyContent: 'center', alignItems: 'center' },
-  bgImage: { position: 'absolute', width: width, height: height, top: 0 },
-  gradient: { position: 'absolute', width: width, height: height },
-  content: { alignItems: 'center', zIndex: 10 },
-  logo: { width: 250, height: 250, marginBottom: 16 },
-  appName: { fontSize: 32, fontWeight: '900', color: '#fff', letterSpacing: -0.5 },
-  tagline: { fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 6, fontWeight: '600', letterSpacing: 0.5 },
+  container: {
+    flex: 1,
+    backgroundColor: '#0A0402',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  bgImage: {
+    ...StyleSheet.absoluteFillObject,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+  },
+  centerGlowHalo: {
+    position: 'absolute',
+    width: 280,
+    height: 280,
+    borderRadius: 140,
+    backgroundColor: 'rgba(255, 140, 20, 0.20)',
+    shadowColor: '#FF7A00',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.65,
+    shadowRadius: 40,
+    elevation: 12,
+  },
+  content: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 10,
+  },
+  logo: {
+    width: 260,
+    height: 260,
+  },
 });

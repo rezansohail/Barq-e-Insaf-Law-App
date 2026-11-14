@@ -102,6 +102,14 @@ export const editTimingSlot = (id, day, time) => {
   }
 };
 
+export const addCaseRequest = (request) => {
+  caseRequests.unshift({
+    id: `req-${Date.now()}`,
+    ...request,
+  });
+  notify();
+};
+
 export const caseRequests = [
   {
     id: 'req-1',
@@ -135,6 +143,18 @@ export const activeCases = [
     contact: '0321-4455667',
     evidence: 'Survey_Report.pdf',
     problemStatement: 'Encroachment declaration and permanent injunction suit.',
+    digitalSignature: {
+      signedName: 'Adv. Tariq Mansoor',
+      signatureType: 'name',
+      consultancyTime: 'Tomorrow at 11:30 AM',
+      chamberAddress: 'Chamber 402, Lawyers Court Building, M.A. Jinnah Road, Karachi',
+      lawyerPhone: '0321-9876543',
+      lawyerEmail: 'tariq.adv@sindhbar.org',
+      notes: 'Bring CNIC and case papers for consultancy meeting arrangement.',
+      signedAt: 'Nov 13, 2026, 10:30 AM',
+      certificateId: 'SBC-DS-441829',
+      sbcLicense: 'SBC-4421/KHI',
+    },
   },
 ];
 
@@ -146,7 +166,7 @@ export const declineRequest = (id) => {
   }
 };
 
-export const acceptRequest = (id) => {
+export const acceptRequest = (id, signatureData = null) => {
   const req = caseRequests.find(r => r.id === id);
   if (req) {
     activeCases.unshift({
@@ -158,6 +178,18 @@ export const acceptRequest = (id) => {
       contact: req.contact,
       evidence: req.evidence,
       problemStatement: req.problemStatement || (req.desc || '').substring(0, 50),
+      digitalSignature: signatureData || {
+        signedName: lawyerProfile.name,
+        signatureType: 'name',
+        consultancyTime: 'Tomorrow at 11:30 AM',
+        chamberAddress: lawyerProfile.address,
+        lawyerPhone: lawyerProfile.phone,
+        lawyerEmail: lawyerProfile.email,
+        notes: 'Bring original title documents and CNIC copy for consultancy.',
+        signedAt: new Date().toLocaleString(),
+        certificateId: 'SBC-DS-' + Math.floor(100000 + Math.random() * 900000),
+        sbcLicense: lawyerProfile.sbc,
+      },
     });
     declineRequest(id);
   }

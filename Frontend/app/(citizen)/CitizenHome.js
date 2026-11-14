@@ -11,31 +11,23 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './CitizenHome.styles';
 import { useMockStore, userData, lawyers, activeCases } from './MockStore';
-
-const navItems = [
-  { id: 'home',     label: 'Home'    },
-  { id: 'cases',    label: 'Cases'   },
-  { id: 'lawyers',  label: 'Lawyers' },
-  { id: 'profile',  label: 'Profile' },
-];
+import TopHeaderMenu from '../../components/TopHeaderMenu';
+import LanguagePeekingTab from '../../components/LanguagePeekingTab';
+import LiquidGlassButton from '../../components/LiquidGlassButton';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 export default function CitizenHome() {
   useMockStore();
   const router = useRouter();
-  const [activeNav, setActiveNav] = useState('home');
   const [showCasePopup, setShowCasePopup] = useState(false);
   const [showLawyerProfile, setShowLawyerProfile] = useState(false);
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [showScheduleModal, setShowScheduleModal] = useState(false);
   const [requestSent] = useState(false);
 
-  const handleNav = (id) => {
-    setActiveNav(id);
-    if (id === 'cases')   router.push('/(citizen)/MyCases');
-    if (id === 'lawyers') router.push('/(citizen)/FindLawyer');
-    if (id === 'home')    router.push('/(citizen)/CitizenHome');
-    if (id === 'profile') router.push('/(citizen)/Profile');
-  };
+  // Enforce double-back to exit on Home, never fall back to login screen
+  useAppNavigation({ isHome: true, homeRoute: '/(citizen)/CitizenHome' });
 
   const handleBuildCase = () => {
     setShowCasePopup(true);
@@ -69,9 +61,9 @@ export default function CitizenHome() {
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
+      <StatusBar barStyle="light-content" backgroundColor="#140803" />
 
-      {/* HEADER */}
+      {/* HEADER - Main Dashboard (No Back Button) */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.brandRow}>
@@ -80,16 +72,16 @@ export default function CitizenHome() {
             </View>
             <View style={styles.brand}>
               <Text style={styles.brandName}>Barq-e-Insaf</Text>
-              <Text style={styles.brandSub}>Lightning Justice</Text>
+              <Text style={styles.brandSub}>Citizen Portal</Text>
             </View>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.notifBtn}>
-              <Text style={styles.notifBtnText}>Notif</Text>
+            <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/(citizen)/MyCases')}>
+              <Text style={styles.notifBtnText}>Cases ({activeCases.length})</Text>
             </TouchableOpacity>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>{userData.dp}</Text>
-            </View>
+
+            {/* Top Right Dropdown Menu with Sign Out, Profile, Dark/Light Mode */}
+            <TopHeaderMenu role="citizen" avatarText={userData.dp || 'AK'} />
           </View>
         </View>
 
@@ -101,10 +93,11 @@ export default function CitizenHome() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* BUILD A CASE BUTTON */}
-        <TouchableOpacity style={styles.buildCaseBtn} onPress={handleBuildCase}>
-          <Text style={styles.buildCaseBtnText}>Build a Case</Text>
-        </TouchableOpacity>
+        {/* BUILD A CASE LIQUID GLASS BUTTON */}
+        <LiquidGlassButton
+          title="⚡ BUILD YOUR CASE"
+          onPress={handleBuildCase}
+        />
 
         {/* VERIFIED LAWYERS NEAR YOU */}
         <Text style={styles.sectionLabel}>
@@ -159,24 +152,8 @@ export default function CitizenHome() {
         ))}
       </ScrollView>
 
-      {/* BOTTOM NAV */}
-      <View style={styles.bottomNav}>
-        {navItems.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.navItem}
-            onPress={() => handleNav(item.id)}
-          >
-            <Text style={[
-              styles.navLabel,
-              activeNav === item.id && styles.navLabelActive,
-            ]}>
-              {item.label}
-            </Text>
-            {activeNav === item.id && <View style={styles.navActiveDot} />}
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Consistent Bottom Nav */}
+      <BottomNavBar role="citizen" activeTab="home" />
 
       {/* CASE TYPE POPUP */}
       <Modal
@@ -322,18 +299,18 @@ export default function CitizenHome() {
                     <Text style={styles.requestSentText}>Request Sent Successfully</Text>
                   </View>
                 ) : (
-                  <TouchableOpacity 
-                    style={styles.sendRequestBtn}
-                    onPress={() => {
-                      setShowLawyerProfile(false);
-                      router.push({
-                        pathname: '/(citizen)/RequestConsultation',
-                        params: { lawyerId: selectedLawyer.id }
-                      });
-                    }}
-                  >
-                    <Text style={styles.sendRequestBtnText}>Request Consultation</Text>
-                  </TouchableOpacity>
+                  <View style={{ marginTop: 14, marginBottom: 8 }}>
+                    <LiquidGlassButton
+                      title="REQUEST CONSULTATION"
+                      onPress={() => {
+                        setShowLawyerProfile(false);
+                        router.push({
+                          pathname: '/(citizen)/RequestConsultation',
+                          params: { lawyerId: selectedLawyer.id }
+                        });
+                      }}
+                    />
+                  </View>
                 )}
               </ScrollView>
             )}
@@ -366,6 +343,8 @@ export default function CitizenHome() {
           </View>
         </View>
       </Modal>
+      {/* PEinterface: Sliding Language Card (Urdu/Sindhi/English) */}
+      <LanguagePeekingTab />
     </SafeAreaView>
   );
 }

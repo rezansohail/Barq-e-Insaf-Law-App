@@ -10,6 +10,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './LawyerHome.styles';
 import { useMockStore, lawyerProfile, caseRequests } from './MockStore';
+import TopHeaderMenu from '../../components/TopHeaderMenu';
+import LanguagePeekingTab from '../../components/LanguagePeekingTab';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 const quickActions = [
   { title: 'Case Requests', route: '/(lawyer)/CaseRequests' },
@@ -18,29 +22,18 @@ const quickActions = [
   { title: 'Other Lawyers', route: '/(lawyer)/OtherLawyers'  },
 ];
 
-const navItems = [
-  { id: 'home',     label: 'Dashboard', route: null                       },
-  { id: 'requests', label: 'Requests',  route: '/(lawyer)/CaseRequests'   },
-  { id: 'cases',    label: 'Cases',     route: '/(lawyer)/MyCases'        },
-  { id: 'schedule', label: 'Schedule',  route: '/(lawyer)/Schedule'       },
-  { id: 'profile',  label: 'Profile',   route: '/(lawyer)/LawyerProfile'  },
-];
-
 export default function LawyerHome() {
   useMockStore();
   const router = useRouter();
-  const [activeNav, setActiveNav] = useState('home');
 
-  const handleNav = (item) => {
-    setActiveNav(item.id);
-    if (item.route) router.push(item.route);
-  };
+  // Enforce double-back to exit on Home, never fall back to login screen
+  useAppNavigation({ isHome: true, homeRoute: '/(lawyer)/LawyerHome' });
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
+      <StatusBar barStyle="light-content" backgroundColor="#140803" />
 
-      {/* HEADER */}
+      {/* HEADER - Main Dashboard (No Back Button) */}
       <View style={styles.header}>
         <View style={styles.headerRow}>
           <View style={styles.brandRow}>
@@ -54,11 +47,11 @@ export default function LawyerHome() {
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/(lawyer)/CaseRequests')}>
-              <Text style={styles.notifText}>Requests {caseRequests.length}</Text>
+              <Text style={styles.notifText}>Requests ({caseRequests.length})</Text>
             </TouchableOpacity>
-            <TouchableOpacity style={styles.avatar} onPress={() => router.push('/(lawyer)/LawyerProfile')}>
-              <Text style={styles.avatarText}>{lawyerProfile.initials}</Text>
-            </TouchableOpacity>
+
+            {/* Top Right Dropdown Menu with Sign Out, Profile, Dark/Light Mode */}
+            <TopHeaderMenu role="lawyer" avatarText={lawyerProfile.initials || 'TM'} />
           </View>
         </View>
 
@@ -131,24 +124,10 @@ export default function LawyerHome() {
         </View>
       </ScrollView>
 
-      {/* BOTTOM NAV */}
-      <View style={styles.bottomNav}>
-        {navItems.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.navItem}
-            onPress={() => handleNav(item)}
-          >
-            <Text style={[
-              styles.navLabel,
-              activeNav === item.id && styles.navLabelActive,
-            ]}>
-              {item.label}
-            </Text>
-            {activeNav === item.id && <View style={styles.navActiveDot} />}
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Consistent Bottom Nav */}
+      <BottomNavBar role="lawyer" activeTab="home" />
+      {/* Sliding Language Card */}
+      <LanguagePeekingTab />
     </SafeAreaView>
   );
 }
