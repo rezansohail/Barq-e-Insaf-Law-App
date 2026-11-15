@@ -30,11 +30,14 @@ export default function RootLayout() {
             <Stack.Screen name="(lawyer)" options={{ headerShown: false }} />
             <Stack.Screen name="(citizen)" options={{ headerShown: false }} />
             <Stack.Screen name="(ngo)" options={{ headerShown: false }} />
+            <Stack.Screen name="(media)" options={{ headerShown: false }} />
+            <Stack.Screen name="KTNNewsInfo" options={{ headerShown: false }} />
+            <Stack.Screen name="NCHDInfo" options={{ headerShown: false }} />
           </Stack>
 
           <StatusBar style="auto" />
           
-          {/* ⚡ Moveable Draggable AI Chatbot Button on ALL Screens */}
+          {/* Moveable Draggable AI Chatbot Button on Screens */}
           <AIChatFloatingButton />
         </ThemeProvider>
       </AppThemeProvider>

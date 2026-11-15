@@ -67,6 +67,30 @@ const STARRY_NIGHT_STARS = [
   { id: 's38', top: '97%', right: '15%',size: 1.5, color: '#FFE082', delay: 1100, dur: 2900 },
   { id: 's39', top: '16%', left: '30%', size: 1.0, color: '#FFFFFF', delay: 700,  dur: 2600 },
   { id: 's40', top: '35%', left: '92%', size: 1.4, color: '#FFD54F', delay: 1500, dur: 3000 },
+  { id: 's41', top: '4%',  left: '60%', size: 1.6, color: '#FFF8E1', delay: 500,  dur: 2500 },
+  { id: 's42', top: '9%',  left: '4%',  size: 2.1, color: '#FFB74D', delay: 1200, dur: 2900 },
+  { id: 's43', top: '12%', right: '35%',size: 1.2, color: '#FFFFFF', delay: 350,  dur: 2200 },
+  { id: 's44', top: '18%', left: '80%', size: 1.8, color: '#FFE082', delay: 900,  dur: 3100 },
+  { id: 's45', top: '21%', left: '10%', size: 1.3, color: '#FFA726', delay: 1400, dur: 2700 },
+  { id: 's46', top: '25%', right: '20%',size: 2.2, color: '#FFFFFF', delay: 250,  dur: 2400 },
+  { id: 's47', top: '29%', left: '52%', size: 1.1, color: '#FFF9E6', delay: 800,  dur: 3000 },
+  { id: 's48', top: '32%', right: '4%',  size: 1.5, color: '#FFD54F', delay: 1350, dur: 2600 },
+  { id: 's49', top: '38%', left: '22%', size: 2.0, color: '#FFFFFF', delay: 600,  dur: 2800 },
+  { id: 's50', top: '44%', right: '25%',size: 1.4, color: '#FFE5B4', delay: 1100, dur: 3300 },
+  { id: 's51', top: '47%', left: '68%', size: 1.7, color: '#FFA726', delay: 450,  dur: 2300 },
+  { id: 's52', top: '53%', left: '3%',  size: 1.2, color: '#FFFFFF', delay: 950,  dur: 2900 },
+  { id: 's53', top: '56%', right: '38%',size: 2.4, color: '#FFB74D', delay: 1500, dur: 3200 },
+  { id: 's54', top: '62%', left: '35%', size: 1.0, color: '#FFF8E1', delay: 300,  dur: 2500 },
+  { id: 's55', top: '65%', right: '10%',size: 1.9, color: '#FFFFFF', delay: 850,  dur: 2700 },
+  { id: 's56', top: '70%', left: '16%', size: 1.5, color: '#FFD54F', delay: 1250, dur: 3000 },
+  { id: 's57', top: '75%', right: '26%',size: 2.0, color: '#FFA726', delay: 400,  dur: 2400 },
+  { id: 's58', top: '78%', left: '50%', size: 1.2, color: '#FFFFFF', delay: 1050, dur: 2800 },
+  { id: 's59', top: '83%', right: '48%',size: 1.6, color: '#FFE082', delay: 700,  dur: 3100 },
+  { id: 's60', top: '86%', left: '88%', size: 2.2, color: '#FFB74D', delay: 1400, dur: 2600 },
+  { id: 's61', top: '90%', left: '6%',  size: 1.3, color: '#FFFFFF', delay: 550,  dur: 2900 },
+  { id: 's62', top: '93%', right: '20%',size: 1.8, color: '#FFF9E6', delay: 1150, dur: 2700 },
+  { id: 's63', top: '95%', left: '44%', size: 1.1, color: '#FFD54F', delay: 350,  dur: 2300 },
+  { id: 's64', top: '98%', left: '72%', size: 2.0, color: '#FFA726', delay: 800,  dur: 3300 },
 ];
 
 function TwinklingStar({ star }) {
@@ -195,6 +219,13 @@ export default function StartScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* Central content */}
         <View style={styles.contentWrapper}>
+          {/* Logo 1 on top of title */}
+          <Image
+            source={require('../assets/images/logo1.png')}
+            style={styles.brandLogo}
+            resizeMode="contain"
+          />
+
           {/* Title */}
           <Text style={[styles.title, cinzelLoaded ? { fontFamily: 'Cinzel_700Bold' } : {}]}>
             BARQ‑E‑INSAF
@@ -316,6 +347,15 @@ const styles = StyleSheet.create({
     width: '100%',
     alignSelf: 'center',
     zIndex: 5,
+  },
+  brandLogo: {
+    width: 90,
+    height: 90,
+    marginBottom: 14,
+    shadowColor: '#FF9500',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 10,
   },
   title: {
     fontSize: 33,

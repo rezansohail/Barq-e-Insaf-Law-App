@@ -12,25 +12,22 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styles from './CaseDetail.styles';
 import { useMockStore, activeCases, updateCase } from './MockStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
 
 export default function CaseDetail() {
   useMockStore();
   const router = useRouter();
   const params = useLocalSearchParams();
   const caseId = params.caseId;
+  useAppNavigation({ isHome: false, homeRoute: '/(citizen)/CitizenHome' });
 
   const caseData = activeCases.find(c => c.id === caseId);
 
   const [editMode, setEditMode] = useState(false);
   const [editedTitle, setEditedTitle] = useState(caseData ? caseData.title : '');
   const [editedDesc, setEditedDesc] = useState(caseData ? caseData.description : '');
-
-  const handleNav = (id) => {
-    if (id === 'home')    router.push('/(citizen)/CitizenHome');
-    if (id === 'cases')   router.push('/(citizen)/MyCases');
-    if (id === 'lawyers') router.push('/(citizen)/FindLawyer');
-    if (id === 'profile') router.push('/(citizen)/Profile');
-  };
 
   const handleSaveChanges = async () => {
     if (!editedTitle.trim() || !editedDesc.trim()) {
@@ -48,39 +45,30 @@ export default function CaseDetail() {
   if (!caseData) {
     return (
       <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
-        <View style={styles.header}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backText}>Back</Text>
-          </TouchableOpacity>
+        <StatusBar barStyle="light-content" backgroundColor="#080402" />
+        <AppHeader title="Case Details" showBack={true} homeRoute="/(citizen)/CitizenHome" role="citizen" />
+        <View style={[styles.scrollContent, { alignItems: 'center', marginTop: 40 }]}>
+          <Text style={[styles.descriptionText, { color: 'rgba(255,255,255,0.7)' }]}>Case not found.</Text>
         </View>
-        <View style={styles.scrollContent}>
-          <Text style={styles.descriptionText}>Case not found</Text>
-        </View>
+        <BottomNavBar role="citizen" activeTab="cases" />
       </SafeAreaView>
     );
   }
 
   return (
     <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
+      <StatusBar barStyle="light-content" backgroundColor="#080402" />
 
-      {/* HEADER */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>Case Details</Text>
-        </View>
-      </View>
+      <AppHeader 
+        title="Case Details" 
+        showBack={true} 
+        homeRoute="/(citizen)/CitizenHome"
+        role="citizen"
+      />
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.caseHeader}>
@@ -98,7 +86,7 @@ export default function CaseDetail() {
           )}
 
           <View style={styles.caseStatusRow}>
-            <View style={styles.statusBadge}>
+            <View style={[styles.statusBadge, caseData.status === 'Active' ? styles.statusActive : styles.statusPending]}>
               <Text style={styles.statusText}>{caseData.status}</Text>
             </View>
             <Text style={styles.caseType}>{caseData.type} Law</Text>
@@ -175,18 +163,8 @@ export default function CaseDetail() {
         )}
       </ScrollView>
 
-      {/* FOOTER */}
-      <View style={styles.bottomNav}>
-        {['Home', 'Cases', 'Lawyers', 'Profile'].map((lbl) => (
-          <TouchableOpacity
-            key={lbl}
-            style={styles.navItem}
-            onPress={() => handleNav(lbl.toLowerCase())}
-          >
-            <Text style={styles.navLabel}>{lbl}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Shared bottom navigation */}
+      <BottomNavBar role="citizen" activeTab="cases" />
     </SafeAreaView>
   );
 }

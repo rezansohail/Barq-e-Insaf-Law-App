@@ -12,6 +12,8 @@ import {
   StatusBar,
   useWindowDimensions,
   Alert,
+  Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -24,10 +26,41 @@ import { setLawyerProfileFromUser } from './(lawyer)/MockStore';
 import { setCitizenProfileFromUser } from './(citizen)/MockStore';
 
 const roleConfig = {
-  citizen: { label: 'Citizen Portal',     color: '#FF9800', topGlow: 'rgba(255, 94, 0, 0.4)' },
-  lawyer:  { label: 'Lawyer Portal',      color: '#FF9800', topGlow: 'rgba(255, 94, 0, 0.4)' },
-  ngo:     { label: 'NGO / Media Portal', color: '#FF9800', topGlow: 'rgba(255, 94, 0, 0.4)' },
-  admin:   { label: 'Admin Panel',        color: '#EA580C', topGlow: 'rgba(224, 17, 17, 0.36)' },
+  citizen: {
+    label: 'Citizen Portal',
+    subLabel: 'Legal Empowerment for Citizens',
+    color: '#FF9500',
+    topGlow: 'rgba(255, 149, 0, 0.4)',
+    canSignUp: true,
+  },
+  lawyer: {
+    label: 'Lawyer Portal',
+    subLabel: 'Advocate Legal Practice',
+    color: '#FFB300',
+    topGlow: 'rgba(255, 179, 0, 0.4)',
+    canSignUp: true,
+  },
+  ngo: {
+    label: 'NGO - National commission for human development (NCHD)',
+    subLabel: 'Institutional Human Development Portal',
+    color: '#FF7A29',
+    topGlow: 'rgba(255, 122, 41, 0.4)',
+    canSignUp: false,
+  },
+  media: {
+    label: 'Media - KTN news',
+    subLabel: 'Court Reporting & Broadcast Journalism',
+    color: '#F59E0B',
+    topGlow: 'rgba(245, 158, 11, 0.4)',
+    canSignUp: false,
+  },
+  admin: {
+    label: 'Admin Panel',
+    subLabel: 'Sindh Bar Council Governance',
+    color: '#EF4444',
+    topGlow: 'rgba(239, 68, 68, 0.36)',
+    canSignUp: false,
+  },
 };
 
 const SINDH_DISTRICTS = [
@@ -114,16 +147,18 @@ const PasswordInput = ({ label, value, onChangeText, color }) => {
         <TextInput
           style={[styles.input, { flex: 1, borderBottomWidth: 0 }]}
           placeholder="Enter password"
-          placeholderTextColor="rgba(255, 220, 180, 0.35)"
+          placeholderTextColor="rgba(255, 238, 220, 0.65)"
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={!show}
           autoCapitalize="none"
         />
         <TouchableOpacity onPress={() => setShow(!show)} style={styles.eyeBtn}>
-          <Text style={{ fontSize: 16, color: color || '#FFB800' }}>
-            {show ? '👁️' : '🚫'}
-          </Text>
+          <Image
+            source={show ? require('../assets/images/show.png') : require('../assets/images/hide.png')}
+            style={{ width: 22, height: 22, tintColor: color || '#FFB800' }}
+            resizeMode="contain"
+          />
         </TouchableOpacity>
       </View>
       <View style={[styles.inputUnderline, { backgroundColor: color || 'rgba(255, 210, 140, 0.3)' }]} />
@@ -143,7 +178,7 @@ const DistrictPicker = ({ value, onSelect, color }) => {
         <Text
           style={[
             styles.dropdownValue,
-            !value && { color: 'rgba(255, 220, 180, 0.35)' },
+            !value && { color: 'rgba(255, 238, 220, 0.65)' },
           ]}
         >
           {value || 'Select Sindh District'}
@@ -209,6 +244,34 @@ export default function LoginScreen() {
   const [specialty,   setSpecialty]   = useState('');
   const [loading,     setLoading]     = useState(false);
   const [errors,      setErrors]      = useState({});
+  const [rememberMe,  setRememberMe]  = useState(true);
+
+  // Forgot password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSubmitted, setForgotSubmitted] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+
+  const handleSendResetLink = () => {
+    if (!forgotEmail.trim()) {
+      setForgotError('Please enter your email address.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(forgotEmail.trim())) {
+      setForgotError('Please enter a valid email address.');
+      return;
+    }
+    setForgotError('');
+    setForgotSubmitted(true);
+  };
+
+  const closeForgotModal = () => {
+    setShowForgotModal(false);
+    setForgotEmail('');
+    setForgotSubmitted(false);
+    setForgotError('');
+  };
 
   const strength = getPasswordStrength(password);
   const clearErrors = () => setErrors({});
@@ -245,6 +308,9 @@ export default function LoginScreen() {
       } else if (currentRole === 'ngo') {
         endpoint = '/ngo/login';
         targetRoute = '/(ngo)/NGOHome';
+      } else if (currentRole === 'media') {
+        endpoint = '/ngo/login';
+        targetRoute = '/(media)/MediaHome';
       }
 
       console.log(`[AUTH] Logging in to ${endpoint} with ${email.trim()}`);
@@ -256,20 +322,28 @@ export default function LoginScreen() {
       console.log('[AUTH] Login response:', response.data);
 
       if (response.data && (response.data.token || response.data.success !== false)) {
-        const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.admin || response.data.user;
-        saveSession({
-          token: response.data.token,
-          role: currentRole,
-          user: userObj,
-          id: userObj?.id,
-        });
-        if (currentRole === 'lawyer' && userObj) {
-          setLawyerProfileFromUser(userObj);
-        }
-        if (currentRole === 'citizen' && userObj) {
-          setCitizenProfileFromUser(userObj);
-        }
-        router.replace({ pathname: targetRoute, params: { citizenId: userObj?.id, lawyerId: userObj?.id } });
+        try {
+          const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.admin || response.data.user;
+          saveSession({
+            token: response.data.token,
+            role: currentRole,
+            user: userObj,
+            id: userObj?.id,
+          });
+          if (currentRole === 'lawyer' && userObj) setLawyerProfileFromUser(userObj);
+          if (currentRole === 'citizen' && userObj) setCitizenProfileFromUser(userObj);
+        } catch (_) {}
+
+        Alert.alert(
+          'Login Successful',
+          `Welcome back to ${config.label}!`,
+          [
+            {
+              text: 'Continue',
+              onPress: () => router.replace(targetRoute),
+            },
+          ]
+        );
       }
     } catch (err) {
       console.error('[AUTH] Login error:', err.response?.data || err.message);
@@ -279,7 +353,11 @@ export default function LoginScreen() {
         err.message ||
         'Unable to connect to server. Please check your credentials.';
 
-      Alert.alert('Login Failed', serverMessage);
+      Alert.alert(
+        'Login Failed',
+        serverMessage,
+        [{ text: 'OK' }]
+      );
       setErrors((prev) => ({ ...prev, general: serverMessage }));
     } finally {
       setLoading(false);
@@ -353,7 +431,20 @@ export default function LoginScreen() {
           email: email.trim(),
           password: password,
           confirmPassword: retypePass,
-          organizationType: 'NGO / Media',
+          organizationType: 'NGO',
+        };
+      } else if (currentRole === 'media') {
+        endpoint = '/ngo/register';
+        targetRoute = '/(media)/MediaHome';
+        payload = {
+          fullName: name.trim(),
+          phone: phone.trim(),
+          cnic: cnic.trim() || null,
+          district: district.trim(),
+          email: email.trim(),
+          password: password,
+          confirmPassword: retypePass,
+          organizationType: 'Media',
         };
       }
 
@@ -362,30 +453,44 @@ export default function LoginScreen() {
       console.log('[AUTH] Register response:', response.data);
 
       if (response.data && (response.data.token || response.data.success !== false)) {
-        const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.admin || response.data.user;
-        saveSession({
-          token: response.data.token,
-          role: currentRole,
-          user: userObj,
-          id: userObj?.id,
-        });
-        if (currentRole === 'lawyer' && userObj) {
-          setLawyerProfileFromUser(userObj);
-        }
-        if (currentRole === 'citizen' && userObj) {
-          setCitizenProfileFromUser(userObj);
-        }
-        router.replace({ pathname: targetRoute, params: { citizenId: userObj?.id, lawyerId: userObj?.id } });
+        try {
+          const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.admin || response.data.user;
+          saveSession({
+            token: response.data.token,
+            role: currentRole,
+            user: userObj,
+            id: userObj?.id,
+          });
+          if (currentRole === 'lawyer' && userObj) setLawyerProfileFromUser(userObj);
+          if (currentRole === 'citizen' && userObj) setCitizenProfileFromUser(userObj);
+        } catch (_) {}
+
+        const successMsg = response.data.message || 'Registration successful! Welcome to Barq-e-Insaf.';
+        Alert.alert('Registration Successful', successMsg, [
+          {
+            text: 'Proceed to Dashboard',
+            onPress: () => router.replace(targetRoute),
+          },
+        ]);
       }
     } catch (err) {
       console.error('[AUTH] Registration error:', err.response?.data || err.message);
-      const serverMessage =
-        err.response?.data?.message ||
-        (Array.isArray(err.response?.data?.errors) ? err.response.data.errors.join(' ') : null) ||
-        err.message ||
-        'Registration failed. Please try again.';
+      let serverMessage = err.response?.data?.message || null;
+      if (!serverMessage && Array.isArray(err.response?.data?.errors)) {
+        serverMessage = err.response.data.errors
+          .map((e) => (typeof e === 'string' ? e : e.message || e.code || ''))
+          .filter(Boolean)
+          .join(' ');
+      }
+      if (!serverMessage) {
+        serverMessage = err.message || 'Registration failed. Please try again.';
+      }
 
-      Alert.alert('Registration Failed', serverMessage);
+      Alert.alert(
+        'Registration Failed',
+        serverMessage,
+        [{ text: 'OK' }]
+      );
       setErrors((prev) => ({ ...prev, general: serverMessage }));
     } finally {
       setLoading(false);
@@ -439,12 +544,18 @@ export default function LoginScreen() {
         <SafeAreaView style={styles.safeArea}>
           {/* ── TOP SECTION ── */}
           <View style={styles.topSection}>
+            {/* Simple '<' back button to RoleSelectScreen */}
             <TouchableOpacity
-              style={styles.backBtn}
-              onPress={() => router.back()}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              style={styles.simpleBackBtn}
+              onPress={() => router.replace('/RoleSelectScreen')}
+              hitSlop={{ top: 16, bottom: 16, left: 16, right: 16 }}
+              accessibilityLabel="Back to Role Selection"
             >
-              <Text style={styles.backText}>← Back</Text>
+              <Image
+                source={require('../assets/images/backarrow.png')}
+                style={styles.backArrowImg}
+                resizeMode="contain"
+              />
             </TouchableOpacity>
 
             {/* Glowing Liquid Glass Brand Orb */}
@@ -483,6 +594,9 @@ export default function LoginScreen() {
                 {config.label.toUpperCase()}
               </Text>
             </View>
+            {config.subLabel ? (
+              <Text style={styles.portalSubText}>{config.subLabel}</Text>
+            ) : null}
           </View>
 
           {/* ── FORM CONTAINER (FROSTED GLASS CARD) ── */}
@@ -509,68 +623,30 @@ export default function LoginScreen() {
                   showsVerticalScrollIndicator={false}
                   keyboardShouldPersistTaps="handled"
                 >
-                  {/* QUICK PORTAL SELECTOR */}
-                  <View style={{ marginBottom: 16 }}>
-                    <Text style={styles.sectionHeaderLabel}>Active Portal</Text>
-                    <View style={styles.roleGrid}>
-                      {[
-                        { id: 'citizen', label: 'Citizen' },
-                        { id: 'lawyer',  label: 'Lawyer' },
-                        { id: 'ngo',     label: 'NGO' },
-                        { id: 'admin',   label: 'Admin' },
-                      ].map((item) => {
-                        const isSelected = selectedRole === item.id;
-                        return (
-                          <TouchableOpacity
-                            key={item.id}
-                            onPress={() => { setSelectedRole(item.id); clearErrors(); if (item.id === 'admin') setActiveTab('login'); }}
-                            activeOpacity={0.8}
-                            style={[
-                              styles.roleTabItem,
-                              isSelected && {
-                                borderColor: config.color,
-                                backgroundColor: 'rgba(255, 152, 0, 0.16)',
-                              },
-                            ]}
-                          >
-                            <Text
-                              style={[
-                                styles.roleTabText,
-                                isSelected && { color: '#FFF5E8', fontWeight: '800' },
-                              ]}
-                            >
-                              {item.icon} {item.label}
-                            </Text>
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </View>
-                  </View>
-
-                  {/* TABS - LOGIN / SIGNUP */}
-                  <View style={styles.tabRow}>
-                    <TouchableOpacity
-                      style={[styles.tabBtn, activeTab === 'login' && styles.tabActive]}
-                      onPress={() => {
-                        setActiveTab('login');
-                        clearErrors();
-                      }}
-                      activeOpacity={0.8}
-                    >
-                      <Text
-                        style={[
-                          styles.tabText,
-                          activeTab === 'login' && styles.tabTextActive,
-                        ]}
+                  {/* TABS - LOGIN / SIGNUP (Sign Up only shown if allowed for role) */}
+                  {config.canSignUp ? (
+                    <View style={styles.tabRow}>
+                      <TouchableOpacity
+                        style={[styles.tabBtn, activeTab === 'login' && styles.tabActive]}
+                        onPress={() => {
+                          setActiveTab('login');
+                          clearErrors();
+                        }}
+                        activeOpacity={0.8}
                       >
-                        LOGIN
-                      </Text>
-                      {activeTab === 'login' && (
-                        <View style={[styles.activeTabIndicator, { backgroundColor: config.color }]} />
-                      )}
-                    </TouchableOpacity>
+                        <Text
+                          style={[
+                            styles.tabText,
+                            activeTab === 'login' && styles.tabTextActive,
+                          ]}
+                        >
+                          LOGIN
+                        </Text>
+                        {activeTab === 'login' && (
+                          <View style={[styles.activeTabIndicator, { backgroundColor: config.color }]} />
+                        )}
+                      </TouchableOpacity>
 
-                    {selectedRole !== 'admin' && (
                       <TouchableOpacity
                         style={[styles.tabBtn, activeTab === 'signup' && styles.tabActive]}
                         onPress={() => {
@@ -591,8 +667,17 @@ export default function LoginScreen() {
                           <View style={[styles.activeTabIndicator, { backgroundColor: config.color }]} />
                         )}
                       </TouchableOpacity>
-                    )}
-                  </View>
+                    </View>
+                  ) : (
+                    <View style={styles.loginOnlyHeader}>
+                      <Text style={[styles.loginOnlyTitle, { color: config.color }]}>
+                        SECURE PORTAL LOGIN
+                      </Text>
+                      <Text style={styles.loginOnlySubtitle}>
+                        Authorized credentials required
+                      </Text>
+                    </View>
+                  )}
 
                   {/* ── SIGNUP FIELDS ── */}
                   {activeTab === 'signup' && selectedRole !== 'admin' && (
@@ -602,7 +687,7 @@ export default function LoginScreen() {
                       <TextInput
                         style={styles.input}
                         placeholder="e.g. Ali Khan"
-                        placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                        placeholderTextColor="rgba(255, 238, 220, 0.65)"
                         value={name}
                         onChangeText={(v) => {
                           if (/^[a-zA-Z\s]*$/.test(v)) setName(v);
@@ -615,7 +700,7 @@ export default function LoginScreen() {
                       <TextInput
                         style={styles.input}
                         placeholder="03001234567"
-                        placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                        placeholderTextColor="rgba(255, 238, 220, 0.65)"
                         value={phone}
                         onChangeText={(v) => {
                           if (/^\d*$/.test(v) && v.length <= 11) setPhone(v);
@@ -632,7 +717,7 @@ export default function LoginScreen() {
                           <TextInput
                             style={styles.input}
                             placeholder="42101-1234567-1"
-                            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                            placeholderTextColor="rgba(255, 238, 220, 0.65)"
                             value={cnic}
                             onChangeText={(v) => {
                               const formatted = formatCNIC(v);
@@ -661,7 +746,7 @@ export default function LoginScreen() {
                           <TextInput
                             style={styles.input}
                             placeholder="SBC-4421"
-                            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                            placeholderTextColor="rgba(255, 238, 220, 0.65)"
                             value={sbcNumber}
                             onChangeText={setSbcNumber}
                           />
@@ -673,7 +758,7 @@ export default function LoginScreen() {
                           <TextInput
                             style={styles.input}
                             placeholder="Criminal / Property / Family"
-                            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                            placeholderTextColor="rgba(255, 238, 220, 0.65)"
                             value={specialty}
                             onChangeText={setSpecialty}
                           />
@@ -690,7 +775,7 @@ export default function LoginScreen() {
                   <TextInput
                     style={styles.input}
                     placeholder="user@barqeinsaf.pk"
-                    placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                    placeholderTextColor="rgba(255, 238, 220, 0.65)"
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -778,19 +863,50 @@ export default function LoginScreen() {
                     </>
                   )}
 
-                  {/* FORGOT PASSWORD */}
+                  {/* REMEMBER ME & FORGOT PASSWORD */}
                   {activeTab === 'login' && (
-                    <TouchableOpacity activeOpacity={0.8}>
-                      <Text style={[styles.forgotText, { color: config.color }]}>
-                        Forgot password?
-                      </Text>
-                    </TouchableOpacity>
+                    <View style={styles.rememberRow}>
+                      <TouchableOpacity
+                        style={styles.rememberCheckboxRow}
+                        activeOpacity={0.8}
+                        onPress={() => setRememberMe(!rememberMe)}
+                        accessibilityRole="checkbox"
+                        accessibilityState={{ checked: rememberMe }}
+                      >
+                        <View
+                          style={[
+                            styles.checkboxBox,
+                            rememberMe && [
+                              styles.checkboxBoxActive,
+                              { borderColor: config.color, backgroundColor: config.color + '26' },
+                            ],
+                          ]}
+                        >
+                          {rememberMe && (
+                            <Text style={[styles.checkIcon, { color: config.color }]}>✓</Text>
+                          )}
+                        </View>
+                        <Text style={styles.rememberLabel}>Remember Me</Text>
+                      </TouchableOpacity>
+
+                      <TouchableOpacity 
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          setForgotEmail(email.trim());
+                          setShowForgotModal(true);
+                        }}
+                      >
+                        <Text style={[styles.forgotText, { color: config.color }]}>
+                          Forgot password?
+                        </Text>
+                      </TouchableOpacity>
+                    </View>
                   )}
 
                   {/* GENERAL ERROR BANNER */}
                   {errors.general && (
                     <View style={styles.generalErrorBox}>
-                      <Text style={styles.generalErrorText}>⚠️ {errors.general}</Text>
+                      <Text style={styles.generalErrorText}>{errors.general}</Text>
                     </View>
                   )}
 
@@ -840,6 +956,87 @@ export default function LoginScreen() {
             </BlurView>
           </View>
         </SafeAreaView>
+
+        {/* ── FORGOT PASSWORD MODAL ── */}
+        <Modal
+          visible={showForgotModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={closeForgotModal}
+        >
+          <View style={styles.forgotModalOverlay}>
+            <View style={styles.forgotModalCard}>
+              <View style={styles.forgotModalHeader}>
+                <Text style={styles.forgotModalTitle}>Reset Password</Text>
+                <TouchableOpacity onPress={closeForgotModal} style={styles.forgotCloseBtn}>
+                  <Text style={styles.forgotCloseText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {!forgotSubmitted ? (
+                <>
+                  <Text style={styles.forgotModalSubtitle}>
+                    Enter your registered email address to receive password recovery instructions:
+                  </Text>
+                  
+                  <Text style={[styles.inputLabel, { marginTop: 16 }]}>REGISTERED EMAIL ADDRESS</Text>
+                  <TextInput
+                    style={[styles.input, { color: '#FFFFFF', borderBottomColor: '#FF9500' }]}
+                    placeholder="user@barqeinsaf.pk"
+                    placeholderTextColor="rgba(255, 238, 220, 0.65)"
+                    value={forgotEmail}
+                    onChangeText={(t) => {
+                      setForgotEmail(t);
+                      if (forgotError) setForgotError('');
+                    }}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoFocus
+                  />
+                  {forgotError ? (
+                    <Text style={[styles.errorText, { marginTop: 6 }]}>{forgotError}</Text>
+                  ) : null}
+
+                  <View style={styles.forgotBtnRow}>
+                    <TouchableOpacity 
+                      style={styles.forgotCancelBtn}
+                      onPress={closeForgotModal}
+                    >
+                      <Text style={styles.forgotCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.forgotSubmitBtn, { backgroundColor: config.color || '#FF9500' }]}
+                      onPress={handleSendResetLink}
+                    >
+                      <Text style={styles.forgotSubmitText}>Send Reset Link</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <View style={{ alignItems: 'center', paddingVertical: 14 }}>
+                  <View style={styles.forgotSuccessOrb}>
+                    <Text style={{ fontSize: 24, color: '#4ade80' }}>✓</Text>
+                  </View>
+                  <Text style={styles.forgotSuccessTitle}>Reset Link Sent</Text>
+                  <Text style={styles.forgotSuccessSubtitle}>
+                    Password recovery instructions have been sent to:
+                  </Text>
+                  <Text style={styles.forgotSuccessEmail}>{forgotEmail.trim()}</Text>
+                  <Text style={styles.forgotSuccessNote}>
+                    Please check your inbox (and spam folder) to reset your account password.
+                  </Text>
+
+                  <TouchableOpacity 
+                    style={[styles.forgotSubmitBtn, { backgroundColor: config.color || '#FF9500', width: '100%', marginTop: 20 }]}
+                    onPress={closeForgotModal}
+                  >
+                    <Text style={styles.forgotSubmitText}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+        </Modal>
       </View>
     </KeyboardAvoidingView>
   );
@@ -866,18 +1063,42 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 16,
     position: 'relative',
+    paddingHorizontal: 24,
   },
-  backBtn: {
+  simpleBackBtn: {
     position: 'absolute',
-    top: 14,
-    left: 24,
-    zIndex: 10,
+    top: 10,
+    left: 20,
+    zIndex: 20,
+    padding: 8,
   },
-  backText: {
-    color: 'rgba(255, 225, 190, 0.8)',
+  backArrowImg: {
+    width: 24,
+    height: 17,
+  },
+  portalSubText: {
+    fontSize: 11.5,
+    color: 'rgba(255, 230, 205, 0.65)',
+    marginTop: 4,
+    textAlign: 'center',
+    fontWeight: '500',
+  },
+  loginOnlyHeader: {
+    alignItems: 'center',
+    paddingVertical: 12,
+    marginBottom: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 149, 0, 0.18)',
+  },
+  loginOnlyTitle: {
     fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 1,
+    fontWeight: '800',
+    letterSpacing: 1.5,
+  },
+  loginOnlySubtitle: {
+    fontSize: 11,
+    color: 'rgba(255, 230, 205, 0.55)',
+    marginTop: 3,
   },
   logoOrbWrapper: {
     width: 60,
@@ -1038,20 +1259,20 @@ const styles = StyleSheet.create({
 
   // ── INPUTS ──
   inputLabel: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800',
-    color: 'rgba(255, 210, 150, 0.75)',
+    color: '#FFF2DF',
     letterSpacing: 1.2,
     textTransform: 'uppercase',
-    marginBottom: 4,
-    marginTop: 14,
+    marginBottom: 5,
+    marginTop: 15,
   },
   input: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 210, 140, 0.2)',
+    borderBottomColor: 'rgba(255, 210, 140, 0.35)',
     paddingVertical: 9,
     fontSize: 14,
-    color: '#FFF5E8',
+    color: '#FFFFFF',
   },
   passwordRow: {
     flexDirection: 'row',
@@ -1065,11 +1286,44 @@ const styles = StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 8,
   },
+  rememberRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginTop: 14,
+  },
+  rememberCheckboxRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  checkboxBox: {
+    width: 18,
+    height: 18,
+    borderRadius: 5,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 210, 140, 0.35)',
+    backgroundColor: 'rgba(20, 10, 4, 0.4)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxBoxActive: {
+    borderWidth: 1.4,
+  },
+  checkIcon: {
+    fontSize: 11,
+    fontWeight: '900',
+    lineHeight: 12,
+  },
+  rememberLabel: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFF2DF',
+    letterSpacing: 0.3,
+  },
   forgotText: {
     fontSize: 12,
     fontWeight: '700',
-    marginTop: 12,
-    textAlign: 'right',
     letterSpacing: 0.5,
   },
 
@@ -1245,5 +1499,119 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#FFF5E8',
     fontWeight: '500',
+  },
+
+  // ── FORGOT PASSWORD MODAL ──
+  forgotModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  forgotModalCard: {
+    backgroundColor: '#180B04',
+    borderRadius: 22,
+    padding: 24,
+    width: '100%',
+    maxWidth: 420,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 149, 0, 0.35)',
+    shadowColor: '#FF9500',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  forgotModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  forgotModalTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  forgotCloseBtn: {
+    padding: 6,
+  },
+  forgotCloseText: {
+    fontSize: 18,
+    color: '#FFB74D',
+    fontWeight: '800',
+  },
+  forgotModalSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 235, 215, 0.8)',
+    lineHeight: 18,
+  },
+  forgotBtnRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 22,
+  },
+  forgotCancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  forgotCancelText: {
+    color: 'rgba(255, 235, 215, 0.75)',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  forgotSubmitBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  forgotSubmitText: {
+    color: '#0A0301',
+    fontWeight: '900',
+    fontSize: 13,
+    letterSpacing: 0.5,
+  },
+  forgotSuccessOrb: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(74, 222, 128, 0.15)',
+    borderWidth: 1.5,
+    borderColor: '#4ade80',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  forgotSuccessTitle: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginBottom: 6,
+  },
+  forgotSuccessSubtitle: {
+    fontSize: 12.5,
+    color: 'rgba(255, 235, 215, 0.7)',
+    textAlign: 'center',
+  },
+  forgotSuccessEmail: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFB74D',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  forgotSuccessNote: {
+    fontSize: 11.5,
+    color: 'rgba(255, 220, 180, 0.55)',
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });

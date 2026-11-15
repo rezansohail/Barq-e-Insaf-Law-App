@@ -8,7 +8,9 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import { useAppTheme } from '../context/ThemeContext';
 
 // Tab configuration per role
 const ROLE_TABS = {
@@ -27,15 +29,15 @@ const ROLE_TABS = {
   ],
   ngo: [
     { id: 'home', label: 'Home', route: '/(ngo)/NGOHome', icon: 'home' },
-    { id: 'map', label: 'Map', route: '/(ngo)/CaseMap', icon: 'map' },
+    { id: 'map', label: 'Sindh Map', route: '/(ngo)/CaseMap', icon: 'map' },
     { id: 'analytics', label: 'Analytics', route: '/(ngo)/Analytics', icon: 'analytics' },
     { id: 'reports', label: 'Reports', route: '/(ngo)/ExportReports', icon: 'reports' },
   ],
   media: [
-    { id: 'home', label: 'Home', route: '/(ngo)/NGOHome', icon: 'home' },
-    { id: 'map', label: 'Map', route: '/(ngo)/CaseMap', icon: 'map' },
-    { id: 'analytics', label: 'Analytics', route: '/(ngo)/Analytics', icon: 'analytics' },
-    { id: 'reports', label: 'Reports', route: '/(ngo)/ExportReports', icon: 'reports' },
+    { id: 'home', label: 'News Desk', route: '/(media)/MediaHome', icon: 'home' },
+    { id: 'map', label: 'Case Map', route: '/(media)/CaseMap', icon: 'map' },
+    { id: 'analytics', label: 'Insights', route: '/(media)/Analytics', icon: 'analytics' },
+    { id: 'reports', label: 'Briefs', route: '/(media)/ExportReports', icon: 'reports' },
   ],
   admin: [
     { id: 'home', label: 'Overview', route: '/(Admin)', icon: 'home' },
@@ -45,8 +47,8 @@ const ROLE_TABS = {
   ],
 };
 
-function renderTabIcon(icon, active) {
-  const color = active ? '#FFA726' : 'rgba(255, 220, 180, 0.45)';
+function renderTabIcon(icon, active, isDarkMode) {
+  const color = active ? '#FFA726' : (isDarkMode ? 'rgba(255, 220, 180, 0.45)' : 'rgba(80, 45, 25, 0.45)');
   const strokeW = active ? 2.2 : 1.6;
 
   switch (icon) {
@@ -98,13 +100,12 @@ function renderTabIcon(icon, active) {
       return (
         <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
           <Path
-            d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"
+            d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 11a4 4 0 100-8 4 4 0 000 8z"
             stroke={color}
             strokeWidth={strokeW}
             strokeLinecap="round"
             strokeLinejoin="round"
           />
-          <Circle cx={12} cy={7} r={4} stroke={color} strokeWidth={strokeW} />
         </Svg>
       );
     case 'requests':
@@ -173,23 +174,27 @@ function renderTabIcon(icon, active) {
 
 export default function BottomNavBar({ role = 'citizen', activeTab = 'home' }) {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { theme, isDarkMode } = useAppTheme();
   const tabs = ROLE_TABS[role] || ROLE_TABS.citizen;
 
   const handleTabPress = (tab) => {
     if (tab.id === activeTab) return;
-    // Always use router.replace to prevent stacking screens in navigation history
     router.replace(tab.route);
   };
 
+  const navBg = isDarkMode ? '#080402' : '#FFFFFF';
+  const navBorder = isDarkMode ? 'rgba(255, 150, 40, 0.22)' : 'rgba(234, 88, 12, 0.18)';
+  const bottomPadding = Math.max(insets.bottom, Platform.OS === 'ios' ? 24 : 12);
+
   return (
-    <View style={styles.navContainer}>
+    <View style={[styles.navContainer, { backgroundColor: navBg, borderTopColor: navBorder, paddingBottom: bottomPadding }]}>
       <BlurView
         intensity={Platform.OS === 'ios' ? 45 : 70}
-        tint="dark"
-        style={styles.blurWrap}
+        tint={isDarkMode ? 'dark' : 'light'}
+        style={[styles.blurWrap, { backgroundColor: isDarkMode ? 'rgba(10, 4, 2, 0.92)' : 'rgba(255, 255, 255, 0.92)' }]}
       >
-        {/* Top ambient amber sheen */}
-        <View style={styles.topSheen} pointerEvents="none" />
+        {isDarkMode && <View style={styles.topSheen} pointerEvents="none" />}
 
         <View style={styles.tabsRow}>
           {tabs.map((tab) => {
@@ -204,15 +209,15 @@ export default function BottomNavBar({ role = 'citizen', activeTab = 'home' }) {
                 accessibilityState={{ selected: isActive }}
               >
                 {isActive && (
-                  <View style={styles.activeGlowPill} pointerEvents="none" />
+                  <View style={[styles.activeGlowPill, !isDarkMode && { backgroundColor: 'rgba(234, 88, 12, 0.12)' }]} pointerEvents="none" />
                 )}
                 <View style={styles.iconContainer}>
-                  {renderTabIcon(tab.icon, isActive)}
+                  {renderTabIcon(tab.icon, isActive, isDarkMode)}
                 </View>
                 <Text
                   style={[
                     styles.tabLabel,
-                    isActive ? styles.tabLabelActive : styles.tabLabelInactive,
+                    isActive ? styles.tabLabelActive : (isDarkMode ? styles.tabLabelInactiveDark : styles.tabLabelInactiveLight),
                   ]}
                 >
                   {tab.label}
@@ -233,7 +238,7 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: '#0A0402',
+    backgroundColor: '#080402',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 150, 40, 0.22)',
     shadowColor: '#000',
@@ -245,21 +250,21 @@ const styles = StyleSheet.create({
   },
   blurWrap: {
     paddingTop: 8,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 10,
+    paddingBottom: 4,
     backgroundColor: 'rgba(10, 4, 2, 0.88)',
   },
   topSheen: {
     position: 'absolute',
     top: 0,
-    left: '12%',
-    right: '12%',
+    left: 0,
+    right: 0,
     height: 1,
-    backgroundColor: 'rgba(255, 190, 80, 0.35)',
+    backgroundColor: 'rgba(255, 180, 60, 0.35)',
   },
   tabsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
     alignItems: 'center',
+    justifyContent: 'space-around',
     paddingHorizontal: 8,
   },
   tabBtn: {
@@ -268,33 +273,36 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     paddingVertical: 4,
     position: 'relative',
-    minHeight: 46,
-  },
-  iconContainer: {
-    height: 22,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 3,
   },
   activeGlowPill: {
     position: 'absolute',
-    top: 2,
-    width: 42,
-    height: 28,
-    borderRadius: 14,
+    top: 0,
+    bottom: 0,
+    left: 6,
+    right: 6,
+    borderRadius: 12,
     backgroundColor: 'rgba(255, 149, 0, 0.14)',
+  },
+  iconContainer: {
+    width: 28,
+    height: 28,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 2,
   },
   tabLabel: {
     fontSize: 10,
-    letterSpacing: 0.3,
-    fontWeight: '600',
+    fontWeight: '700',
+    letterSpacing: 0.2,
   },
   tabLabelActive: {
     color: '#FFA726',
-    fontWeight: '800',
   },
-  tabLabelInactive: {
+  tabLabelInactiveDark: {
     color: 'rgba(255, 220, 180, 0.45)',
+  },
+  tabLabelInactiveLight: {
+    color: 'rgba(70, 40, 20, 0.55)',
   },
   activeDot: {
     width: 4,
@@ -302,9 +310,5 @@ const styles = StyleSheet.create({
     borderRadius: 2,
     backgroundColor: '#FF9500',
     marginTop: 3,
-    shadowColor: '#FFA726',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 1,
-    shadowRadius: 4,
   },
 });

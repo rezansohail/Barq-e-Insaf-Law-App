@@ -143,7 +143,7 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
 
                     <View style={styles.divider} />
 
-                    {/* 👤 Profile Option */}
+                    {/* Profile Option */}
                     <TouchableOpacity
                       style={styles.menuItem}
                       onPress={handleProfile}
@@ -170,7 +170,7 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
                       </Text>
                     </TouchableOpacity>
 
-                    {/* 🌓 Dark Mode / Light Mode Toggle */}
+                    {/* Dark Mode / Light Mode Toggle */}
                     <TouchableOpacity
                       style={styles.menuItem}
                       onPress={handleToggleTheme}
@@ -223,20 +223,28 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
                           },
                         ]}
                       >
-                        <Text style={styles.modePillText}>
-                          {isDarkMode ? '🌙' : '☀️'}
+                        <Text style={[styles.modePillText, { fontSize: 9, fontWeight: '800' }]}>
+                          {isDarkMode ? 'DARK' : 'LIGHT'}
                         </Text>
                       </View>
                     </TouchableOpacity>
 
-                    {/* 🌐 Language Translation Option */}
+                    {/* Language Translation Option */}
                     <TouchableOpacity
                       style={styles.menuItem}
                       onPress={handleCycleLang}
                       activeOpacity={0.75}
                     >
                       <View style={styles.itemIconCircle}>
-                        <Text style={{ fontSize: 13 }}>🌐</Text>
+                        <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+                          <Path
+                            d="M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"
+                            stroke="#FF9500"
+                            strokeWidth={1.8}
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        </Svg>
                       </View>
                       <View style={{ flex: 1 }}>
                         <Text
@@ -245,7 +253,7 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
                             { color: isDarkMode ? '#FFFFFF' : '#1A0C04' },
                           ]}
                         >
-                          Language / زبان
+                          Language / Translation
                         </Text>
                         <Text style={styles.modeSubText}>
                           Current: {currentLang}
@@ -269,7 +277,7 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
 
                     <View style={styles.divider} />
 
-                    {/* 🚪 Sign Out */}
+                    {/* Sign Out */}
                     <TouchableOpacity
                       style={[styles.menuItem, styles.signOutItem]}
                       onPress={handleSignOut}

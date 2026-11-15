@@ -5,6 +5,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
@@ -63,7 +64,9 @@ export default function LawyerManagement() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Search */}
         <View style={styles.searchBox}>
-          <Text style={{ color: '#FF9500', fontSize: 16 }}>🔍</Text>
+          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+            <Path d="M21 21l-4.35-4.35M19 11a8 8 0 11-16 0 8 8 0 0116 0z" stroke="#FF9500" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          </Svg>
           <TextInput
             style={styles.searchInput}
             placeholder="Search by advocate name, SBC license, district..."

@@ -235,7 +235,7 @@ export default function CaseForm() {
     });
 
     Alert.alert(
-      'Case Created Successfully! ⚡',
+      'Case Created Successfully',
       'Your case has been securely registered in your Vault. Verified Sindh advocates can now review your files.',
       [
         {
@@ -407,7 +407,7 @@ export default function CaseForm() {
               disabled={pickingLoading}
             >
               <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
-                📄 Phone File (PDF)
+                Phone File (PDF)
               </Text>
             </TouchableOpacity>
 
@@ -425,7 +425,7 @@ export default function CaseForm() {
               disabled={pickingLoading}
             >
               <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
-                🖼️ Gallery Photo
+                Gallery Photo
               </Text>
             </TouchableOpacity>
 
@@ -443,7 +443,7 @@ export default function CaseForm() {
               disabled={pickingLoading}
             >
               <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
-                📸 Snap Camera
+                Snap Camera
               </Text>
             </TouchableOpacity>
           </View>
@@ -466,7 +466,7 @@ export default function CaseForm() {
           {evidenceList.map((item, index) => (
             <View key={item.id || index} style={styles.evidenceItem}>
               <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: 'rgba(255, 149, 0, 0.15)', borderWidth: 1, borderColor: 'rgba(255, 160, 40, 0.3)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                <Text style={{ fontSize: 16 }}>{item.type === 'Photo' ? '🖼️' : '📄'}</Text>
+                <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFB74D' }}>{item.type === 'Photo' ? 'IMG' : 'DOC'}</Text>
               </View>
               <View style={styles.evidenceInfo}>
                 <Text style={styles.evidenceName} numberOfLines={1}>{item.name}</Text>

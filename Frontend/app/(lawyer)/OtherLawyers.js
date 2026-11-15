@@ -12,10 +12,17 @@ import { useRouter } from 'expo-router';
 import styles from './OtherLawyers.styles';
 import { useMockStore, otherLawyers, fetchOtherLawyers } from './MockStore';
 import { getCurrentLawyerId } from '../../constants/authStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 export default function OtherLawyers() {
   useMockStore();
   const router = useRouter();
+  const { isDark, theme } = useAppTheme();
+  useAppNavigation({ isHome: false, homeRoute: '/(lawyer)/LawyerHome' });
+
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [showProfile, setShowProfile] = useState(false);
 
@@ -23,58 +30,91 @@ export default function OtherLawyers() {
     fetchOtherLawyers(getCurrentLawyerId());
   }, []);
 
-  const handleNav = (lbl) => {
-    if (lbl === 'home') router.push('/(lawyer)/LawyerHome');
-    if (lbl === 'requests') router.push('/(lawyer)/CaseRequests');
-    if (lbl === 'cases') router.push('/(lawyer)/MyCases');
-    if (lbl === 'schedule') router.push('/(lawyer)/Schedule');
-    if (lbl === 'profile') router.push('/(lawyer)/LawyerProfile');
-  };
-
   const handleLawyerPress = (lawyer) => {
     setSelectedLawyer(lawyer);
     setShowProfile(true);
   };
 
+  const dynamicStyles = {
+    safe: {
+      flex: 1,
+      backgroundColor: isDark ? '#060201' : '#FAF7F2',
+    },
+    lawyerCard: {
+      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
+      borderColor: isDark ? 'rgba(255, 149, 0, 0.28)' : 'rgba(255, 149, 0, 0.20)',
+    },
+    lawyerName: {
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+    },
+    casesText: {
+      fontSize: 12,
+      color: '#FF9500',
+      fontWeight: '700',
+      marginTop: 3,
+    },
+    statusText: {
+      color: isDark ? 'rgba(255, 235, 215, 0.7)' : '#665544',
+    },
+    modalContent: {
+      backgroundColor: isDark ? '#140A04' : '#FFFFFF',
+      borderColor: isDark ? 'rgba(255, 160, 40, 0.35)' : 'rgba(255, 149, 0, 0.25)',
+    },
+    modalName: {
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+    },
+    detailCard: {
+      backgroundColor: isDark ? 'rgba(28, 14, 6, 0.85)' : '#F5EBE1',
+      borderColor: isDark ? 'rgba(255, 149, 0, 0.25)' : 'rgba(255, 149, 0, 0.15)',
+    },
+    detailLabel: {
+      color: isDark ? '#FF9500' : '#D97706',
+    },
+    detailValue: {
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+    },
+    aboutText: {
+      color: isDark ? 'rgba(255, 235, 215, 0.85)' : '#332211',
+    },
+  };
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
+    <SafeAreaView style={dynamicStyles.safe}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? "#060201" : "#FAF7F2"} />
       
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>Other Lawyers</Text>
-        </View>
-      </View>
+      <AppHeader 
+        title="Peer Advocates" 
+        showBack={true} 
+        homeRoute="/(lawyer)/LawyerHome"
+        role="lawyer"
+      />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {otherLawyers.length === 0 && (
-          <Text style={styles.lawyerSpec}>No other lawyers found</Text>
+          <View style={{ padding: 24, alignItems: 'center' }}>
+            <Text style={{ color: isDark ? 'rgba(255,255,255,0.6)' : '#665544', fontSize: 14 }}>
+              No other advocates registered yet.
+            </Text>
+          </View>
         )}
         {otherLawyers.map((lawyer, index) => (
           <TouchableOpacity 
             key={index} 
-            style={styles.lawyerCard}
+            style={[styles.lawyerCard, dynamicStyles.lawyerCard]}
             onPress={() => handleLawyerPress(lawyer)}
           >
-            <View style={[styles.avatarLarge, { backgroundColor: lawyer.color }]}>
+            <View style={[styles.avatarLarge, { backgroundColor: lawyer.color || '#E65100' }]}>
               <Text style={styles.avatarText}>{lawyer.initials}</Text>
             </View>
             <View style={styles.lawyerInfo}>
-              <Text style={styles.lawyerName}>{lawyer.name}</Text>
+              <Text style={[styles.lawyerName, dynamicStyles.lawyerName]}>{lawyer.name}</Text>
               <Text style={styles.lawyerSpec}>{lawyer.spec}</Text>
-              <View style={styles.ratingRow}>
-                <Text style={styles.ratingStar}>★</Text>
-                <Text style={styles.ratingText}>{lawyer.rating} ({lawyer.successfulCasesCount} cases)</Text>
-              </View>
+              <Text style={dynamicStyles.casesText}>{lawyer.successfulCasesCount || 0} Disposed Cases</Text>
               <View style={styles.statusRow}>
                 <View style={[styles.statusDot, { backgroundColor: lawyer.isAvailable ? '#4ade80' : '#ef4444' }]} />
-                <Text style={styles.statusText}>{lawyer.isAvailable ? 'Available' : 'Not Available'}</Text>
+                <Text style={[styles.statusText, dynamicStyles.statusText]}>
+                  {lawyer.isAvailable ? 'Available for Counsel' : 'Chamber Busy'}
+                </Text>
               </View>
             </View>
           </TouchableOpacity>
@@ -89,7 +129,7 @@ export default function OtherLawyers() {
         onRequestClose={() => setShowProfile(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
+          <View style={[styles.modalContent, dynamicStyles.modalContent]}>
             <TouchableOpacity 
               style={styles.closeBtn}
               onPress={() => setShowProfile(false)}
@@ -99,78 +139,49 @@ export default function OtherLawyers() {
 
             {selectedLawyer && (
               <>
-                <View style={[styles.modalAvatar, { backgroundColor: selectedLawyer.color }]}>
+                <View style={[styles.modalAvatar, { backgroundColor: selectedLawyer.color || '#E65100' }]}>
                   <Text style={styles.modalAvatarText}>{selectedLawyer.initials}</Text>
                 </View>
                 
-                <Text style={styles.modalName}>{selectedLawyer.name}</Text>
+                <Text style={[styles.modalName, dynamicStyles.modalName]}>{selectedLawyer.name}</Text>
                 <Text style={styles.modalSpec}>{selectedLawyer.spec}</Text>
                 
                 <View style={styles.modalDetails}>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Location</Text>
-                    <Text style={styles.detailValue}>{selectedLawyer.district}</Text>
+                  <View style={[styles.detailRow, dynamicStyles.detailCard]}>
+                    <Text style={[styles.detailLabel, dynamicStyles.detailLabel]}>Location</Text>
+                    <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{selectedLawyer.district}</Text>
                   </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Experience</Text>
-                    <Text style={styles.detailValue}>{selectedLawyer.experience}</Text>
+                  <View style={[styles.detailRow, dynamicStyles.detailCard]}>
+                    <Text style={[styles.detailLabel, dynamicStyles.detailLabel]}>Experience</Text>
+                    <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{selectedLawyer.experience}</Text>
                   </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Rating</Text>
-                    <Text style={styles.detailValue}>{selectedLawyer.rating} ★</Text>
+                  <View style={[styles.detailRow, dynamicStyles.detailCard]}>
+                    <Text style={[styles.detailLabel, dynamicStyles.detailLabel]}>Disposed Cases</Text>
+                    <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{selectedLawyer.successfulCasesCount}</Text>
                   </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Cases</Text>
-                    <Text style={styles.detailValue}>{selectedLawyer.successfulCasesCount}</Text>
+                  <View style={[styles.detailRow, dynamicStyles.detailCard]}>
+                    <Text style={[styles.detailLabel, dynamicStyles.detailLabel]}>Education</Text>
+                    <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{selectedLawyer.education}</Text>
                   </View>
-                  <View style={styles.detailRow}>
-                    <Text style={styles.detailLabel}>Education</Text>
-                    <Text style={styles.detailValue}>{selectedLawyer.education}</Text>
-                  </View>
-                  <View style={[styles.detailRow, styles.detailRowLast]}>
-                    <Text style={styles.detailLabel}>Status</Text>
+                  <View style={[styles.detailRow, styles.detailRowLast, dynamicStyles.detailCard]}>
+                    <Text style={[styles.detailLabel, dynamicStyles.detailLabel]}>Status</Text>
                     <Text style={[styles.detailValue, { color: selectedLawyer.isAvailable ? '#4ade80' : '#ef4444' }]}>
-                      {selectedLawyer.isAvailable ? 'Available' : 'Not Available'}
+                      {selectedLawyer.isAvailable ? 'Available' : 'Chamber Busy'}
                     </Text>
                   </View>
                 </View>
 
-                <Text style={styles.aboutText}>{selectedLawyer.about}</Text>
-
-                {selectedLawyer.reviews && selectedLawyer.reviews.length > 0 && (
-                  <View style={styles.reviewsSection}>
-                    <Text style={styles.reviewsTitle}>Client Reviews</Text>
-                    {selectedLawyer.reviews.slice(0, 2).map((review, idx) => (
-                      <View key={idx} style={styles.reviewItem}>
-                        <Text style={styles.reviewName}>{review.clientName}</Text>
-                        <Text style={styles.reviewRating}>{'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}</Text>
-                        <Text style={styles.reviewComment}>{review.comment}</Text>
-                        <Text style={styles.reviewDate}>{review.date}</Text>
-                      </View>
-                    ))}
-                  </View>
-                )}
+                {selectedLawyer.about ? (
+                  <Text style={[styles.aboutText, dynamicStyles.aboutText]}>{selectedLawyer.about}</Text>
+                ) : null}
               </>
             )}
           </View>
         </View>
       </Modal>
 
-      {/* FOOTER */}
-      <View style={styles.bottomNav}>
-        {['Dashboard', 'Requests', 'Cases', 'Schedule', 'Profile'].map((lbl, idx) => {
-          const ids = ['home', 'requests', 'cases', 'schedule', 'profile'];
-          return (
-            <TouchableOpacity
-              key={lbl}
-              style={styles.navItem}
-              onPress={() => handleNav(ids[idx])}
-            >
-              <Text style={[styles.navLabel, ids[idx] === 'profile' && styles.navLabelActive]}>{lbl}</Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+      {/* Shared bottom navigation */}
+      <BottomNavBar role="lawyer" activeTab="cases" />
     </SafeAreaView>
   );
 }

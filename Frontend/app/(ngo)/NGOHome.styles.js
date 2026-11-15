@@ -118,6 +118,60 @@ export default StyleSheet.create({
     borderColor: 'rgba(255, 149, 0, 0.30)',
     padding: 14,
   },
+  breakdownCard: {
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    gap: 10,
+  },
+  barRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  barLabel: {
+    width: 110,
+    fontSize: 11.5,
+    fontWeight: '700',
+  },
+  barTrack: {
+    flex: 1,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    overflow: 'hidden',
+  },
+  barFill: {
+    height: '100%',
+    borderRadius: 4,
+  },
+  barVal: {
+    width: 28,
+    textAlign: 'right',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  insightGrid: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  insightCard: {
+    flex: 1,
+    borderRadius: 14,
+    padding: 14,
+    alignItems: 'center',
+  },
+  insightNum: {
+    fontSize: 20,
+    fontWeight: '800',
+  },
+  insightLabel: {
+    fontSize: 10,
+    marginTop: 4,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
   rowItem: {
     flexDirection: 'row',
     justifyContent: 'space-between',

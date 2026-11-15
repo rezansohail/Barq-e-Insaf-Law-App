@@ -16,48 +16,47 @@ const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
 export default function SplashScreen() {
   const router = useRouter();
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const scaleAnim = useRef(new Animated.Value(0.88)).current;
+  const scaleAnim = useRef(new Animated.Value(0.92)).current;
   const hoverAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    // Entrance fade and spring scale
+    // 1. Entrance fade-in and subtle scale
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 900,
+        duration: 800,
         easing: Easing.out(Easing.cubic),
         useNativeDriver: true,
       }),
       Animated.spring(scaleAnim, {
         toValue: 1,
-        friction: 6,
-        tension: 40,
+        friction: 7,
+        tension: 35,
         useNativeDriver: true,
       }),
     ]).start();
 
-    // Smooth continuous floating / hovering loop
-    Animated.loop(
-      Animated.sequence([
-        Animated.timing(hoverAnim, {
-          toValue: -12,
-          duration: 1300,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-        Animated.timing(hoverAnim, {
-          toValue: 12,
-          duration: 1300,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ])
-    ).start();
+    // 2. Slow hover that executes only ONCE: gentle float up by -12px, then softly settle back to 0
+    Animated.sequence([
+      Animated.delay(400),
+      Animated.timing(hoverAnim, {
+        toValue: -14,
+        duration: 1100,
+        easing: Easing.inOut(Easing.sin),
+        useNativeDriver: true,
+      }),
+      Animated.timing(hoverAnim, {
+        toValue: 0,
+        duration: 1100,
+        easing: Easing.inOut(Easing.sin),
+        useNativeDriver: true,
+      }),
+    ]).start();
 
-    // Transition to StartScreen after 3000ms
+    // 3. Transition to StartScreen after hover finishes (~2700ms)
     const timer = setTimeout(() => {
       router.replace('/StartScreen');
-    }, 3000);
+    }, 2700);
 
     return () => clearTimeout(timer);
   }, []);
@@ -89,13 +88,10 @@ export default function SplashScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      {/* Center Ambient Orange Glow Halo */}
-      <View style={styles.centerGlowHalo} pointerEvents="none" />
-
-      {/* Center Hovering Animated Logo Only */}
+      {/* Center Hovering Animated Logo Only - Perfectly Centered, NO Halo */}
       <Animated.View
         style={[
-          styles.content,
+          styles.logoWrapper,
           {
             opacity: fadeAnim,
             transform: [{ scale: scaleAnim }, { translateY: hoverAnim }],
@@ -126,25 +122,18 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
   },
-  centerGlowHalo: {
+  logoWrapper: {
     position: 'absolute',
-    width: 280,
-    height: 280,
-    borderRadius: 140,
-    backgroundColor: 'rgba(255, 140, 20, 0.20)',
-    shadowColor: '#FF7A00',
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.65,
-    shadowRadius: 40,
-    elevation: 12,
-  },
-  content: {
-    alignItems: 'center',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
     justifyContent: 'center',
+    alignItems: 'center',
     zIndex: 10,
   },
   logo: {
-    width: 260,
-    height: 260,
+    width: 250,
+    height: 250,
   },
 });

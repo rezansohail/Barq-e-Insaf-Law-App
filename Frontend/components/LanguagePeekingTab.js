@@ -127,7 +127,9 @@ export default function LanguagePeekingTab() {
             </View>
 
             {/* Globe icon */}
-            <Text style={styles.globeIcon}>🌐</Text>
+            <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+              <Path d="M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z" stroke="#FF9500" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
+            </Svg>
 
             {/* Compact text in collapsed state */}
             {!isExpanded && (

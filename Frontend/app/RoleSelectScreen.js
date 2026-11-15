@@ -157,10 +157,28 @@ export default function RoleSelectScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* Top Header - spacious and clean */}
         <View style={styles.header}>
-          <View style={styles.headerPill}>
-            <Text style={[styles.headerPillText, fontSemiBold ? { fontFamily: fontSemiBold } : {}]}>
-              PORTAL ACCESS
-            </Text>
+          <View style={styles.headerTopRow}>
+            <TouchableOpacity
+              style={styles.circularBackBtn}
+              onPress={() => router.replace('/StartScreen')}
+              activeOpacity={0.75}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityLabel="Back to Start Screen"
+            >
+              <BlurView intensity={Platform.OS === 'ios' ? 40 : 60} tint="dark" style={styles.backBlur}>
+                <Image
+                  source={require('../assets/images/backarrow.png')}
+                  style={styles.backArrowImg}
+                  contentFit="contain"
+                />
+              </BlurView>
+            </TouchableOpacity>
+
+            <View style={styles.headerPill}>
+              <Text style={[styles.headerPillText, fontSemiBold ? { fontFamily: fontSemiBold } : {}]}>
+                PORTAL ACCESS
+              </Text>
+            </View>
           </View>
           <Text style={[styles.headerTitle, fontExtraBold ? { fontFamily: fontExtraBold } : {}]}>
             Choose your role
@@ -266,7 +284,11 @@ export default function RoleSelectScreen() {
 
                         {/* Liquid Glass Arrow Pill */}
                         <View style={styles.arrowPill}>
-                          <Text style={styles.arrowText}>→</Text>
+                          <Image
+                            source={require('../assets/images/arrow.png')}
+                            style={styles.forwardArrowImg}
+                            contentFit="contain"
+                          />
                         </View>
                       </LinearGradient>
                     </BlurView>
@@ -332,7 +354,11 @@ export default function RoleSelectScreen() {
 
                       {/* Red Arrow Pill */}
                       <View style={styles.adminArrowPill}>
-                        <Text style={styles.adminArrowText}>→</Text>
+                        <Image
+                          source={require('../assets/images/arrow.png')}
+                          style={styles.forwardArrowImg}
+                          contentFit="contain"
+                        />
                       </View>
                     </LinearGradient>
                   </BlurView>
@@ -378,15 +404,41 @@ const styles = StyleSheet.create({
     paddingTop: 12,
     paddingBottom: 6,
   },
+  headerTopRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  circularBackBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 170, 60, 0.35)',
+    backgroundColor: 'rgba(25, 10, 3, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  backBlur: {
+    flex: 1,
+    width: '100%',
+    height: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  backArrowImg: {
+    width: 18,
+    height: 13,
+  },
   headerPill: {
-    alignSelf: 'flex-start',
     backgroundColor: 'rgba(255, 149, 0, 0.12)',
     borderWidth: 1,
     borderColor: 'rgba(255, 160, 40, 0.35)',
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 20,
-    marginBottom: 8,
   },
   headerPillText: {
     color: '#FFB85A',
@@ -515,6 +567,10 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 180, 80, 0.35)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  forwardArrowImg: {
+    width: 16,
+    height: 11,
   },
   arrowText: {
     fontSize: 15,

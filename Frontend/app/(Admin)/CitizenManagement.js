@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   TextInput, StatusBar, StyleSheet,
-  Dimensions, Alert,
+  Dimensions, Alert, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
@@ -81,7 +82,14 @@ export default function CitizenManagement() {
           </View>
 
           <TouchableOpacity style={s.backToListBtn} onPress={() => setShowDetail(null)}>
-            <Text style={s.backToListBtnTxt}>&lt; RETURN TO DIRECTORY</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
+              <Image
+                source={require('../../assets/images/backarrow.png')}
+                style={{ width: 16, height: 11 }}
+                resizeMode="contain"
+              />
+              <Text style={s.backToListBtnTxt}>RETURN TO DIRECTORY</Text>
+            </View>
           </TouchableOpacity>
         </ScrollView>
         <BottomNavBar role="admin" activeTab="citizens" />
@@ -104,7 +112,9 @@ export default function CitizenManagement() {
       <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         {/* Search */}
         <View style={s.searchBox}>
-          <Text style={{ color: '#FF9500', fontSize: 16 }}>🔍</Text>
+          <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
+            <Path d="M21 21l-4.35-4.35M19 11a8 8 0 11-16 0 8 8 0 0116 0z" stroke="#FF9500" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
+          </Svg>
           <TextInput
             style={s.searchInput}
             placeholder="Search by citizen name, phone, district..."

@@ -5,19 +5,27 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './MyCases.styles';
 import { useMockStore, activeCases, fetchCitizenCases, userData } from './MockStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const filters = ['All', 'Active', 'Pending', 'Closed'];
 
 export default function MyCases() {
   useMockStore();
   const router = useRouter();
-  const [activeNav, setActiveNav] = useState('cases');
+  const { theme, isDarkMode } = useAppTheme();
   const [activeFilter, setActiveFilter] = useState('All');
+
+  // Back returns to CitizenHome
+  useAppNavigation({ isHome: false, homeRoute: '/(citizen)/CitizenHome' });
 
   useEffect(() => {
     if (userData.id) {
@@ -29,14 +37,6 @@ export default function MyCases() {
     ? activeCases
     : activeCases.filter(c => c.status === activeFilter);
 
-  const handleNav = (id) => {
-    setActiveNav(id);
-    if (id === 'home')    router.push('/(citizen)/CitizenHome');
-    if (id === 'cases')   router.push('/(citizen)/MyCases');
-    if (id === 'lawyers') router.push('/(citizen)/FindLawyer');
-    if (id === 'profile') router.push('/(citizen)/Profile');
-  };
-
   const handleCasePress = (caseItem) => {
     router.push({
       pathname: '/(citizen)/CaseDetail',
@@ -45,21 +45,16 @@ export default function MyCases() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#5C1A1A" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={theme.bg} />
 
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backText}>Back</Text>
-        </TouchableOpacity>
-        <View style={styles.brandRow}>
-          <View style={styles.logoBadge}>
-            <Text style={styles.logoBadgeText}>BI</Text>
-          </View>
-          <Text style={styles.headerTitle}>My Cases</Text>
-        </View>
-      </View>
+      {/* Top Header matching app standard with '<' Chevron */}
+      <AppHeader
+        title="My Cases"
+        showBack={true}
+        homeRoute="/(citizen)/CitizenHome"
+        role="citizen"
+      />
 
       <ScrollView
         style={styles.scroll}
@@ -75,10 +70,19 @@ export default function MyCases() {
           {filters.map((f) => (
             <TouchableOpacity
               key={f}
-              style={[styles.filterChip, activeFilter === f && styles.filterChipActive]}
+              style={[
+                styles.filterChip,
+                activeFilter === f && styles.filterChipActive,
+              ]}
               onPress={() => setActiveFilter(f)}
+              activeOpacity={0.75}
             >
-              <Text style={[styles.filterText, activeFilter === f && styles.filterTextActive]}>
+              <Text
+                style={[
+                  styles.filterText,
+                  activeFilter === f && styles.filterTextActive,
+                ]}
+              >
                 {f}
               </Text>
             </TouchableOpacity>
@@ -86,47 +90,46 @@ export default function MyCases() {
         </ScrollView>
 
         {/* CASE CARDS */}
-        {filtered.length === 0 && (
-          <Text style={styles.caseMeta}>No cases yet</Text>
-        )}
-        {filtered.map((c, i) => (
-          <TouchableOpacity
-            key={i}
-            style={styles.caseCard}
-            onPress={() => handleCasePress(c)}
-          >
-            <View style={styles.caseCardTop}>
-              <View style={styles.caseType}>
-                <Text style={styles.caseTitle}>{c.title}</Text>
+        {filtered.length === 0 ? (
+          <Text style={styles.emptyText}>No cases found in this category.</Text>
+        ) : (
+          filtered.map((c, i) => (
+            <TouchableOpacity
+              key={c.id || i}
+              style={styles.caseCard}
+              activeOpacity={0.84}
+              onPress={() => handleCasePress(c)}
+            >
+              <View style={styles.caseCardTop}>
+                <View style={styles.caseType}>
+                  <Text style={styles.caseTitle} numberOfLines={1}>{c.title}</Text>
+                  <Text style={styles.caseMeta}>{c.type || 'Legal Matter'} · {c.district || userData.district || 'Sindh'}</Text>
+                </View>
+                <Text style={styles.badgeText}>{c.status || 'Active'}</Text>
               </View>
-              <Text style={styles.badgeText}>{c.status}</Text>
-            </View>
-            <Text style={styles.caseMeta}>Filing Date: {c.filingDate}</Text>
-            
-            {/* NO case description shown here as per prompt details */}
-            
-            <View style={styles.caseFooter}>
-              <Text style={styles.caseFooterText}>Updated {c.lastUpdated}</Text>
-              <TouchableOpacity style={styles.viewBtn} onPress={() => handleCasePress(c)}>
-                <Text style={styles.viewBtnText}>View Details</Text>
-              </TouchableOpacity>
-            </View>
-          </TouchableOpacity>
-        ))}
+
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.08)', paddingTop: 8 }}>
+                <Text style={{ fontSize: 11, color: 'rgba(255, 220, 180, 0.6)' }}>
+                  Filed: {c.filingDate || c.date || 'Recent'}
+                </Text>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Text style={{ fontSize: 11, fontWeight: '800', color: '#FF9500' }}>
+                    View Matter Details
+                  </Text>
+                  <Image
+                    source={require('../../assets/images/arrow.png')}
+                    style={{ width: 14, height: 10 }}
+                    resizeMode="contain"
+                  />
+                </View>
+              </View>
+            </TouchableOpacity>
+          ))
+        )}
       </ScrollView>
 
-      {/* BOTTOM NAV */}
-      <View style={styles.bottomNav}>
-        {['Home', 'Cases', 'Lawyers', 'Profile'].map((lbl) => (
-          <TouchableOpacity
-            key={lbl}
-            style={styles.navItem}
-            onPress={() => handleNav(lbl.toLowerCase())}
-          >
-            <Text style={[styles.navLabel, lbl === 'Cases' && styles.navLabelActive]}>{lbl}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Unified Bottom Navigation */}
+      <BottomNavBar role="citizen" activeTab="cases" />
     </SafeAreaView>
   );
 }

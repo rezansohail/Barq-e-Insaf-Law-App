@@ -1,129 +1,156 @@
-import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './NGOHome.styles';
 import TopHeaderMenu from '../../components/TopHeaderMenu';
-import LanguagePeekingTab from '../../components/LanguagePeekingTab';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
-
-const caseTypes = [
-  { label: 'Property',    value: 0, pct: 0, color: '#FF9500' },
-  { label: 'Family',      value: 0, pct: 0, color: '#FFA726' },
-  { label: 'Inheritance', value: 0, pct: 0, color: '#FFB74D' },
-  { label: 'Civil',       value: 0, pct: 0, color: '#FFD54F' },
-];
-
-const insights = [
-  { num: '—', label: 'Avg. lawyer response' },
-  { num: '—', label: 'Rural access rate' },
-  { num: '—', label: 'Evidence uploaded' },
-  { num: '—', label: 'Chatbot queries' },
-];
-
-const heatmap = [];
+import { fetchRealSindhCases } from '../../constants/realCasesStore';
+import { useAppTheme } from '../../context/ThemeContext';
+import SindhCasesMap from '../../components/SindhCasesMap';
 
 export default function NGOHome() {
   const router = useRouter();
-
-  // Enforce double-back to exit on Home, never fall back to login screen
+  const { isDarkMode, theme } = useAppTheme();
   useAppNavigation({ isHome: true, homeRoute: '/(ngo)/NGOHome' });
 
+  const [realCases, setRealCases] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let isMounted = true;
+    fetchRealSindhCases().then((cases) => {
+      if (isMounted) {
+        setRealCases(cases);
+        setLoading(false);
+      }
+    });
+    return () => { isMounted = false; };
+  }, []);
+
+  const totalCases = realCases.length;
+  const uniqueDistricts = new Set(realCases.map((c) => c.district)).size;
+  const propertyCount = realCases.filter((c) => /property|land/i.test(c.type)).length;
+  const familyCount = realCases.filter((c) => /family|custody|khula/i.test(c.type)).length;
+  const otherCount = Math.max(0, totalCases - propertyCount - familyCount);
+
+  const safeBg = isDarkMode ? '#080402' : '#FAF8F5';
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#140803" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: safeBg }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={safeBg} />
 
       {/* HEADER - Main Dashboard (No Back Button) */}
-      <View style={styles.header}>
+      <View style={[styles.header, { backgroundColor: isDarkMode ? '#120703' : '#FFFFFF', borderBottomColor: isDarkMode ? 'rgba(255, 149, 0, 0.20)' : 'rgba(234, 88, 12, 0.15)' }]}>
         <View style={styles.headerRow}>
           <View style={styles.brand}>
-            <Text style={styles.brandName}>Barq-e-Insaf ⚡</Text>
-            <Text style={styles.brandSub}>Institutional Analytics Portal</Text>
+            <Text style={[styles.brandName, { color: '#FF9500' }]}>Barq-e-Insaf</Text>
+            <Text style={[styles.brandSub, { color: isDarkMode ? 'rgba(255, 235, 215, 0.65)' : '#664530' }]}>
+              Institutional Analytics Portal
+            </Text>
           </View>
           <View style={styles.headerRight}>
-            <TopHeaderMenu role="ngo" avatarText="NGO" />
+            <TopHeaderMenu role="ngo" avatarText="NCHD" />
           </View>
         </View>
 
-        <Text style={styles.orgName}>National Commission for Human Development (NCHD) / Media</Text>
-        <Text style={styles.orgSub}>Institutional Portal · Verified Public Interest & Case Analytics</Text>
+        <Text style={[styles.orgName, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+          National Commission for Human Development (NCHD)
+        </Text>
+        <Text style={[styles.orgSub, { color: isDarkMode ? 'rgba(255, 220, 180, 0.7)' : '#7C5238' }]}>
+          Institutional Portal · Verified Public Interest & Case Analytics
+        </Text>
 
         <View style={styles.statsRow}>
-          <View style={styles.statChip}><Text style={styles.statNum}>0</Text><Text style={styles.statLabel}>Cases / Month</Text></View>
-          <View style={styles.statChip}><Text style={styles.statNum}>0</Text><Text style={styles.statLabel}>Districts</Text></View>
-          <View style={styles.statChip}><Text style={styles.statNum}>—</Text><Text style={styles.statLabel}>vs Last Month</Text></View>
+          <View style={[styles.statChip, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.85)' : '#F3EFEA', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.2)' }]}>
+            <Text style={[styles.statNum, { color: '#FFB74D' }]}>{totalCases}</Text>
+            <Text style={[styles.statLabel, { color: isDarkMode ? 'rgba(255, 220, 180, 0.65)' : '#664530' }]}>Active Cases</Text>
+          </View>
+          <View style={[styles.statChip, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.85)' : '#F3EFEA', borderColor: 'transparent' }]}>
+            <Text style={[styles.statNum, { color: '#00E5FF' }]}>{uniqueDistricts}</Text>
+            <Text style={[styles.statLabel, { color: isDarkMode ? 'rgba(255, 220, 180, 0.65)' : '#664530' }]}>Districts</Text>
+          </View>
+          <View style={[styles.statChip, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.85)' : '#F3EFEA', borderColor: 'transparent' }]}>
+            <Text style={[styles.statNum, { color: '#4ade80' }]}>Live</Text>
+            <Text style={[styles.statLabel, { color: isDarkMode ? 'rgba(255, 220, 180, 0.65)' : '#664530' }]}>Database</Text>
+          </View>
         </View>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 }]} showsVerticalScrollIndicator={false}>
+        {/* Section Header */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionLabel}>Sindh Case Heatmap</Text>
+          <Text style={[styles.sectionLabel, { color: isDarkMode ? '#FFB74D' : '#C2410C' }]}>
+            Sindh Real-Time Case Map
+          </Text>
           <TouchableOpacity onPress={() => router.push('/(ngo)/CaseMap')}>
-            <Text style={styles.seeAllText}>Expand →</Text>
+            <Text style={styles.seeAllText}>Fullscreen View</Text>
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.mapCard} onPress={() => router.push('/(ngo)/CaseMap')}>
-          <View style={styles.mapVisual}>
-            {heatmap.length === 0 && <Text style={styles.mapSub}>No case data yet</Text>}
-            {heatmap.map((h, i) => (
-              <View
-                key={i}
-                style={[
-                  styles.mapDot,
-                  {
-                    width: 16,
-                    height: h,
-                    backgroundColor: i % 3 === 0 ? '#5C1A1A' : i % 3 === 1 ? '#1B4332' : '#f59e0b',
-                    opacity: 0.4 + (h / 22) * 0.6,
-                  },
-                ]}
-              />
-            ))}
+        {loading ? (
+          <View style={{ paddingVertical: 24, alignItems: 'center' }}>
+            <ActivityIndicator color="#FF9500" />
           </View>
-          <View style={styles.mapFooter}>
-            <View>
-              <Text style={styles.mapLabel}>Interactive Sindh Map</Text>
-              <Text style={styles.mapSub}>Tap to explore district data</Text>
-            </View>
-          </View>
-        </TouchableOpacity>
+        ) : (
+          <SindhCasesMap cases={realCases} />
+        )}
 
+        {/* Case Type Breakdown */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionLabel}>Case Type Breakdown</Text>
+          <Text style={[styles.sectionLabel, { color: isDarkMode ? '#FFB74D' : '#C2410C' }]}>
+            Dispute Classification
+          </Text>
           <TouchableOpacity onPress={() => router.push('/(ngo)/Analytics')}>
-            <Text style={styles.seeAllText}>Full Report →</Text>
+            <Text style={styles.seeAllText}>Analytics</Text>
           </TouchableOpacity>
         </View>
 
-        {caseTypes.map((c, i) => (
-          <View key={i} style={styles.barRow}>
-            <Text style={styles.barLabel}>{c.label}</Text>
+        <View style={[styles.breakdownCard, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.94)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
+          <View style={styles.barRow}>
+            <Text style={[styles.barLabel, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Property & Land</Text>
             <View style={styles.barTrack}>
-              <View style={[styles.barFill, { width: `${c.pct}%`, backgroundColor: c.color }]} />
+              <View style={[styles.barFill, { width: totalCases > 0 ? `${(propertyCount / totalCases) * 100}%` : '0%', backgroundColor: '#FF9100' }]} />
             </View>
-            <Text style={styles.barVal}>{c.value}</Text>
+            <Text style={[styles.barVal, { color: '#FFB74D' }]}>{propertyCount}</Text>
           </View>
-        ))}
 
-        <Text style={styles.sectionLabel}>Key Insights</Text>
-        <View style={styles.insightGrid}>
-          {insights.map((ins, i) => (
-            <View key={i} style={styles.insightCard}>
-              <Text style={styles.insightNum}>{ins.num}</Text>
-              <Text style={styles.insightLabel}>{ins.label}</Text>
+          <View style={styles.barRow}>
+            <Text style={[styles.barLabel, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Family & Custody</Text>
+            <View style={styles.barTrack}>
+              <View style={[styles.barFill, { width: totalCases > 0 ? `${(familyCount / totalCases) * 100}%` : '0%', backgroundColor: '#00E5FF' }]} />
             </View>
-          ))}
+            <Text style={[styles.barVal, { color: '#00E5FF' }]}>{familyCount}</Text>
+          </View>
+
+          <View style={styles.barRow}>
+            <Text style={[styles.barLabel, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Civil & Contract</Text>
+            <View style={styles.barTrack}>
+              <View style={[styles.barFill, { width: totalCases > 0 ? `${(otherCount / totalCases) * 100}%` : '0%', backgroundColor: '#C084FC' }]} />
+            </View>
+            <Text style={[styles.barVal, { color: '#C084FC' }]}>{otherCount}</Text>
+          </View>
         </View>
 
+        {/* Key Indicators */}
+        <Text style={[styles.sectionLabel, { color: isDarkMode ? '#FFB74D' : '#C2410C', marginTop: 14 }]}>
+          Public Interest Metrics
+        </Text>
+        <View style={styles.insightGrid}>
+          <View style={[styles.insightCard, { backgroundColor: isDarkMode ? 'rgba(22, 11, 5, 0.92)' : '#F3EFEA', borderColor: 'transparent' }]}>
+            <Text style={[styles.insightNum, { color: '#FF9500' }]}>{totalCases}</Text>
+            <Text style={[styles.insightLabel, { color: isDarkMode ? 'rgba(255, 235, 215, 0.7)' : '#664530' }]}>Verified Filings</Text>
+          </View>
+          <View style={[styles.insightCard, { backgroundColor: isDarkMode ? 'rgba(22, 11, 5, 0.92)' : '#F3EFEA', borderColor: 'transparent' }]}>
+            <Text style={[styles.insightNum, { color: '#00E5FF' }]}>{uniqueDistricts}</Text>
+            <Text style={[styles.insightLabel, { color: isDarkMode ? 'rgba(255, 235, 215, 0.7)' : '#664530' }]}>Sindh Coverage</Text>
+          </View>
+        </View>
       </ScrollView>
 
       {/* Consistent Bottom Nav */}
       <BottomNavBar role="ngo" activeTab="home" />
-      {/* Sliding Language Card */}
-      <LanguagePeekingTab />
     </SafeAreaView>
   );
 }

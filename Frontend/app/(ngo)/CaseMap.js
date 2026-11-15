@@ -1,67 +1,71 @@
-import React from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, ScrollView, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './CaseMap.styles';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
-
-const sampleDistricts = [
-  { name: 'Karachi Central', cases: 42, lawyers: 38, sev: 'Covered', style: 'sevCovered' },
-  { name: 'Malir & Korangi', cases: 68, lawyers: 12, sev: 'High', style: 'sevHigh' },
-  { name: 'Hyderabad Rural', cases: 84, lawyers: 6, sev: 'Critical', style: 'sevCritical' },
-  { name: 'Sukkur City', cases: 31, lawyers: 18, sev: 'Covered', style: 'sevCovered' },
-  { name: 'Larkana & Thatta', cases: 72, lawyers: 8, sev: 'High', style: 'sevHigh' },
-];
+import SindhCasesMap from '../../components/SindhCasesMap';
+import { fetchRealSindhCases } from '../../constants/realCasesStore';
+import { useAppTheme } from '../../context/ThemeContext';
 
 export default function CaseMap() {
   const router = useRouter();
-
-  // Hardware back returns to NGOHome
+  const { isDarkMode, theme } = useAppTheme();
   useAppNavigation({ isHome: false, homeRoute: '/(ngo)/NGOHome' });
 
-  return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+  const [realCases, setRealCases] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-      {/* Modern '< Sindh Case Hotspots' Header */}
+  useEffect(() => {
+    let isMounted = true;
+    fetchRealSindhCases().then((cases) => {
+      if (isMounted) {
+        setRealCases(cases);
+        setLoading(false);
+      }
+    });
+    return () => { isMounted = false; };
+  }, []);
+
+  const safeBg = isDarkMode ? '#080402' : '#FAF8F5';
+
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: safeBg }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={safeBg} />
+
       <AppHeader
-        title="Sindh Case Hotspots"
+        title="Sindh Judicial Case Map"
         showBack={true}
         homeRoute="/(ngo)/NGOHome"
         role="ngo"
       />
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={styles.legendRow}>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#ef4444' }]} />
-            <Text style={styles.legendText}>Critical Gap</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#f59e0b' }]} />
-            <Text style={styles.legendText}>High Need</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, { backgroundColor: '#4ade80' }]} />
-            <Text style={styles.legendText}>Adequately Covered</Text>
-          </View>
+      <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 }]} showsVerticalScrollIndicator={false}>
+        {/* Intro Card */}
+        <View style={[styles.introCard, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.94)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
+          <Text style={[styles.introTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+            Sindh Real-Time Dispute Map
+          </Text>
+          <Text style={[styles.introSub, { color: isDarkMode ? 'rgba(255, 235, 215, 0.75)' : '#4A2A15' }]}>
+            Live geographic distribution of disputes currently registered across Sindh districts. Pointers reflect dispute category and age without citizen personal identifiers.
+          </Text>
         </View>
 
-        {sampleDistricts.map((d, i) => (
-          <View key={i} style={styles.districtCard}>
-            <Text style={styles.districtIcon}>📍</Text>
-            <View style={styles.districtInfo}>
-              <Text style={styles.districtName}>{d.name}</Text>
-              <Text style={styles.districtMeta}>{d.cases} active disputes · {d.lawyers} certified advocates</Text>
-            </View>
-            <Text style={[styles.severityBadge, styles[d.style]]}>{d.sev}</Text>
+        {loading ? (
+          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+            <ActivityIndicator color="#FF9500" size="large" />
+            <Text style={{ marginTop: 12, fontSize: 12, color: isDarkMode ? '#FFB74D' : '#C2410C', fontWeight: '700' }}>
+              Querying Sindh District Database...
+            </Text>
           </View>
-        ))}
+        ) : (
+          <SindhCasesMap cases={realCases} />
+        )}
       </ScrollView>
 
-      {/* Consistent Bottom Nav */}
+      {/* Shared Bottom Nav */}
       <BottomNavBar role="ngo" activeTab="map" />
     </SafeAreaView>
   );

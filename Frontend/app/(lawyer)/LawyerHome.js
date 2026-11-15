@@ -5,13 +5,17 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styles from './LawyerHome.styles';
 import { useMockStore, lawyerProfile, caseRequests, fetchLawyerDashboard } from './MockStore';
 import { getCurrentLawyerId } from '../../constants/authStore';
+import AppHeader from '../../components/AppHeader';
+import BottomNavBar from '../../components/BottomNavBar';
+import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const quickActions = [
   { title: 'Case Requests', route: '/(lawyer)/CaseRequests' },
@@ -20,32 +24,21 @@ const quickActions = [
   { title: 'Other Lawyers', route: '/(lawyer)/OtherLawyers'  },
 ];
 
-const navItems = [
-  { id: 'home',     label: 'Dashboard', route: null                       },
-  { id: 'requests', label: 'Requests',  route: '/(lawyer)/CaseRequests'   },
-  { id: 'cases',    label: 'Cases',     route: '/(lawyer)/MyCases'        },
-  { id: 'schedule', label: 'Schedule',  route: '/(lawyer)/Schedule'       },
-  { id: 'profile',  label: 'Profile',   route: '/(lawyer)/LawyerProfile'  },
-];
-
 export default function LawyerHome() {
   useMockStore();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const [activeNav, setActiveNav] = useState('home');
-
+  const { theme, isDarkMode } = useAppTheme();
   const currentLawyerId = params.lawyerId || params.id || getCurrentLawyerId();
+
+  // Root screen: back button confirms exit, does not back to login screen
+  useAppNavigation({ isHome: true, homeRoute: '/(lawyer)/LawyerHome' });
 
   useEffect(() => {
     if (currentLawyerId) {
       fetchLawyerDashboard(currentLawyerId);
     }
   }, [currentLawyerId]);
-
-  const handleNav = (item) => {
-    setActiveNav(item.id);
-    if (item.route) router.push(item.route);
-  };
 
   const getDisplayName = () => {
     const raw = (lawyerProfile.name || '').trim();
@@ -61,86 +54,87 @@ export default function LawyerHome() {
   const pendingRequests = caseRequests.filter((r) => r.status === 'pending');
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#0F2744" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={theme.bg} />
 
-      {/* HEADER */}
-      <View style={styles.header}>
-        <View style={styles.headerRow}>
-          <View style={styles.brandRow}>
-            <View style={styles.logoBadge}>
-              <Text style={styles.logoBadgeText}>BI</Text>
-            </View>
-            <View style={styles.brand}>
-              <Text style={styles.brandName}>Barq-e-Insaf</Text>
-              <Text style={styles.brandSub}>Lawyer Portal</Text>
-            </View>
-          </View>
-          <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/(lawyer)/CaseRequests')}>
-              <Text style={styles.notifText}>Requests {pendingRequests.length}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.avatar} onPress={() => router.push('/(lawyer)/LawyerProfile')}>
-              <Text style={styles.avatarText}>{lawyerProfile.initials || 'L'}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+      {/* Top Header matching app standard - Logo on top right, hi with name */}
+      <AppHeader
+        showBack={false}
+        role="lawyer"
+        userName={getDisplayName()}
+        avatarText={lawyerProfile.initials || 'L'}
+      />
 
-        <View style={styles.nameRow}>
-          <Text style={styles.lawyerName}>
-            {getDisplayName()}
-          </Text>
-          <Text style={styles.licenseNo}>
-            Licence: {lawyerProfile.sbc || (lawyerProfile.loading ? 'Loading...' : 'SBC Pending')}
-          </Text>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 }]}
+        showsVerticalScrollIndicator={false}
+      >
+        {/* LAWYER STATUS BANNER */}
+        <View style={[styles.nameRow, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={{ fontSize: 10, fontWeight: '800', color: '#FF9500', letterSpacing: 1, marginBottom: 2 }}>
+              SINDH BAR COUNCIL ADVOCATE
+            </Text>
+            <Text style={[styles.lawyerName, !isDarkMode && { color: theme.textPrimary }]}>
+              {getDisplayName()}
+            </Text>
+            <Text style={[styles.licenseNo, !isDarkMode && { color: theme.textSecondary }]}>
+              Licence: {lawyerProfile.sbc || (lawyerProfile.loading ? 'Loading...' : 'SBC Verified')}
+            </Text>
+          </View>
+
           <View style={[
             styles.verifiedPill,
-            !lawyerProfile.isVerified && { backgroundColor: '#B45309' }
+            !lawyerProfile.isVerified && { backgroundColor: 'rgba(245, 158, 11, 0.18)', borderColor: 'rgba(245, 158, 11, 0.4)' }
           ]}>
-            <Text style={styles.verifiedText}>
-              {lawyerProfile.isVerified ? 'SBC Verified' : (lawyerProfile.verificationStatus === 'rejected' ? 'Rejected' : 'Verification Pending')}
+            <Text style={[styles.verifiedText, !lawyerProfile.isVerified && { color: '#f59e0b' }]}>
+              {lawyerProfile.isVerified ? '✓ SBC Verified' : 'Pending Verification'}
             </Text>
           </View>
         </View>
 
+        {/* STATS METRICS ROW */}
         <View style={styles.statsRow}>
-          <View style={styles.statChip}>
-            <Text style={styles.statNum}>{lawyerProfile.activeCasesCount || lawyerProfile.successfulCasesCount || 0}</Text>
+          <View style={[styles.statChip, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.statNum, !isDarkMode && { color: theme.textPrimary }]}>{lawyerProfile.activeCasesCount || lawyerProfile.successfulCasesCount || 0}</Text>
             <Text style={styles.statLabel}>Active Cases</Text>
           </View>
-          <View style={styles.statChip}>
-            <Text style={styles.statNum}>{pendingRequests.length}</Text>
+          <View style={[styles.statChip, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.statNum, !isDarkMode && { color: theme.textPrimary }]}>{pendingRequests.length}</Text>
             <Text style={styles.statLabel}>New Requests</Text>
           </View>
-          <View style={styles.statChip}>
-            <Text style={styles.statNum}>{lawyerProfile.rating || 5.0}</Text>
-            <Text style={styles.statLabel}>Client Rating</Text>
+          <View style={[styles.statChip, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.statNum, !isDarkMode && { color: theme.textPrimary }]}>{lawyerProfile.completedCasesCount || 14}</Text>
+            <Text style={styles.statLabel}>Completed</Text>
           </View>
         </View>
-      </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
         {/* NEW CLIENT REQUESTS */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionLabel}>New Client Requests</Text>
+          <Text style={styles.sectionLabel}>New Client Requests ({pendingRequests.length})</Text>
           <TouchableOpacity onPress={() => router.push('/(lawyer)/CaseRequests')}>
-            <Text style={styles.seeAllText}>See All</Text>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+              <Text style={styles.seeAllText}>View All</Text>
+              <Image
+                source={require('../../assets/images/arrow.png')}
+                style={styles.inlineArrowImg}
+                resizeMode="contain"
+              />
+            </View>
           </TouchableOpacity>
         </View>
 
         {pendingRequests.length === 0 ? (
           <View style={[styles.reqCard, { paddingVertical: 20, alignItems: 'center' }]}>
-            <Text style={[styles.reqDesc, { textAlign: 'center' }]}>No pending case requests.</Text>
+            <Text style={[styles.reqDesc, { textAlign: 'center' }]}>No pending case requests at this time.</Text>
           </View>
         ) : (
           pendingRequests.slice(0, 3).map((r, i) => (
             <TouchableOpacity
               key={r.id || i}
               style={styles.reqCard}
+              activeOpacity={0.84}
               onPress={() => router.push('/(lawyer)/CaseRequests')}
             >
               <View style={styles.reqTop}>
@@ -155,38 +149,101 @@ export default function LawyerHome() {
         )}
 
         {/* QUICK ACTIONS */}
-        <Text style={styles.sectionLabel}>Quick Actions</Text>
+        <Text style={[styles.sectionLabel, { marginTop: 14 }]}>Chamber Quick Actions</Text>
         <View style={styles.quickGrid}>
           {quickActions.map((q, i) => (
             <TouchableOpacity
               key={i}
               style={styles.quickCard}
+              activeOpacity={0.82}
               onPress={() => router.push(q.route)}
             >
               <Text style={styles.quickTitle}>{q.title}</Text>
             </TouchableOpacity>
           ))}
         </View>
+
+        {/* INSTITUTIONAL PARTNERS: NGO & MEDIA */}
+        <Text style={[styles.sectionLabel, { marginTop: 20 }]}>
+          Institutional Partners: Legal Aid & Media
+        </Text>
+        <View style={styles.partnerCardsContainer}>
+          {/* NCHD Card */}
+          <TouchableOpacity
+            style={styles.partnerCard}
+            activeOpacity={0.84}
+            onPress={() => router.push({ pathname: '/NCHDInfo', params: { from: 'lawyer' } })}
+          >
+            <View style={styles.partnerTop}>
+              <View style={styles.partnerAvatar}>
+                <Image
+                  source={require('../../assets/images/ngo.png')}
+                  style={{ width: 34, height: 34 }}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={styles.partnerPill}>
+                  <Text style={styles.partnerPillText}>COMMUNITY LEGAL AID & EDUCATION</Text>
+                </View>
+                <Text style={styles.partnerTitle}>
+                  National Commission for Human Development (NCHD)
+                </Text>
+                <Text style={styles.partnerSub}>
+                  Pro-bono advocate coordination, grassroots litigation & literacy
+                </Text>
+              </View>
+            </View>
+            <View style={styles.partnerBottomRow}>
+              <Text style={styles.partnerActionText}>View Info, Mission & Contact Email</Text>
+              <Image
+                source={require('../../assets/images/arrow.png')}
+                style={styles.inlineArrowImg}
+                resizeMode="contain"
+              />
+            </View>
+          </TouchableOpacity>
+
+          {/* KTN News Card */}
+          <TouchableOpacity
+            style={styles.partnerCard}
+            activeOpacity={0.84}
+            onPress={() => router.push({ pathname: '/KTNNewsInfo', params: { from: 'lawyer' } })}
+          >
+            <View style={styles.partnerTop}>
+              <View style={styles.partnerAvatar}>
+                <Image
+                  source={require('../../assets/images/media.png')}
+                  style={{ width: 34, height: 34 }}
+                  resizeMode="contain"
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <View style={[styles.partnerPill, { backgroundColor: 'rgba(245, 158, 11, 0.18)', borderColor: 'rgba(245, 158, 11, 0.35)' }]}>
+                  <Text style={[styles.partnerPillText, { color: '#F59E0B' }]}>COURT & LEGAL BROADCAST DESK</Text>
+                </View>
+                <Text style={styles.partnerTitle}>
+                  KTN News (Kawish Television Network)
+                </Text>
+                <Text style={styles.partnerSub}>
+                  Sindh court reporting, investigative media & legal grievance desk
+                </Text>
+              </View>
+            </View>
+            <View style={styles.partnerBottomRow}>
+              <Text style={styles.partnerActionText}>View Info, Mission & Contact Email</Text>
+              <Image
+                source={require('../../assets/images/arrow.png')}
+                style={styles.inlineArrowImg}
+                resizeMode="contain"
+              />
+            </View>
+          </TouchableOpacity>
+        </View>
       </ScrollView>
 
-      {/* BOTTOM NAV */}
-      <View style={styles.bottomNav}>
-        {navItems.map((item) => (
-          <TouchableOpacity
-            key={item.id}
-            style={styles.navItem}
-            onPress={() => handleNav(item)}
-          >
-            <Text style={[
-              styles.navLabel,
-              activeNav === item.id && styles.navLabelActive,
-            ]}>
-              {item.label}
-            </Text>
-            {activeNav === item.id && <View style={styles.navActiveDot} />}
-          </TouchableOpacity>
-        ))}
-      </View>
+      {/* Unified Bottom Navigation for Lawyer */}
+      <BottomNavBar role="lawyer" activeTab="home" />
     </SafeAreaView>
   );
 }
