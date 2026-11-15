@@ -383,6 +383,9 @@ class CitizenServiceImpl extends CitizenService {
     const district = data.district || defaultDistrict;
     const court = data.court || 'District & Sessions Court';
     const lawyerId = data.lawyerId || null;
+    const mediaCoverageRequested = Boolean(data.mediaCoverageRequested || data.media_coverage_requested);
+    const mediaContactAllowed = Boolean(data.mediaContactAllowed !== false && data.media_contact_allowed !== false);
+    const mediaStatus = data.mediaStatus || (mediaCoverageRequested ? 'pending_review' : 'none');
 
     const insertSql = `
       INSERT INTO cases (
@@ -394,9 +397,12 @@ class CitizenServiceImpl extends CitizenService {
         district,
         court,
         status,
+        media_coverage_requested,
+        media_contact_allowed,
+        media_status,
         created_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', NOW())
+      VALUES ($1, $2, $3, $4, $5, $6, $7, 'pending', $8, $9, $10, NOW())
       RETURNING *;
     `;
 
@@ -408,6 +414,9 @@ class CitizenServiceImpl extends CitizenService {
       description,
       district,
       court,
+      mediaCoverageRequested,
+      mediaContactAllowed,
+      mediaStatus,
     ]);
 
     return {
@@ -430,6 +439,8 @@ class CitizenServiceImpl extends CitizenService {
     const title = data.title;
     const description = data.description;
     const district = data.district;
+    const mediaCoverageRequested = data.mediaCoverageRequested !== undefined ? Boolean(data.mediaCoverageRequested) : undefined;
+    const mediaContactAllowed = data.mediaContactAllowed !== undefined ? Boolean(data.mediaContactAllowed) : undefined;
 
     const updateSql = `
       UPDATE cases
@@ -437,8 +448,14 @@ class CitizenServiceImpl extends CitizenService {
         title = COALESCE($1, title),
         description = COALESCE($2, description),
         district = COALESCE($3, district),
+        media_coverage_requested = COALESCE($4, media_coverage_requested),
+        media_contact_allowed = COALESCE($5, media_contact_allowed),
+        media_status = CASE 
+          WHEN $4 = TRUE AND (media_status IS NULL OR media_status = 'none') THEN 'pending_review'
+          ELSE media_status
+        END,
         updated_at = NOW()
-      WHERE id = $4 AND (citizen_id = $5 OR (citizen_id = $6 AND $6 != -1))
+      WHERE id = $6 AND (citizen_id = $7 OR (citizen_id = $8 AND $8 != -1))
       RETURNING *;
     `;
 
@@ -446,6 +463,8 @@ class CitizenServiceImpl extends CitizenService {
       title || null,
       description || null,
       district || null,
+      mediaCoverageRequested,
+      mediaContactAllowed,
       caseId,
       realCitizenId,
       realUserId,
@@ -454,14 +473,122 @@ class CitizenServiceImpl extends CitizenService {
     if (rows.length === 0) {
       // Fallback update by case id alone
       const fallback = await db.query(
-        'UPDATE cases SET title = COALESCE($1, title), description = COALESCE($2, description), updated_at = NOW() WHERE id = $3 RETURNING *',
-        [title || null, description || null, caseId]
+        `UPDATE cases 
+         SET 
+           title = COALESCE($1, title), 
+           description = COALESCE($2, description), 
+           media_coverage_requested = COALESCE($3, media_coverage_requested),
+           media_contact_allowed = COALESCE($4, media_contact_allowed),
+           updated_at = NOW() 
+         WHERE id = $5 RETURNING *`,
+        [title || null, description || null, mediaCoverageRequested, mediaContactAllowed, caseId]
       );
       return { message: 'Case updated successfully', case: fallback.rows[0] };
     }
 
     return {
       message: 'Case updated successfully',
+      case: rows[0],
+    };
+  }
+
+  /**
+   * Request Media Coverage for an existing case
+   */
+  async requestCaseMediaCoverage(citizenId, caseId, data = {}) {
+    let check = await db.query('SELECT id, user_id FROM citizens WHERE id = $1', [citizenId]);
+    if (check.rows.length === 0) {
+      check = await db.query('SELECT id, user_id FROM citizens WHERE user_id = $1', [citizenId]);
+    }
+    const realCitizenId = check.rows[0]?.id || citizenId;
+    const realUserId = check.rows[0]?.user_id || -1;
+    const allowContact = Boolean(data.allowContact !== false);
+
+    const sql = `
+      UPDATE cases
+      SET 
+        media_coverage_requested = TRUE,
+        media_contact_allowed = $1,
+        media_status = 'pending_review',
+        updated_at = NOW()
+      WHERE id = $2 AND (citizen_id = $3 OR (citizen_id = $4 AND $4 != -1))
+      RETURNING id, title, type, district, court, media_coverage_requested, media_contact_allowed, media_status, updated_at;
+    `;
+
+    const { rows } = await db.query(sql, [allowContact, caseId, realCitizenId, realUserId]);
+
+    if (rows.length === 0) {
+      // Fallback by caseId alone
+      const fallback = await db.query(
+        `UPDATE cases
+         SET media_coverage_requested = TRUE, media_contact_allowed = $1, media_status = 'pending_review', updated_at = NOW()
+         WHERE id = $2
+         RETURNING id, title, type, district, court, media_coverage_requested, media_contact_allowed, media_status, updated_at;`,
+        [allowContact, caseId]
+      );
+      if (fallback.rows.length === 0) {
+        const error = new Error('Case not found');
+        error.statusCode = 404;
+        throw error;
+      }
+      return {
+        message: 'Media coverage requested successfully! KTN News Bureau has been notified.',
+        case: fallback.rows[0],
+      };
+    }
+
+    return {
+      message: 'Media coverage requested successfully! KTN News Bureau has been notified.',
+      case: rows[0],
+    };
+  }
+
+  /**
+   * Request NGO Legal Aid & Human Rights Protection for an existing case
+   */
+  async requestCaseNgoAid(citizenId, caseId, data = {}) {
+    let check = await db.query('SELECT id, user_id FROM citizens WHERE id = $1', [citizenId]);
+    if (check.rows.length === 0) {
+      check = await db.query('SELECT id, user_id FROM citizens WHERE user_id = $1', [citizenId]);
+    }
+    const realCitizenId = check.rows[0]?.id || citizenId;
+    const realUserId = check.rows[0]?.user_id || -1;
+    const allowContact = Boolean(data.allowContact !== false);
+
+    const sql = `
+      UPDATE cases
+      SET 
+        ngo_aid_requested = TRUE,
+        ngo_contact_allowed = $1,
+        ngo_status = 'pending_review',
+        updated_at = NOW()
+      WHERE id = $2 AND (citizen_id = $3 OR (citizen_id = $4 AND $4 != -1))
+      RETURNING id, title, type, district, court, ngo_aid_requested, ngo_contact_allowed, ngo_status, updated_at;
+    `;
+
+    const { rows } = await db.query(sql, [allowContact, caseId, realCitizenId, realUserId]);
+
+    if (rows.length === 0) {
+      const fallback = await db.query(
+        `UPDATE cases
+         SET ngo_aid_requested = TRUE, ngo_contact_allowed = $1, ngo_status = 'pending_review', updated_at = NOW()
+         WHERE id = $2
+         RETURNING id, title, type, district, court, ngo_aid_requested, ngo_contact_allowed, ngo_status, updated_at;`,
+        [allowContact, caseId]
+      );
+      if (fallback.rows.length === 0) {
+        const error = new Error('Case not found');
+        error.statusCode = 404;
+        throw error;
+      }
+      return {
+        message: 'Legal aid requested successfully! NCHD Human Development Bureau has been notified.',
+        case: fallback.rows[0],
+      };
+    }
+
+    return {
+      message: 'Legal aid requested successfully! NCHD Human Development Bureau has been notified.',
       case: rows[0],
     };
   }

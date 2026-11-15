@@ -19,8 +19,22 @@ app.use('/api/ngo',      require('./routes/ngo'));
 app.use('/api/ngos',     require('./routes/ngo'));
 app.use('/api/media',    require('./routes/media'));
 
+// Swagger Interactive Testing Platform
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  customSiteTitle: 'Barq-e-Insaf API Testing Platform',
+  customCss: '.swagger-ui .topbar { background-color: #1a0802; border-bottom: 2px solid #FF9500; } .swagger-ui .topbar-wrapper img { content: url("https://raw.githubusercontent.com/swagger-api/swagger-ui/master/dist/favicon-32x32.png"); }',
+}));
+app.use('/docs', (req, res) => res.redirect('/api-docs'));
+app.get('/api/docs.json', (req, res) => res.json(swaggerSpec));
+
 app.get('/', (req, res) => {
-  res.json({ message: 'Barq-e-Insaf API running with Neon PostgreSQL' });
+  res.json({
+    message: 'Barq-e-Insaf API running with Neon PostgreSQL',
+    docs: 'http://localhost:5000/api-docs'
+  });
 });
 
 const PORT = process.env.PORT || 5000;

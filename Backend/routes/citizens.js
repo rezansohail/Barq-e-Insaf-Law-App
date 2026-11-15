@@ -9,6 +9,8 @@ const {
   getCitizenCases,
   createCitizenCase,
   updateCitizenCase,
+  requestCaseMediaCoverage,
+  requestCaseNgoAid,
   getCitizenConsultations,
   createCitizenConsultation,
   getCitizenVault,
@@ -39,6 +41,8 @@ router.put('/:id/profile', updateCitizenProfile);
 router.get('/:id/cases',  getCitizenCases);
 router.post('/:id/cases', createCitizenCase);
 router.put('/:id/cases/:caseId', updateCitizenCase);
+router.post('/:id/cases/:caseId/media-request', requestCaseMediaCoverage);
+router.post('/:id/cases/:caseId/ngo-request',   requestCaseNgoAid);
 
 // ── CITIZEN CONSULTATION REQUESTS ──
 router.get('/:id/consultations',  getCitizenConsultations);

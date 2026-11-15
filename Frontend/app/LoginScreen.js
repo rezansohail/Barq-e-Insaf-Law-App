@@ -309,7 +309,7 @@ export default function LoginScreen() {
         endpoint = '/ngo/login';
         targetRoute = '/(ngo)/NGOHome';
       } else if (currentRole === 'media') {
-        endpoint = '/ngo/login';
+        endpoint = '/media/login';
         targetRoute = '/(media)/MediaHome';
       }
 
@@ -323,7 +323,7 @@ export default function LoginScreen() {
 
       if (response.data && (response.data.token || response.data.success !== false)) {
         try {
-          const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.admin || response.data.user;
+          const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.media || response.data.admin || response.data.user;
           saveSession({
             token: response.data.token,
             role: currentRole,
@@ -334,16 +334,20 @@ export default function LoginScreen() {
           if (currentRole === 'citizen' && userObj) setCitizenProfileFromUser(userObj);
         } catch (_) {}
 
-        Alert.alert(
-          'Login Successful',
-          `Welcome back to ${config.label}!`,
-          [
-            {
-              text: 'Continue',
-              onPress: () => router.replace(targetRoute),
-            },
-          ]
-        );
+        if (Platform.OS === 'web') {
+          router.replace(targetRoute);
+        } else {
+          Alert.alert(
+            'Login Successful',
+            `Welcome back to ${config.label}!`,
+            [
+              {
+                text: 'Continue',
+                onPress: () => router.replace(targetRoute),
+              },
+            ]
+          );
+        }
       }
     } catch (err) {
       console.error('[AUTH] Login error:', err.response?.data || err.message);
@@ -434,7 +438,7 @@ export default function LoginScreen() {
           organizationType: 'NGO',
         };
       } else if (currentRole === 'media') {
-        endpoint = '/ngo/register';
+        endpoint = '/media/register';
         targetRoute = '/(media)/MediaHome';
         payload = {
           fullName: name.trim(),
@@ -444,7 +448,7 @@ export default function LoginScreen() {
           email: email.trim(),
           password: password,
           confirmPassword: retypePass,
-          organizationType: 'Media',
+          mediaType: 'Media',
         };
       }
 
@@ -454,7 +458,7 @@ export default function LoginScreen() {
 
       if (response.data && (response.data.token || response.data.success !== false)) {
         try {
-          const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.admin || response.data.user;
+          const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.media || response.data.admin || response.data.user;
           saveSession({
             token: response.data.token,
             role: currentRole,
@@ -466,12 +470,16 @@ export default function LoginScreen() {
         } catch (_) {}
 
         const successMsg = response.data.message || 'Registration successful! Welcome to Barq-e-Insaf.';
-        Alert.alert('Registration Successful', successMsg, [
-          {
-            text: 'Proceed to Dashboard',
-            onPress: () => router.replace(targetRoute),
-          },
-        ]);
+        if (Platform.OS === 'web') {
+          router.replace(targetRoute);
+        } else {
+          Alert.alert('Registration Successful', successMsg, [
+            {
+              text: 'Proceed to Dashboard',
+              onPress: () => router.replace(targetRoute),
+            },
+          ]);
+        }
       }
     } catch (err) {
       console.error('[AUTH] Registration error:', err.response?.data || err.message);
