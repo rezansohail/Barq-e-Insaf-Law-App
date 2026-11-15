@@ -44,7 +44,7 @@ export default function MediaExportReports() {
     }, 1200);
   };
 
-  const safeBg = isDarkMode ? '#080402' : '#FAF8F5';
+  const safeBg = isDarkMode ? '#13131A' : '#FAF8F5';
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: safeBg }]}>

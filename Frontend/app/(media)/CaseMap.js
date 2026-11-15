@@ -29,7 +29,7 @@ export default function MediaCaseMap() {
     return () => { isMounted = false; };
   }, []);
 
-  const safeBg = isDarkMode ? '#080402' : '#FAF8F5';
+  const safeBg = isDarkMode ? '#13131A' : '#FAF8F5';
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: safeBg }]}>
@@ -44,11 +44,11 @@ export default function MediaCaseMap() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 }]} showsVerticalScrollIndicator={false}>
         {/* Intro Card */}
-        <View style={[styles.introCard, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.94)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
+        <View style={[styles.introCard, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
           <Text style={[styles.introTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
             Sindh Judicial Reporting Map
           </Text>
-          <Text style={[styles.introSub, { color: isDarkMode ? 'rgba(255, 235, 215, 0.75)' : '#4A2A15' }]}>
+          <Text style={[styles.introSub, { color: isDarkMode ? '#E5E7EB' : '#4A2A15' }]}>
             Live geographic breakdown of active dispute dockets across Sindh. Pointer colors identify Family vs. Property litigation, shaded by filing recency, protecting citizen privacy with zero personal identifiers.
           </Text>
         </View>
