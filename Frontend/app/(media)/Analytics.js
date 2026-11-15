@@ -42,7 +42,7 @@ export default function MediaAnalytics() {
     { label: 'Labor & Civil Disputes', percentage: 12, color: '#C084FC' },
   ];
 
-  const safeBg = isDarkMode ? '#080402' : '#FAF8F5';
+  const safeBg = isDarkMode ? '#13131A' : '#FAF8F5';
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: safeBg }]}>
@@ -80,16 +80,16 @@ export default function MediaAnalytics() {
         </View>
 
         {/* Category Breakdown Card */}
-        <View style={[styles.card, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.94)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
+        <View style={[styles.card, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
           <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Sindh Case Beat Coverage</Text>
-          <Text style={[styles.cardSub, { color: isDarkMode ? 'rgba(255, 235, 215, 0.7)' : '#664530' }]}>
+          <Text style={[styles.cardSub, { color: isDarkMode ? '#9CA3AF' : '#664530' }]}>
             Verified distribution by legal category
           </Text>
 
           {categoryBreakdown.map((cat) => (
             <View key={cat.label} style={styles.breakdownRow}>
               <View style={styles.breakdownMeta}>
-                <Text style={[styles.catLabel, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>{cat.label}</Text>
+                <Text style={[styles.catLabel, { color: isDarkMode ? '#E5E7EB' : '#1A0C04' }]}>{cat.label}</Text>
                 <Text style={[styles.catPercent, { color: cat.color }]}>
                   {cat.percentage}%
                 </Text>
@@ -107,9 +107,9 @@ export default function MediaAnalytics() {
         </View>
 
         {/* District Metrics Table */}
-        <View style={[styles.card, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.94)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
+        <View style={[styles.card, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
           <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>District Resolution Ratios</Text>
-          <Text style={[styles.cardSub, { color: isDarkMode ? 'rgba(255, 235, 215, 0.7)' : '#664530' }]}>
+          <Text style={[styles.cardSub, { color: isDarkMode ? '#9CA3AF' : '#664530' }]}>
             Court case filings vs counsel resolution
           </Text>
 
@@ -125,8 +125,8 @@ export default function MediaAnalytics() {
               <Text style={[styles.tableDistrict, { flex: 2, color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
                 {dm.district}
               </Text>
-              <Text style={[styles.tableNum, { flex: 1, textAlign: 'center' }]}>{dm.reported}</Text>
-              <Text style={[styles.tableNum, { flex: 1, textAlign: 'center' }]}>{dm.resolved}</Text>
+              <Text style={[styles.tableNum, { flex: 1, textAlign: 'center', color: isDarkMode ? '#D1D5DB' : '#664530' }]}>{dm.reported}</Text>
+              <Text style={[styles.tableNum, { flex: 1, textAlign: 'center', color: isDarkMode ? '#D1D5DB' : '#664530' }]}>{dm.resolved}</Text>
               <Text style={[styles.tableRate, { flex: 1, textAlign: 'right' }]}>{dm.rate}</Text>
             </View>
           ))}

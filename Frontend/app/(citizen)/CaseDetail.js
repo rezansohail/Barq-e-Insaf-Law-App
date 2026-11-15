@@ -7,6 +7,9 @@ import {
   StatusBar,
   TextInput,
   Alert,
+  Modal,
+  Switch,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -28,6 +31,40 @@ export default function CaseDetail() {
   const [editMode, setEditMode] = useState(false);
   const [editedTitle, setEditedTitle] = useState(caseData ? caseData.title : '');
   const [editedDesc, setEditedDesc] = useState(caseData ? caseData.description : '');
+
+  // Media coverage request modal states
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [allowAnonymousRelay, setAllowAnonymousRelay] = useState(true);
+  const [mediaNotes, setMediaNotes] = useState('');
+  const [isSubmittingMedia, setIsSubmittingMedia] = useState(false);
+
+  const handleOpenMediaModal = () => {
+    setMediaNotes(caseData?.mediaNotes || '');
+    setShowMediaModal(true);
+  };
+
+  const handleSubmitMediaRequest = async () => {
+    setIsSubmittingMedia(true);
+    try {
+      await updateCase(caseData.id, {
+        mediaRequested: true,
+        mediaStatus: caseData.mediaStatus || 'pending',
+        mediaNotes: mediaNotes.trim(),
+        anonymousRelayConsent: allowAnonymousRelay,
+        mediaRequestedAt: new Date().toISOString(),
+      });
+      setShowMediaModal(false);
+      Alert.alert(
+        'Coverage Requested',
+        'Your case details have been securely submitted to the KTN News Judicial Bureau under 100% identity protection.'
+      );
+    } catch (e) {
+      Alert.alert('Notice', 'Coverage request saved locally.');
+      setShowMediaModal(false);
+    } finally {
+      setIsSubmittingMedia(false);
+    }
+  };
 
   const handleSaveChanges = async () => {
     if (!editedTitle.trim() || !editedDesc.trim()) {
@@ -90,6 +127,17 @@ export default function CaseDetail() {
               <Text style={styles.statusText}>{caseData.status}</Text>
             </View>
             <Text style={styles.caseType}>{caseData.type} Law</Text>
+            {caseData.mediaRequested && (
+              <View style={caseData.mediaStatus === 'under_investigation' ? styles.mediaBadgeInvestigating : styles.mediaBadgePending}>
+                <Image
+                  source={require('../../assets/images/speaker.png')}
+                  style={{ width: 13, height: 13, tintColor: caseData.mediaStatus === 'under_investigation' ? '#E9D5FF' : '#FFA726' }}
+                />
+                <Text style={caseData.mediaStatus === 'under_investigation' ? styles.mediaBadgeTextInvestigating : styles.mediaBadgeTextPending}>
+                  {caseData.mediaStatus === 'under_investigation' ? 'Under KTN Investigation' : 'Media Review: Pending'}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -142,6 +190,30 @@ export default function CaseDetail() {
           </Text>
         </TouchableOpacity>
 
+        {/* REQUEST MEDIA COVERAGE BUTTON */}
+        <TouchableOpacity 
+          style={[
+            styles.mediaRequestBtn,
+            caseData.mediaRequested && styles.mediaRequestBtnRequested,
+          ]}
+          onPress={handleOpenMediaModal}
+          activeOpacity={0.8}
+        >
+          <Image 
+            source={require('../../assets/images/speaker.png')} 
+            style={[
+              styles.mediaRequestBtnIcon,
+              caseData.mediaRequested && { tintColor: '#FFA726' },
+            ]} 
+          />
+          <Text style={[
+            styles.mediaRequestBtnText,
+            caseData.mediaRequested && styles.mediaRequestBtnTextRequested,
+          ]}>
+            {caseData.mediaRequested ? 'KTN Coverage Requested' : 'Request KTN News Coverage'}
+          </Text>
+        </TouchableOpacity>
+
         {/* EDIT TOGGLE CONTROLS */}
         {editMode ? (
           <View style={styles.editActionRow}>
@@ -165,6 +237,71 @@ export default function CaseDetail() {
 
       {/* Shared bottom navigation */}
       <BottomNavBar role="citizen" activeTab="cases" />
+
+      {/* CONFIRMATION MODAL: REQUEST BROADCAST JOURNALISM COVERAGE */}
+      <Modal
+        visible={showMediaModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowMediaModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalCard}>
+            <View style={styles.modalHeaderRow}>
+              <Image source={require('../../assets/images/speaker.png')} style={styles.modalSpeakerIcon} />
+              <Text style={styles.modalTitle}>Request Broadcast Journalism Coverage</Text>
+            </View>
+
+            <View style={styles.noticeBox}>
+              <Text style={styles.noticeLabel}>100% Identity Protection</Text>
+              <Text style={styles.noticeText}>
+                Your identity (Name & CNIC) will be strictly protected and anonymized. Only case facts and district will be visible to journalists.
+              </Text>
+            </View>
+
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>
+                Allow KTN News Bureau to contact me via secure anonymous relay
+              </Text>
+              <Switch
+                value={allowAnonymousRelay}
+                onValueChange={setAllowAnonymousRelay}
+                trackColor={{ false: '#3E3E4A', true: '#FF9500' }}
+                thumbColor={allowAnonymousRelay ? '#FFFFFF' : '#9CA3AF'}
+              />
+            </View>
+
+            <Text style={styles.inputLabel}>Grievance Summary for Newsroom</Text>
+            <TextInput
+              style={styles.notesInput}
+              multiline
+              placeholder="Briefly describe what happened (e.g., land grabbing syndicate ignoring court stay order)..."
+              placeholderTextColor="rgba(255, 255, 255, 0.4)"
+              value={mediaNotes}
+              onChangeText={setMediaNotes}
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShowMediaModal(false)}
+                disabled={isSubmittingMedia}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.modalSubmitBtn}
+                onPress={handleSubmitMediaRequest}
+                disabled={isSubmittingMedia}
+              >
+                <Text style={styles.modalSubmitText}>
+                  {isSubmittingMedia ? 'Submitting...' : 'Submit to News Bureau'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }

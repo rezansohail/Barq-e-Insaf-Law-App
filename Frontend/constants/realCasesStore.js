@@ -1,4 +1,5 @@
 import api from './api';
+import { activeCases } from '../app/(citizen)/MockStore';
 
 // Precise normalized coordinate offsets for Sindh Districts on map canvas (0 to 100)
 export const SINDH_DISTRICT_COORDS = {
@@ -145,6 +146,16 @@ export async function fetchRealSindhCases() {
       }
     });
 
+    // Merge in-memory activeCases if any
+    if (Array.isArray(activeCases)) {
+      activeCases.forEach((ac) => {
+        if (ac && ac.id) {
+          const existing = uniqueMap.get(String(ac.id)) || {};
+          uniqueMap.set(String(ac.id), { ...existing, ...ac });
+        }
+      });
+    }
+
     const realCasesList = Array.from(uniqueMap.values());
 
     // Map each case to its Sindh geographic pointer and color-age profile
@@ -170,6 +181,9 @@ export async function fetchRealSindhCases() {
         status: c.status || 'Active',
         filingDate: formattedDate,
         createdAt: c.createdAt,
+        mediaRequested: Boolean(c.mediaRequested),
+        mediaStatus: c.mediaStatus || 'pending',
+        mediaNotes: c.mediaNotes || '',
         // STRICT REQUIREMENT: Only brief case description, ZERO personal info (no citizen name/phone/cnic)
         description: c.description || 'Dispute documentation under judicial review.',
         coords,

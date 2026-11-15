@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   Modal,
   Dimensions,
   ScrollView,
+  Image,
 } from 'react-native';
 import Svg, { Path, Circle, Rect, Text as SvgText, G } from 'react-native-svg';
 import { useAppTheme } from '../context/ThemeContext';
@@ -16,6 +17,28 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export default function SindhCasesMap({ cases = [], onCaseSelect }) {
   const { isDarkMode } = useAppTheme();
   const [selectedCase, setSelectedCase] = useState(null);
+
+  const districtSeverityMap = useMemo(() => {
+    const total = cases.length || 1;
+    const counts = {};
+    cases.forEach((c) => {
+      const d = c.district || 'Karachi Central';
+      counts[d] = (counts[d] || 0) + 1;
+    });
+
+    const map = {};
+    Object.entries(counts).forEach(([dist, count]) => {
+      const ratio = count / total;
+      if (ratio >= 0.35 || count >= 3) {
+        map[dist] = { level: 'High Hotspot', color: '#EF4444', label: 'High Hotspot' };
+      } else if (ratio >= 0.15 || count >= 2) {
+        map[dist] = { level: 'Moderate', color: '#F59E0B', label: 'Moderate' };
+      } else {
+        map[dist] = { level: 'Low', color: '#10B981', label: 'Low Frequency' };
+      }
+    });
+    return map;
+  }, [cases]);
 
   const handlePointerPress = (c) => {
     setSelectedCase(c);
@@ -64,6 +87,27 @@ export default function SindhCasesMap({ cases = [], onCaseSelect }) {
                 <View style={[styles.shadeDot, { backgroundColor: '#B45309' }]} />
                 <Text style={styles.shadeLabel}>Older</Text>
               </View>
+            </View>
+          </View>
+        </View>
+
+        {/* Dynamic Sindh Hotspot Ratios */}
+        <View style={styles.hotspotLegendRow}>
+          <Text style={[styles.legendGroupTitle, { color: isDarkMode ? '#FFB74D' : '#C2410C' }]}>
+            HOTSPOT SEVERITY:
+          </Text>
+          <View style={styles.hotspotItems}>
+            <View style={styles.hotspotItem}>
+              <View style={[styles.hotspotDot, { backgroundColor: '#EF4444' }]} />
+              <Text style={styles.hotspotLabel}>High Hotspot</Text>
+            </View>
+            <View style={styles.hotspotItem}>
+              <View style={[styles.hotspotDot, { backgroundColor: '#F59E0B' }]} />
+              <Text style={styles.hotspotLabel}>Moderate</Text>
+            </View>
+            <View style={styles.hotspotItem}>
+              <View style={[styles.hotspotDot, { backgroundColor: '#10B981' }]} />
+              <Text style={styles.hotspotLabel}>Low / Stable</Text>
             </View>
           </View>
         </View>
@@ -149,6 +193,7 @@ export default function SindhCasesMap({ cases = [], onCaseSelect }) {
           const posY = (c.coords.y / 100) * mapHeight;
           const { color, glow, category } = c.colorProfile;
           const isSelected = selectedCase && selectedCase.id === c.id;
+          const districtSeverity = districtSeverityMap[c.district] || { color: '#F59E0B' };
 
           return (
             <TouchableOpacity
@@ -169,15 +214,22 @@ export default function SindhCasesMap({ cases = [], onCaseSelect }) {
                   styles.pulseRing,
                   {
                     backgroundColor: glow,
-                    borderColor: color,
+                    borderColor: districtSeverity.color || color,
                     transform: [{ scale: isSelected ? 1.4 : 1 }],
                   },
                 ]}
               />
               {/* Center Marker Dot */}
-              <View style={[styles.markerDot, { backgroundColor: color }]}>
+              <View style={[styles.markerDot, { backgroundColor: color, borderColor: districtSeverity.color }]}>
                 <View style={styles.innerDotCore} />
               </View>
+
+              {/* Speaker pin indicator if media requested */}
+              {c.mediaRequested && (
+                <View style={styles.pinSpeakerBadge}>
+                  <Image source={require('../assets/images/speaker.png')} style={styles.pinSpeakerIcon} />
+                </View>
+              )}
 
               {/* Date Tag Badge below pointer */}
               <View style={[styles.pointerDateBadge, { backgroundColor: isDarkMode ? 'rgba(10, 5, 2, 0.92)' : '#FFFFFF' }]}>
@@ -249,13 +301,33 @@ export default function SindhCasesMap({ cases = [], onCaseSelect }) {
                   {selectedCase.title}
                 </Text>
 
+                {/* Media Investigation Requested Tag */}
+                {selectedCase.mediaRequested && (
+                  <View style={styles.mediaInvestigationBadge}>
+                    <Image
+                      source={require('../assets/images/speaker.png')}
+                      style={styles.speakerIcon}
+                    />
+                    <Text style={styles.mediaInvestigationText}>Media Investigation Requested</Text>
+                  </View>
+                )}
+
                 <View style={styles.jurisdictionRow}>
                   <Text style={styles.jurisdictionText}>
                     Jurisdiction: {selectedCase.district} · {selectedCase.court}
                   </Text>
-                  <Text style={[styles.ageLabel, { color: selectedCase.colorProfile.color }]}>
-                    {selectedCase.colorProfile.shadeLabel}
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    {districtSeverityMap[selectedCase.district] && (
+                      <View style={[styles.hotspotBadge, { backgroundColor: `${districtSeverityMap[selectedCase.district].color}25`, borderColor: districtSeverityMap[selectedCase.district].color }]}>
+                        <Text style={[styles.hotspotBadgeText, { color: districtSeverityMap[selectedCase.district].color }]}>
+                          {districtSeverityMap[selectedCase.district].level}
+                        </Text>
+                      </View>
+                    )}
+                    <Text style={[styles.ageLabel, { color: selectedCase.colorProfile.color }]}>
+                      {selectedCase.colorProfile.shadeLabel}
+                    </Text>
+                  </View>
                 </View>
 
                 {/* Brief Facts & Description Only (Zero Personal Data) */}
@@ -517,5 +589,90 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: '900',
     letterSpacing: 0.8,
+  },
+  hotspotLegendRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 8,
+    paddingTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+  },
+  hotspotItems: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  hotspotItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+  },
+  hotspotDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+  },
+  hotspotLabel: {
+    fontSize: 9.5,
+    fontWeight: '700',
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  pinSpeakerBadge: {
+    position: 'absolute',
+    top: -6,
+    right: -6,
+    backgroundColor: '#FF9500',
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#FFFFFF',
+    zIndex: 30,
+  },
+  pinSpeakerIcon: {
+    width: 8,
+    height: 8,
+    tintColor: '#000000',
+    resizeMode: 'contain',
+  },
+  mediaInvestigationBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: 'rgba(255, 149, 0, 0.16)',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#FFA726',
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  speakerIcon: {
+    width: 14,
+    height: 14,
+    tintColor: '#FFA726',
+    resizeMode: 'contain',
+  },
+  mediaInvestigationText: {
+    color: '#FFA726',
+    fontSize: 11,
+    fontWeight: '800',
+    letterSpacing: 0.2,
+  },
+  hotspotBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+  },
+  hotspotBadgeText: {
+    fontSize: 9.5,
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
 });
