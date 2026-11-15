@@ -18,10 +18,12 @@ import { getCurrentCitizenId } from '../../constants/authStore';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 export default function Profile() {
   useMockStore();
   const router = useRouter();
+  const { theme, isDarkMode } = useAppTheme();
   const params = useLocalSearchParams();
   const currentCitizenId = params.citizenId || params.id || getCurrentCitizenId();
 
@@ -81,8 +83,8 @@ export default function Profile() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={theme.bg} />
 
       {/* Modern '< My Profile' Header */}
       <AppHeader

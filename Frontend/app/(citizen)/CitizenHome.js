@@ -76,9 +76,9 @@ export default function CitizenHome() {
 
       {/* Modern AppHeader with user greeting & menu */}
       <AppHeader
-        title="Barq-e-Insaf"
         showBack={false}
         role="citizen"
+        userName={userData.name || 'Citizen'}
         avatarText={userData.dp || 'C'}
       />
 
@@ -87,15 +87,12 @@ export default function CitizenHome() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* WELCOME BANNER */}
-        <View style={styles.welcomeBanner}>
+        {/* DISTRICT & PORTAL STATUS BANNER (No Salam) */}
+        <View style={[styles.welcomeBanner, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
           <View style={{ flex: 1 }}>
             <Text style={styles.greetingSub}>CITIZEN PORTAL</Text>
-            <Text style={styles.greetingName}>
-              Asalam-u-Alaikum{userData.name ? `, ${userData.name}` : ''}
-            </Text>
-            <Text style={styles.districtBadgeText}>
-              District: {userData.district || 'Sindh Province'} · Case Filing Active
+            <Text style={[styles.districtBadgeText, !isDarkMode && { color: theme.textSecondary }]}>
+              District: {userData.district || 'Sindh Province'} · Active Legal Representation & Dossier Vault
             </Text>
           </View>
         </View>
@@ -174,8 +171,7 @@ export default function CitizenHome() {
                 <Text style={styles.lawyerSpec} numberOfLines={1}>{l.spec || 'Legal Counsel'}</Text>
 
                 <View style={styles.lawyerCardFooter}>
-                  <Text style={styles.ratingText}>⭐ {l.rating || '5.0'}</Text>
-                  <Text style={styles.consultFee}>{l.fee || 'Pro Bono'}</Text>
+                  <Text style={styles.consultAction}>Request Legal Consultation →</Text>
                 </View>
               </TouchableOpacity>
             ))
@@ -247,7 +243,7 @@ export default function CitizenHome() {
           <TouchableOpacity
             style={styles.partnerCard}
             activeOpacity={0.84}
-            onPress={() => router.push('/NCHDInfo')}
+            onPress={() => router.push({ pathname: '/NCHDInfo', params: { from: 'citizen' } })}
           >
             <View style={styles.partnerTop}>
               <View style={styles.partnerAvatar}>
@@ -283,7 +279,7 @@ export default function CitizenHome() {
           <TouchableOpacity
             style={styles.partnerCard}
             activeOpacity={0.84}
-            onPress={() => router.push('/KTNNewsInfo')}
+            onPress={() => router.push({ pathname: '/KTNNewsInfo', params: { from: 'citizen' } })}
           >
             <View style={styles.partnerTop}>
               <View style={styles.partnerAvatar}>

@@ -126,16 +126,16 @@ export default StyleSheet.create({
   },
   lawyerCard: {
     width: width * 0.58,
-    backgroundColor: 'rgba(20, 10, 4, 0.92)',
+    backgroundColor: 'rgba(38, 20, 10, 0.94)',
     borderRadius: 16,
     padding: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.06)', // Clean subtle separation
+    borderColor: 'rgba(255, 170, 60, 0.22)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 3 },
     shadowOpacity: 0.3,
     shadowRadius: 6,
-    elevation: 2,
+    elevation: 3,
   },
   lawyerCardTop: {
     flexDirection: 'row',
@@ -153,7 +153,7 @@ export default StyleSheet.create({
     alignItems: 'center',
   },
   lawyerAvatarText: {
-    color: '#FFF5E8',
+    color: '#FFFFFF',
     fontSize: 13,
     fontWeight: '900',
   },
@@ -171,9 +171,9 @@ export default StyleSheet.create({
     fontWeight: '800',
   },
   lawyerName: {
-    fontSize: 13.5,
+    fontSize: 14.5,
     fontWeight: '800',
-    color: '#FFF5E8',
+    color: '#FFFFFF',
     marginBottom: 2,
   },
   lawyerSpec: {
@@ -184,21 +184,16 @@ export default StyleSheet.create({
   },
   lawyerCardFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'flex-start',
     alignItems: 'center',
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.08)',
     paddingTop: 8,
   },
-  ratingText: {
+  consultAction: {
     fontSize: 11,
     fontWeight: '800',
-    color: '#FFB74D',
-  },
-  consultFee: {
-    fontSize: 10.5,
-    fontWeight: '700',
-    color: 'rgba(255, 220, 180, 0.75)',
+    color: '#FF9500',
   },
   emptyCard: {
     backgroundColor: 'rgba(20, 10, 4, 0.85)',

@@ -12,13 +12,28 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
 import AppHeader from '../components/AppHeader';
+import { useAppTheme } from '../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
 export default function NCHDInfo() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  const { isDark } = useAppTheme();
+
+  const handleBack = () => {
+    if (params.from === 'lawyer') {
+      router.replace('/(lawyer)/LawyerHome');
+    } else if (params.from === 'citizen') {
+      router.replace('/(citizen)/CitizenHome');
+    } else if (router.canGoBack()) {
+      router.back();
+    } else {
+      router.replace('/(citizen)/CitizenHome');
+    }
+  };
 
   const handleEmailPress = async (email) => {
     const url = `mailto:${email}?subject=Legal%20Assistance%20Inquiry%20-%20Barq-e-Insaf`;
@@ -42,24 +57,73 @@ export default function NCHDInfo() {
     }
   };
 
+  const dynamicStyles = {
+    safe: {
+      flex: 1,
+      backgroundColor: isDark ? '#060201' : '#FAF7F2',
+    },
+    scroll: {
+      flex: 1,
+      backgroundColor: isDark ? '#060201' : '#FAF7F2',
+    },
+    heroCard: {
+      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
+      borderColor: isDark ? 'rgba(255, 149, 0, 0.35)' : 'rgba(255, 149, 0, 0.20)',
+    },
+    orgTitle: {
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+    },
+    heroDesc: {
+      color: isDark ? 'rgba(255, 235, 215, 0.85)' : '#332211',
+    },
+    reachOutCard: {
+      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
+      borderColor: isDark ? '#FF9500' : 'rgba(255, 149, 0, 0.4)',
+    },
+    reachOutTitle: {
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+    },
+    reachOutSub: {
+      color: isDark ? 'rgba(255, 235, 215, 0.75)' : '#554433',
+    },
+    emailContainer: {
+      backgroundColor: isDark ? 'rgba(24, 12, 5, 0.95)' : '#F5EBE1',
+      borderColor: isDark ? 'rgba(255, 160, 40, 0.25)' : 'rgba(255, 149, 0, 0.2)',
+    },
+    infoCard: {
+      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
+      borderColor: isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.18)',
+    },
+    infoParagraph: {
+      color: isDark ? 'rgba(255, 235, 215, 0.85)' : '#332211',
+    },
+    bulletItem: {
+      color: isDark ? 'rgba(255, 230, 205, 0.78)' : '#443322',
+    },
+    boldText: {
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+    },
+  };
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+    <SafeAreaView style={dynamicStyles.safe}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
 
       {/* Top Header matching app standard */}
       <AppHeader
         title="NCHD Overview"
         showBack={true}
-        onBackPress={() => router.back()}
+        onBack={handleBack}
+        homeRoute={params.from === 'lawyer' ? '/(lawyer)/LawyerHome' : '/(citizen)/CitizenHome'}
       />
 
       <ScrollView
-        style={styles.scroll}
+        style={dynamicStyles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
         {/* HERO CARD */}
-        <View style={styles.heroCard}>
+        <View style={[styles.heroCard, dynamicStyles.heroCard]}>
           <View style={styles.heroTop}>
             <View style={styles.logoSlot}>
               <Image
@@ -72,7 +136,7 @@ export default function NCHDInfo() {
               <View style={styles.badgePill}>
                 <Text style={styles.badgePillText}>INSTITUTIONAL LEGAL AID & DEVELOPMENT</Text>
               </View>
-              <Text style={styles.orgTitle}>
+              <Text style={[styles.orgTitle, dynamicStyles.orgTitle]}>
                 National Commission for Human Development (NCHD)
               </Text>
               <Text style={styles.orgSubtitle}>

@@ -14,12 +14,14 @@ import { useMockStore, activeCases, fetchCitizenCases, userData } from './MockSt
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const filters = ['All', 'Active', 'Pending', 'Closed'];
 
 export default function MyCases() {
   useMockStore();
   const router = useRouter();
+  const { theme, isDarkMode } = useAppTheme();
   const [activeFilter, setActiveFilter] = useState('All');
 
   // Back returns to CitizenHome
@@ -43,8 +45,8 @@ export default function MyCases() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={theme.bg} />
 
       {/* Top Header matching app standard with '<' Chevron */}
       <AppHeader

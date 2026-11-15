@@ -16,12 +16,14 @@ import { useMockStore, lawyers, fetchLawyersList } from './MockStore';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const specialties = ['All', 'Property', 'Family', 'Civil', 'Criminal'];
 
 export default function FindLawyer() {
   useMockStore();
   const router = useRouter();
+  const { theme, isDarkMode } = useAppTheme();
   const [activeFilter, setActiveFilter] = useState('All');
   const [search, setSearch] = useState('');
   const [selectedLawyer, setSelectedLawyer] = useState(null);
@@ -51,8 +53,8 @@ export default function FindLawyer() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={theme.bg} />
 
       {/* Top Header matching app standard */}
       <AppHeader
@@ -119,14 +121,13 @@ export default function FindLawyer() {
               <View style={styles.lawyerInfo}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
                   <Text style={styles.lawyerName}>{l.name}</Text>
-                  <Text style={styles.ratingText}>⭐ {l.rating || '5.0'}</Text>
                 </View>
 
                 <Text style={styles.lawyerSpec}>{l.spec} · {l.experience || 'Sindh Bar'}</Text>
 
                 <View style={styles.lawyerMeta}>
                   <Text style={styles.sbcBadge}>{l.sbc ? `SBC ${l.sbc}` : 'SBC VERIFIED'}</Text>
-                  <Text style={styles.feeText}>{l.fee || 'Pro Bono / Subsidized'}</Text>
+                  <Text style={styles.courtBadge}>{l.court || 'Sindh High Court'}</Text>
                 </View>
 
                 <View style={styles.actionButtonsRow}>
@@ -187,7 +188,7 @@ export default function FindLawyer() {
                     <Text style={styles.sectionHeading}>Credentials & SBC Status</Text>
                     <Text style={styles.modalDetailText}>Sindh Bar Council: {selectedLawyer.sbc || 'Verified'}</Text>
                     <Text style={styles.modalDetailText}>Experience: {selectedLawyer.experience || '8+ Years'}</Text>
-                    <Text style={styles.modalDetailText}>Fee Structure: {selectedLawyer.fee || 'Pro Bono'}</Text>
+                    <Text style={styles.modalDetailText}>Chamber: {selectedLawyer.chamber || 'High Court of Sindh'}</Text>
                   </View>
 
                   <TouchableOpacity

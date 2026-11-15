@@ -26,6 +26,7 @@ import { getCurrentLawyerId } from '../../constants/authStore';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const daysOfWeek = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
 
@@ -186,9 +187,11 @@ export default function Schedule() {
     if (lbl === 'profile') router.push('/(lawyer)/LawyerProfile');
   };
 
+  const { theme, isDarkMode } = useAppTheme();
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={theme.bg} />
       
       {/* Top Header */}
       <AppHeader
@@ -198,27 +201,29 @@ export default function Schedule() {
         role="lawyer"
         rightElement={
           <TouchableOpacity style={styles.addBtn} onPress={handleOpenAddModal} activeOpacity={0.8}>
-            <Text style={styles.addBtnText}>+ Add</Text>
+            <Text style={styles.addBtnText}>+ Add Slot</Text>
           </TouchableOpacity>
         }
       />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
-        <Text style={styles.sectionTitle}>Office Hours</Text>
-        <Text style={styles.sectionSub}>Set your available consultation hours for citizens</Text>
+        <Text style={styles.sectionTitle}>Chamber Consultation Hours</Text>
+        <Text style={[styles.sectionSub, !isDarkMode && { color: theme.textSecondary }]}>
+          Set your available consultation hours for verified citizen appointments
+        </Text>
 
         {isLoading ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color="#0F2744" />
-            <Text style={styles.loadingText}>Loading schedule...</Text>
+            <ActivityIndicator size="large" color="#FF9500" />
+            <Text style={[styles.loadingText, !isDarkMode && { color: theme.textSecondary }]}>Loading schedule...</Text>
           </View>
         ) : timingSlots.length > 0 ? (
           timingSlots.map((slot, i) => (
-            <View key={slot.id || i} style={styles.card}>
+            <View key={slot.id || i} style={[styles.card, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
               <View style={styles.cardTop}>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.dayText}>{slot.day}</Text>
-                  <Text style={styles.timeText}>⏰ {slot.time}</Text>
+                  <Text style={[styles.dayText, !isDarkMode && { color: theme.textPrimary }]}>{slot.day}</Text>
+                  <Text style={[styles.timeText, !isDarkMode && { color: theme.textSecondary }]}>{slot.time}</Text>
                 </View>
                 <View style={styles.actionRow}>
                   <TouchableOpacity 
@@ -240,9 +245,9 @@ export default function Schedule() {
             </View>
           ))
         ) : (
-          <View style={styles.emptyCard}>
-            <Text style={styles.emptyText}>No time slots added yet</Text>
-            <Text style={styles.emptySub}>Tap + Add to set your available hours</Text>
+          <View style={[styles.emptyCard, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.emptyText, !isDarkMode && { color: theme.textPrimary }]}>No consultation slots added yet</Text>
+            <Text style={[styles.emptySub, !isDarkMode && { color: theme.textSecondary }]}>Tap + Add Slot to set your available hours</Text>
           </View>
         )}
       </ScrollView>
@@ -394,87 +399,82 @@ export default function Schedule() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#060201' },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingTop: 14,
-    paddingBottom: 16,
-    backgroundColor: '#0F2744',
-  },
-  backBtn: {
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  backText: { color: '#fff', fontSize: 16 },
-  brandRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, marginLeft: 8 },
-  logoBadge: {
-    backgroundColor: '#fff', width: 32, height: 32, borderRadius: 8,
-    justifyContent: 'center', alignItems: 'center',
-  },
-  logoBadgeText: { color: '#0F2744', fontSize: 14, fontWeight: '800' },
-  headerTitle: { color: '#fff', fontSize: 16, fontWeight: '800' },
+  safe: { flex: 1, backgroundColor: '#080402' },
   addBtn: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
+    backgroundColor: 'rgba(255, 149, 0, 0.18)',
+    borderWidth: 1.2,
+    borderColor: '#FF9500',
+    paddingHorizontal: 14,
+    paddingVertical: 7,
+    borderRadius: 20,
   },
   addBtnText: {
-    color: '#0F2744',
+    color: '#FFB74D',
     fontSize: 12,
-    fontWeight: '700',
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
-  scroll: { flex: 1, backgroundColor: '#F5F3EF' },
-  content: { padding: 20, paddingBottom: 100, gap: 14 },
-  sectionTitle: { fontSize: 15, fontWeight: '800', color: '#0F2744' },
-  sectionSub: { fontSize: 12, color: '#888', marginBottom: 4 },
+  scroll: { flex: 1 },
+  content: { padding: 18, paddingBottom: 110, gap: 14 },
+  sectionTitle: { fontSize: 16, fontWeight: '800', color: '#FF9500', letterSpacing: -0.2 },
+  sectionSub: { fontSize: 12, color: 'rgba(255, 230, 205, 0.75)', marginBottom: 4, lineHeight: 17 },
   loadingWrap: { padding: 40, alignItems: 'center', gap: 10 },
-  loadingText: { fontSize: 13, color: '#666' },
-  card: { backgroundColor: '#fff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#ece9e4', elevation: 2 },
+  loadingText: { fontSize: 13, color: 'rgba(255, 220, 180, 0.7)' },
+  card: {
+    backgroundColor: 'rgba(38, 20, 10, 0.94)',
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 170, 60, 0.25)',
+    elevation: 3,
+  },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  dayText: { fontSize: 15, fontWeight: '700', color: '#1a1a1a' },
-  timeText: { fontSize: 13, color: '#666', marginTop: 4 },
+  dayText: { fontSize: 15.5, fontWeight: '800', color: '#FFFFFF' },
+  timeText: { fontSize: 13, color: '#FFEED6', marginTop: 4, fontWeight: '600' },
   actionRow: { flexDirection: 'row', gap: 8 },
   editBtn: {
-    backgroundColor: '#e0ebf5',
+    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    borderWidth: 1,
+    borderColor: '#FF9500',
     paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: 6,
+    borderRadius: 8,
   },
-  editBtnText: { color: '#0F2744', fontSize: 11, fontWeight: '700' },
+  editBtnText: { color: '#FFB74D', fontSize: 11, fontWeight: '800' },
   deleteBtn: {
-    backgroundColor: '#fee2e2',
+    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+    borderWidth: 1,
+    borderColor: '#EF4444',
     paddingHorizontal: 12,
     paddingVertical: 5,
-    borderRadius: 6,
+    borderRadius: 8,
   },
-  deleteBtnText: { color: '#991b1b', fontSize: 11, fontWeight: '700' },
+  deleteBtnText: { color: '#F87171', fontSize: 11, fontWeight: '800' },
   emptyCard: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(38, 20, 10, 0.85)',
     borderRadius: 16,
     padding: 30,
     borderWidth: 1,
-    borderColor: '#ece9e4',
+    borderColor: 'rgba(255, 170, 60, 0.22)',
     alignItems: 'center',
   },
-  emptyText: { fontSize: 16, color: '#666', fontWeight: '600' },
-  emptySub: { fontSize: 13, color: '#999', marginTop: 4 },
+  emptyText: { fontSize: 15, color: '#FFFFFF', fontWeight: '800' },
+  emptySub: { fontSize: 12, color: 'rgba(255, 230, 205, 0.7)', marginTop: 4 },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.6)',
+    backgroundColor: 'rgba(0,0,0,0.75)',
     justifyContent: 'center',
     alignItems: 'center',
     padding: 20,
   },
   modalContent: {
-    backgroundColor: '#fff',
+    backgroundColor: '#170905',
     borderRadius: 20,
     padding: 24,
     width: '100%',
     maxWidth: 420,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 170, 60, 0.35)',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -482,27 +482,31 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginBottom: 16,
   },
-  modalTitle: { fontSize: 20, fontWeight: '700', color: '#1a1a1a' },
-  modalClose: { fontSize: 28, color: '#666', fontWeight: '300' },
-  modalLabel: { fontSize: 12, fontWeight: '700', color: '#666', textTransform: 'uppercase', marginBottom: 6, marginTop: 12 },
+  modalTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
+  modalClose: { fontSize: 24, color: '#FF9500', fontWeight: '600' },
+  modalLabel: { fontSize: 11, fontWeight: '800', color: '#FF9500', textTransform: 'uppercase', marginBottom: 6, marginTop: 12, letterSpacing: 0.8 },
   dayChipsRow: { flexDirection: 'row', marginBottom: 4 },
   dayChip: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#f1f1f1',
+    backgroundColor: 'rgba(255, 149, 0, 0.12)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 170, 60, 0.25)',
     marginRight: 6,
   },
   dayChipActive: {
-    backgroundColor: '#0F2744',
+    backgroundColor: '#FF9500',
+    borderColor: '#FF9500',
   },
   dayChipText: {
     fontSize: 12,
-    fontWeight: '600',
-    color: '#555',
+    fontWeight: '700',
+    color: 'rgba(255, 230, 205, 0.85)',
   },
   dayChipTextActive: {
-    color: '#fff',
+    color: '#080402',
+    fontWeight: '900',
   },
   presetChipsWrap: {
     flexDirection: 'row',
@@ -514,54 +518,43 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 8,
-    backgroundColor: '#f1f5f9',
+    backgroundColor: 'rgba(255, 149, 0, 0.12)',
     borderWidth: 1,
-    borderColor: '#e2e8f0',
+    borderColor: 'rgba(255, 170, 60, 0.25)',
   },
   presetChipActive: {
-    backgroundColor: '#0F2744',
-    borderColor: '#0F2744',
+    backgroundColor: '#FF9500',
+    borderColor: '#FF9500',
   },
   presetChipText: {
     fontSize: 11,
-    color: '#334155',
-    fontWeight: '500',
+    color: 'rgba(255, 230, 205, 0.85)',
+    fontWeight: '600',
   },
   presetChipTextActive: {
-    color: '#fff',
-    fontWeight: '700',
+    color: '#080402',
+    fontWeight: '900',
   },
   modalInput: {
-    backgroundColor: '#fff',
+    backgroundColor: 'rgba(10, 4, 1, 0.95)',
     borderRadius: 12,
     padding: 12,
     fontSize: 14,
-    color: '#1a1a1a',
+    color: '#FFFFFF',
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: 'rgba(255, 170, 60, 0.3)',
   },
   saveBtn: {
-    backgroundColor: '#0F2744',
-    borderRadius: 12,
+    backgroundColor: '#FF7A00',
+    borderRadius: 14,
     paddingVertical: 14,
     alignItems: 'center',
     marginTop: 18,
+    shadowColor: '#FF7A00',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.35,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  saveBtnText: { color: '#fff', fontSize: 14, fontWeight: '700' },
-  bottomNav: {
-    position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: '#fff',
-    borderTopWidth: 1,
-    borderTopColor: '#ece9e4',
-    flexDirection: 'row',
-    height: 80,
-    paddingBottom: 24,
-    paddingTop: 10,
-  },
-  navItem: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  navLabel: { fontSize: 11, fontWeight: '600', color: '#bbb' },
-  navLabelActive: { color: '#0F2744' },
+  saveBtnText: { color: '#FFFFFF', fontSize: 14, fontWeight: '800', letterSpacing: 0.5 },
 });

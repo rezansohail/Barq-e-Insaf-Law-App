@@ -19,6 +19,7 @@ import { getCurrentLawyerId } from '../../constants/authStore';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const QUICK_REASONS = [
   'Schedule is currently full for new consultations.',
@@ -30,6 +31,7 @@ const QUICK_REASONS = [
 export default function CaseRequests() {
   useMockStore();
   const router = useRouter();
+  const { isDark, theme } = useAppTheme();
   const params = useLocalSearchParams();
   const currentLawyerId = params.lawyerId || params.id || getCurrentLawyerId();
 
@@ -104,19 +106,38 @@ export default function CaseRequests() {
     });
   };
 
-  const handleNav = (lbl) => {
-    if (lbl === 'home') router.push('/(lawyer)/LawyerHome');
-    if (lbl === 'requests') router.push('/(lawyer)/CaseRequests');
-    if (lbl === 'cases') router.push('/(lawyer)/MyCases');
-    if (lbl === 'schedule') router.push('/(lawyer)/Schedule');
-    if (lbl === 'profile') router.push('/(lawyer)/LawyerProfile');
-  };
-
   const pendingRequests = caseRequests.filter((r) => r.status === 'pending');
 
+  const dynamicStyles = {
+    safe: {
+      flex: 1,
+      backgroundColor: isDark ? '#060201' : '#FAF7F2',
+    },
+    reqCard: {
+      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
+      borderColor: isDark ? 'rgba(255, 149, 0, 0.32)' : 'rgba(255, 149, 0, 0.20)',
+    },
+    reqName: {
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+    },
+    reqMeta: {
+      color: isDark ? 'rgba(255, 235, 215, 0.7)' : '#665544',
+    },
+    problemBox: {
+      backgroundColor: isDark ? 'rgba(28, 14, 6, 0.85)' : '#F5EBE1',
+      borderColor: isDark ? 'rgba(255, 149, 0, 0.20)' : 'rgba(255, 149, 0, 0.15)',
+    },
+    reqDesc: {
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+    },
+    emptyText: {
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+    },
+  };
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+    <SafeAreaView style={dynamicStyles.safe}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? "#060201" : "#FAF7F2"} />
       
       {/* Top Header matching app standard */}
       <AppHeader
@@ -129,17 +150,17 @@ export default function CaseRequests() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {pendingRequests.length > 0 ? (
           pendingRequests.map((r) => (
-            <View key={r.id} style={styles.reqCard}>
+            <View key={r.id} style={[styles.reqCard, dynamicStyles.reqCard]}>
               <TouchableOpacity onPress={() => handleViewCase(r.id)}>
                 <View style={styles.reqTop}>
-                  <Text style={styles.reqName}>{r.name} - {r.spec}</Text>
+                  <Text style={[styles.reqName, dynamicStyles.reqName]}>{r.name} - {r.spec}</Text>
                   <Text style={styles.badgeNew}>Pending</Text>
                 </View>
-                <Text style={styles.reqMeta}>Location: {r.location} · {r.time}</Text>
+                <Text style={[styles.reqMeta, dynamicStyles.reqMeta]}>Location: {r.location} · {r.time}</Text>
                 
-                <View style={styles.problemBox}>
+                <View style={[styles.problemBox, dynamicStyles.problemBox]}>
                   <Text style={styles.problemLabel}>Problem Statement:</Text>
-                  <Text style={styles.reqDesc}>{r.problemStatement || r.desc}</Text>
+                  <Text style={[styles.reqDesc, dynamicStyles.reqDesc]}>{r.problemStatement || r.desc}</Text>
                 </View>
                 
                 {/* Note detailing that contact and evidence are hidden until acceptance */}
@@ -169,9 +190,9 @@ export default function CaseRequests() {
             </View>
           ))
         ) : (
-          <View style={[styles.reqCard, { paddingVertical: 30, alignItems: 'center' }]}>
-            <Text style={styles.emptyText}>No pending consultation requests.</Text>
-            <Text style={{ fontSize: 12, color: '#888', marginTop: 6, textAlign: 'center' }}>
+          <View style={[styles.reqCard, dynamicStyles.reqCard, { paddingVertical: 30, alignItems: 'center' }]}>
+            <Text style={[styles.emptyText, dynamicStyles.emptyText]}>No pending consultation requests.</Text>
+            <Text style={{ fontSize: 12, color: isDark ? 'rgba(255, 235, 215, 0.6)' : '#665544', marginTop: 6, textAlign: 'center' }}>
               When citizens request a consultation with your profile, they will appear here in real time.
             </Text>
           </View>

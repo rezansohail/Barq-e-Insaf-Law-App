@@ -58,13 +58,13 @@ export default StyleSheet.create({
     fontWeight: '800',
   },
   lawyerCard: {
-    backgroundColor: 'rgba(22, 10, 4, 0.78)',
+    backgroundColor: 'rgba(38, 20, 10, 0.94)',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     flexDirection: 'row',
     borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.22)',
+    borderColor: 'rgba(255, 170, 60, 0.28)',
     gap: 12,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -90,9 +90,9 @@ export default StyleSheet.create({
     flex: 1,
   },
   lawyerName: {
-    fontSize: 15,
+    fontSize: 16,
     fontWeight: '800',
-    color: '#FFF5E8',
+    color: '#FFFFFF',
     letterSpacing: -0.2,
   },
   lawyerSpec: {
@@ -119,10 +119,10 @@ export default StyleSheet.create({
     paddingHorizontal: 8,
     paddingVertical: 3,
   },
-  ratingText: {
-    fontSize: 12,
-    color: '#FFE082',
-    fontWeight: '700',
+  courtBadge: {
+    fontSize: 10.5,
+    color: '#FFF2DF',
+    fontWeight: '600',
   },
   actionButtonsRow: {
     flexDirection: 'row',

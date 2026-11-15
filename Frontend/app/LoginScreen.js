@@ -13,6 +13,7 @@ import {
   useWindowDimensions,
   Alert,
   Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -146,7 +147,7 @@ const PasswordInput = ({ label, value, onChangeText, color }) => {
         <TextInput
           style={[styles.input, { flex: 1, borderBottomWidth: 0 }]}
           placeholder="Enter password"
-          placeholderTextColor="rgba(255, 220, 180, 0.35)"
+          placeholderTextColor="rgba(255, 238, 220, 0.65)"
           value={value}
           onChangeText={onChangeText}
           secureTextEntry={!show}
@@ -177,7 +178,7 @@ const DistrictPicker = ({ value, onSelect, color }) => {
         <Text
           style={[
             styles.dropdownValue,
-            !value && { color: 'rgba(255, 220, 180, 0.35)' },
+            !value && { color: 'rgba(255, 238, 220, 0.65)' },
           ]}
         >
           {value || 'Select Sindh District'}
@@ -244,6 +245,33 @@ export default function LoginScreen() {
   const [loading,     setLoading]     = useState(false);
   const [errors,      setErrors]      = useState({});
   const [rememberMe,  setRememberMe]  = useState(true);
+
+  // Forgot password modal state
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [forgotSubmitted, setForgotSubmitted] = useState(false);
+  const [forgotError, setForgotError] = useState('');
+
+  const handleSendResetLink = () => {
+    if (!forgotEmail.trim()) {
+      setForgotError('Please enter your email address.');
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(forgotEmail.trim())) {
+      setForgotError('Please enter a valid email address.');
+      return;
+    }
+    setForgotError('');
+    setForgotSubmitted(true);
+  };
+
+  const closeForgotModal = () => {
+    setShowForgotModal(false);
+    setForgotEmail('');
+    setForgotSubmitted(false);
+    setForgotError('');
+  };
 
   const strength = getPasswordStrength(password);
   const clearErrors = () => setErrors({});
@@ -326,12 +354,9 @@ export default function LoginScreen() {
         'Unable to connect to server. Please check your credentials.';
 
       Alert.alert(
-        'Login Status',
-        `${serverMessage}\n\nProceed to portal in offline demo mode?`,
-        [
-          { text: 'Retry', style: 'cancel' },
-          { text: 'Proceed', onPress: () => router.replace(targetRoute) }
-        ]
+        'Login Failed',
+        serverMessage,
+        [{ text: 'OK' }]
       );
       setErrors((prev) => ({ ...prev, general: serverMessage }));
     } finally {
@@ -462,12 +487,9 @@ export default function LoginScreen() {
       }
 
       Alert.alert(
-        'Registration Status',
-        `${serverMessage}\n\nProceed to portal in offline demo mode?`,
-        [
-          { text: 'Retry', style: 'cancel' },
-          { text: 'Proceed', onPress: () => router.replace(targetRoute) },
-        ]
+        'Registration Failed',
+        serverMessage,
+        [{ text: 'OK' }]
       );
       setErrors((prev) => ({ ...prev, general: serverMessage }));
     } finally {
@@ -665,7 +687,7 @@ export default function LoginScreen() {
                       <TextInput
                         style={styles.input}
                         placeholder="e.g. Ali Khan"
-                        placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                        placeholderTextColor="rgba(255, 238, 220, 0.65)"
                         value={name}
                         onChangeText={(v) => {
                           if (/^[a-zA-Z\s]*$/.test(v)) setName(v);
@@ -678,7 +700,7 @@ export default function LoginScreen() {
                       <TextInput
                         style={styles.input}
                         placeholder="03001234567"
-                        placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                        placeholderTextColor="rgba(255, 238, 220, 0.65)"
                         value={phone}
                         onChangeText={(v) => {
                           if (/^\d*$/.test(v) && v.length <= 11) setPhone(v);
@@ -695,7 +717,7 @@ export default function LoginScreen() {
                           <TextInput
                             style={styles.input}
                             placeholder="42101-1234567-1"
-                            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                            placeholderTextColor="rgba(255, 238, 220, 0.65)"
                             value={cnic}
                             onChangeText={(v) => {
                               const formatted = formatCNIC(v);
@@ -724,7 +746,7 @@ export default function LoginScreen() {
                           <TextInput
                             style={styles.input}
                             placeholder="SBC-4421"
-                            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                            placeholderTextColor="rgba(255, 238, 220, 0.65)"
                             value={sbcNumber}
                             onChangeText={setSbcNumber}
                           />
@@ -736,7 +758,7 @@ export default function LoginScreen() {
                           <TextInput
                             style={styles.input}
                             placeholder="Criminal / Property / Family"
-                            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                            placeholderTextColor="rgba(255, 238, 220, 0.65)"
                             value={specialty}
                             onChangeText={setSpecialty}
                           />
@@ -753,7 +775,7 @@ export default function LoginScreen() {
                   <TextInput
                     style={styles.input}
                     placeholder="user@barqeinsaf.pk"
-                    placeholderTextColor="rgba(255, 220, 180, 0.35)"
+                    placeholderTextColor="rgba(255, 238, 220, 0.65)"
                     value={email}
                     onChangeText={setEmail}
                     keyboardType="email-address"
@@ -867,7 +889,13 @@ export default function LoginScreen() {
                         <Text style={styles.rememberLabel}>Remember Me</Text>
                       </TouchableOpacity>
 
-                      <TouchableOpacity activeOpacity={0.8}>
+                      <TouchableOpacity 
+                        activeOpacity={0.8}
+                        onPress={() => {
+                          setForgotEmail(email.trim());
+                          setShowForgotModal(true);
+                        }}
+                      >
                         <Text style={[styles.forgotText, { color: config.color }]}>
                           Forgot password?
                         </Text>
@@ -928,6 +956,87 @@ export default function LoginScreen() {
             </BlurView>
           </View>
         </SafeAreaView>
+
+        {/* ── FORGOT PASSWORD MODAL ── */}
+        <Modal
+          visible={showForgotModal}
+          transparent={true}
+          animationType="fade"
+          onRequestClose={closeForgotModal}
+        >
+          <View style={styles.forgotModalOverlay}>
+            <View style={styles.forgotModalCard}>
+              <View style={styles.forgotModalHeader}>
+                <Text style={styles.forgotModalTitle}>Reset Password</Text>
+                <TouchableOpacity onPress={closeForgotModal} style={styles.forgotCloseBtn}>
+                  <Text style={styles.forgotCloseText}>✕</Text>
+                </TouchableOpacity>
+              </View>
+
+              {!forgotSubmitted ? (
+                <>
+                  <Text style={styles.forgotModalSubtitle}>
+                    Enter your registered email address to receive password recovery instructions:
+                  </Text>
+                  
+                  <Text style={[styles.inputLabel, { marginTop: 16 }]}>REGISTERED EMAIL ADDRESS</Text>
+                  <TextInput
+                    style={[styles.input, { color: '#FFFFFF', borderBottomColor: '#FF9500' }]}
+                    placeholder="user@barqeinsaf.pk"
+                    placeholderTextColor="rgba(255, 238, 220, 0.65)"
+                    value={forgotEmail}
+                    onChangeText={(t) => {
+                      setForgotEmail(t);
+                      if (forgotError) setForgotError('');
+                    }}
+                    keyboardType="email-address"
+                    autoCapitalize="none"
+                    autoFocus
+                  />
+                  {forgotError ? (
+                    <Text style={[styles.errorText, { marginTop: 6 }]}>{forgotError}</Text>
+                  ) : null}
+
+                  <View style={styles.forgotBtnRow}>
+                    <TouchableOpacity 
+                      style={styles.forgotCancelBtn}
+                      onPress={closeForgotModal}
+                    >
+                      <Text style={styles.forgotCancelText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity 
+                      style={[styles.forgotSubmitBtn, { backgroundColor: config.color || '#FF9500' }]}
+                      onPress={handleSendResetLink}
+                    >
+                      <Text style={styles.forgotSubmitText}>Send Reset Link</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : (
+                <View style={{ alignItems: 'center', paddingVertical: 14 }}>
+                  <View style={styles.forgotSuccessOrb}>
+                    <Text style={{ fontSize: 24, color: '#4ade80' }}>✓</Text>
+                  </View>
+                  <Text style={styles.forgotSuccessTitle}>Reset Link Sent</Text>
+                  <Text style={styles.forgotSuccessSubtitle}>
+                    Password recovery instructions have been sent to:
+                  </Text>
+                  <Text style={styles.forgotSuccessEmail}>{forgotEmail.trim()}</Text>
+                  <Text style={styles.forgotSuccessNote}>
+                    Please check your inbox (and spam folder) to reset your account password.
+                  </Text>
+
+                  <TouchableOpacity 
+                    style={[styles.forgotSubmitBtn, { backgroundColor: config.color || '#FF9500', width: '100%', marginTop: 20 }]}
+                    onPress={closeForgotModal}
+                  >
+                    <Text style={styles.forgotSubmitText}>Done</Text>
+                  </TouchableOpacity>
+                </View>
+              )}
+            </View>
+          </View>
+        </Modal>
       </View>
     </KeyboardAvoidingView>
   );
@@ -1150,20 +1259,20 @@ const styles = StyleSheet.create({
 
   // ── INPUTS ──
   inputLabel: {
-    fontSize: 10.5,
+    fontSize: 11,
     fontWeight: '800',
-    color: 'rgba(255, 210, 150, 0.75)',
+    color: '#FFF2DF',
     letterSpacing: 1.2,
     textTransform: 'uppercase',
-    marginBottom: 4,
-    marginTop: 14,
+    marginBottom: 5,
+    marginTop: 15,
   },
   input: {
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 210, 140, 0.2)',
+    borderBottomColor: 'rgba(255, 210, 140, 0.35)',
     paddingVertical: 9,
     fontSize: 14,
-    color: '#FFF5E8',
+    color: '#FFFFFF',
   },
   passwordRow: {
     flexDirection: 'row',
@@ -1208,8 +1317,8 @@ const styles = StyleSheet.create({
   },
   rememberLabel: {
     fontSize: 12,
-    fontWeight: '600',
-    color: 'rgba(255, 225, 195, 0.8)',
+    fontWeight: '700',
+    color: '#FFF2DF',
     letterSpacing: 0.3,
   },
   forgotText: {
@@ -1390,5 +1499,119 @@ const styles = StyleSheet.create({
     fontSize: 13,
     color: '#FFF5E8',
     fontWeight: '500',
+  },
+
+  // ── FORGOT PASSWORD MODAL ──
+  forgotModalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  forgotModalCard: {
+    backgroundColor: '#180B04',
+    borderRadius: 22,
+    padding: 24,
+    width: '100%',
+    maxWidth: 420,
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 149, 0, 0.35)',
+    shadowColor: '#FF9500',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.3,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  forgotModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  forgotModalTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    letterSpacing: 0.3,
+  },
+  forgotCloseBtn: {
+    padding: 6,
+  },
+  forgotCloseText: {
+    fontSize: 18,
+    color: '#FFB74D',
+    fontWeight: '800',
+  },
+  forgotModalSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 235, 215, 0.8)',
+    lineHeight: 18,
+  },
+  forgotBtnRow: {
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    gap: 12,
+    marginTop: 22,
+  },
+  forgotCancelBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
+  },
+  forgotCancelText: {
+    color: 'rgba(255, 235, 215, 0.75)',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  forgotSubmitBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  forgotSubmitText: {
+    color: '#0A0301',
+    fontWeight: '900',
+    fontSize: 13,
+    letterSpacing: 0.5,
+  },
+  forgotSuccessOrb: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
+    backgroundColor: 'rgba(74, 222, 128, 0.15)',
+    borderWidth: 1.5,
+    borderColor: '#4ade80',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  forgotSuccessTitle: {
+    fontSize: 17,
+    fontWeight: '900',
+    color: '#FFFFFF',
+    marginBottom: 6,
+  },
+  forgotSuccessSubtitle: {
+    fontSize: 12.5,
+    color: 'rgba(255, 235, 215, 0.7)',
+    textAlign: 'center',
+  },
+  forgotSuccessEmail: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFB74D',
+    marginTop: 4,
+    marginBottom: 8,
+  },
+  forgotSuccessNote: {
+    fontSize: 11.5,
+    color: 'rgba(255, 220, 180, 0.55)',
+    textAlign: 'center',
+    lineHeight: 16,
   },
 });

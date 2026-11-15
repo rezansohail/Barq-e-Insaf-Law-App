@@ -13,11 +13,11 @@ export default StyleSheet.create({
     paddingBottom: 110,
   },
   profileCard: {
-    backgroundColor: 'rgba(22, 10, 4, 0.78)',
+    backgroundColor: 'rgba(38, 20, 10, 0.94)',
     borderRadius: 20,
     padding: 20,
     borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.22)',
+    borderColor: 'rgba(255, 170, 60, 0.28)',
     marginBottom: 16,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
@@ -66,7 +66,7 @@ export default StyleSheet.create({
   userName: {
     fontSize: 20,
     fontWeight: '800',
-    color: '#FFF5E8',
+    color: '#FFFFFF',
     textAlign: 'center',
   },
   userRole: {

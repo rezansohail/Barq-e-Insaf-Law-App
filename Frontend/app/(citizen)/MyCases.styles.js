@@ -45,12 +45,12 @@ export default StyleSheet.create({
     fontWeight: '800',
   },
   caseCard: {
-    backgroundColor: 'rgba(22, 10, 4, 0.78)',
+    backgroundColor: 'rgba(38, 20, 10, 0.94)',
     borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.22)',
+    borderColor: 'rgba(255, 170, 60, 0.25)',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
@@ -68,9 +68,9 @@ export default StyleSheet.create({
     marginRight: 12,
   },
   caseTitle: {
-    fontSize: 15,
+    fontSize: 15.5,
     fontWeight: '800',
-    color: '#FFF5E8',
+    color: '#FFFFFF',
     letterSpacing: -0.2,
   },
   badgeText: {

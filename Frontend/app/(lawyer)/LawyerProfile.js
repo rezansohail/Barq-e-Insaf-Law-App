@@ -19,10 +19,12 @@ import { getCurrentLawyerId } from '../../constants/authStore';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 export default function LawyerProfile() {
   useMockStore();
   const router = useRouter();
+  const { isDark, theme } = useAppTheme();
   const params = useLocalSearchParams();
   useAppNavigation({ isHome: false, homeRoute: '/(lawyer)/LawyerHome' });
 
@@ -101,9 +103,56 @@ export default function LawyerProfile() {
     Alert.alert('Success', 'Profile picture reset to initials.');
   };
 
+  const dynamicStyles = {
+    safe: {
+      flex: 1,
+      backgroundColor: isDark ? '#080402' : '#FAF7F2',
+    },
+    scroll: {
+      flex: 1,
+      backgroundColor: isDark ? '#080402' : '#FAF7F2',
+    },
+    actionBar: {
+      backgroundColor: isDark ? 'rgba(28, 14, 6, 0.9)' : '#F0E5D8',
+      borderBottomColor: isDark ? 'rgba(255, 160, 40, 0.25)' : 'rgba(255, 149, 0, 0.2)',
+    },
+    actionBarTitle: {
+      color: isDark ? 'rgba(255, 235, 215, 0.75)' : '#443322',
+    },
+    profileHeaderCard: {
+      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
+      borderColor: isDark ? 'rgba(255, 160, 40, 0.35)' : 'rgba(255, 149, 0, 0.2)',
+    },
+    profileName: {
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+    },
+    card: {
+      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
+      borderColor: isDark ? 'rgba(255, 160, 40, 0.35)' : 'rgba(255, 149, 0, 0.2)',
+    },
+    cardTitle: {
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+    },
+    cardSub: {
+      color: isDark ? 'rgba(255, 235, 215, 0.65)' : '#665544',
+    },
+    detailCard: {
+      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
+      borderColor: isDark ? 'rgba(255, 160, 40, 0.3)' : 'rgba(255, 149, 0, 0.2)',
+    },
+    detailValue: {
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+    },
+    input: {
+      backgroundColor: isDark ? 'rgba(20, 9, 4, 0.95)' : '#FFFFFF',
+      color: isDark ? '#FFFFFF' : '#1A0F07',
+      borderColor: isDark ? 'rgba(255, 160, 40, 0.4)' : 'rgba(255, 149, 0, 0.25)',
+    },
+  };
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" backgroundColor="#080402" />
+    <SafeAreaView style={dynamicStyles.safe}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? "#080402" : "#FAF7F2"} />
       
       <AppHeader 
         title="Advocate Profile" 
@@ -113,8 +162,8 @@ export default function LawyerProfile() {
       />
 
       {/* Edit Mode Toggle Header Bar */}
-      <View style={styles.actionBar}>
-        <Text style={styles.actionBarTitle}>
+      <View style={[styles.actionBar, dynamicStyles.actionBar]}>
+        <Text style={[styles.actionBarTitle, dynamicStyles.actionBarTitle]}>
           {editMode ? 'Editing Profile Details' : 'Advocate Registry Information'}
         </Text>
         <TouchableOpacity 
@@ -125,10 +174,10 @@ export default function LawyerProfile() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.content}>
+      <ScrollView style={dynamicStyles.scroll} contentContainerStyle={styles.content}>
         
         {/* Profile Header Card */}
-        <View style={styles.profileHeaderCard}>
+        <View style={[styles.profileHeaderCard, dynamicStyles.profileHeaderCard]}>
           <TouchableOpacity 
             style={styles.profilePicContainer}
             onPress={() => setShowDPMenu(true)}
@@ -140,7 +189,7 @@ export default function LawyerProfile() {
               <Text style={styles.dpBadgeText}>EDIT</Text>
             </View>
           </TouchableOpacity>
-          <Text style={styles.profileName}>{lawyerProfile.name || 'Advocate'}</Text>
+          <Text style={[styles.profileName, dynamicStyles.profileName]}>{lawyerProfile.name || 'Advocate'}</Text>
           <Text style={styles.profileSpec}>
             {lawyerProfile.spec || 'Advocate High Court'} · SBC {lawyerProfile.sbc || 'Verified'}
           </Text>
@@ -155,11 +204,11 @@ export default function LawyerProfile() {
         </View>
 
         {/* Availability Toggle */}
-        <View style={styles.card}>
+        <View style={[styles.card, dynamicStyles.card]}>
           <View style={styles.row}>
             <View style={{ flex: 1, paddingRight: 10 }}>
-              <Text style={styles.cardTitle}>Accepting New Clients</Text>
-              <Text style={styles.cardSub}>Enable to appear active to citizens seeking counsel</Text>
+              <Text style={[styles.cardTitle, dynamicStyles.cardTitle]}>Accepting New Clients</Text>
+              <Text style={[styles.cardSub, dynamicStyles.cardSub]}>Enable to appear active to citizens seeking counsel</Text>
             </View>
             <Switch
               value={editMode ? editedData.isAvailable : lawyerProfile.isAvailable}
@@ -184,28 +233,28 @@ export default function LawyerProfile() {
         <Text style={styles.label}>Full Name</Text>
         {editMode ? (
           <TextInput
-            style={styles.input}
+            style={[styles.input, dynamicStyles.input]}
             value={editedData.name}
             onChangeText={(text) => setEditedData({...editedData, name: text})}
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}
           />
         ) : (
-          <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.name || 'Not provided'}</Text>
+          <View style={[styles.detailCard, dynamicStyles.detailCard]}>
+            <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{lawyerProfile.name || 'Not provided'}</Text>
           </View>
         )}
 
         <Text style={styles.label}>Specialty Practice Areas</Text>
         {editMode ? (
           <TextInput
-            style={styles.input}
+            style={[styles.input, dynamicStyles.input]}
             value={editedData.spec}
             onChangeText={(text) => setEditedData({...editedData, spec: text})}
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}
           />
         ) : (
-          <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.spec || 'General Practice'}</Text>
+          <View style={[styles.detailCard, dynamicStyles.detailCard]}>
+            <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{lawyerProfile.spec || 'General Practice'}</Text>
           </View>
         )}
 
@@ -218,8 +267,8 @@ export default function LawyerProfile() {
 
         {/* CNIC kept strictly for Lawyer Sindh Bar Council verification */}
         <Text style={styles.label}>CNIC Number (Bar Verification)</Text>
-        <View style={[styles.detailCard, styles.verifiedCard]}>
-          <Text style={[styles.detailValue, { color: 'rgba(255,255,255,0.85)' }]}>
+        <View style={[styles.detailCard, styles.verifiedCard, dynamicStyles.detailCard]}>
+          <Text style={[styles.detailValue, dynamicStyles.detailValue]}>
             {lawyerProfile.cnic || '42101-9876543-1'}
           </Text>
         </View>
@@ -227,112 +276,112 @@ export default function LawyerProfile() {
         <Text style={styles.label}>District / High Court Jurisdiction</Text>
         {editMode ? (
           <TextInput
-            style={styles.input}
+            style={[styles.input, dynamicStyles.input]}
             value={editedData.district}
             onChangeText={(text) => setEditedData({...editedData, district: text})}
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}
           />
         ) : (
-          <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.district || 'Sindh'}</Text>
+          <View style={[styles.detailCard, dynamicStyles.detailCard]}>
+            <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{lawyerProfile.district || 'Sindh'}</Text>
           </View>
         )}
 
         <Text style={styles.label}>Chamber Email Address</Text>
         {editMode ? (
           <TextInput
-            style={styles.input}
+            style={[styles.input, dynamicStyles.input]}
             value={editedData.email}
             onChangeText={(text) => setEditedData({...editedData, email: text})}
             keyboardType="email-address"
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}
           />
         ) : (
-          <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.email || 'Not provided'}</Text>
+          <View style={[styles.detailCard, dynamicStyles.detailCard]}>
+            <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{lawyerProfile.email || 'Not provided'}</Text>
           </View>
         )}
 
         <Text style={styles.label}>Chamber Direct Phone</Text>
         {editMode ? (
           <TextInput
-            style={styles.input}
+            style={[styles.input, dynamicStyles.input]}
             value={editedData.phone}
             onChangeText={(text) => setEditedData({...editedData, phone: text})}
             keyboardType="phone-pad"
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}
           />
         ) : (
-          <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.phone || 'Not provided'}</Text>
+          <View style={[styles.detailCard, dynamicStyles.detailCard]}>
+            <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{lawyerProfile.phone || 'Not provided'}</Text>
           </View>
         )}
 
         <Text style={styles.label}>Past Court Experience</Text>
         {editMode ? (
           <TextInput
-            style={[styles.input, styles.textArea]}
+            style={[styles.input, styles.textArea, dynamicStyles.input]}
             value={editedData.experience}
             onChangeText={(text) => setEditedData({...editedData, experience: text})}
             multiline
             numberOfLines={3}
             placeholder="e.g. 14 Years practice in High Court and District Courts"
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}
           />
         ) : (
-          <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.experience || 'Not provided'}</Text>
+          <View style={[styles.detailCard, dynamicStyles.detailCard]}>
+            <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{lawyerProfile.experience || 'Not provided'}</Text>
           </View>
         )}
 
         <Text style={styles.label}>Education & Bar Credentials</Text>
         {editMode ? (
           <TextInput
-            style={[styles.input, styles.textArea]}
+            style={[styles.input, styles.textArea, dynamicStyles.input]}
             value={editedData.education}
             onChangeText={(text) => setEditedData({...editedData, education: text})}
             multiline
             numberOfLines={2}
             placeholder="e.g. LL.B (SM Law College), LL.M"
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}
           />
         ) : (
-          <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.education || 'Not provided'}</Text>
+          <View style={[styles.detailCard, dynamicStyles.detailCard]}>
+            <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{lawyerProfile.education || 'Not provided'}</Text>
           </View>
         )}
 
         <Text style={styles.label}>Office / Chamber Address</Text>
         {editMode ? (
           <TextInput
-            style={[styles.input, styles.textArea]}
+            style={[styles.input, styles.textArea, dynamicStyles.input]}
             value={editedData.address}
             onChangeText={(text) => setEditedData({...editedData, address: text})}
             multiline
             numberOfLines={3}
             placeholder="e.g. Chamber 402, Lawyers Court Building, Karachi"
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}
           />
         ) : (
-          <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.address || 'Not provided'}</Text>
+          <View style={[styles.detailCard, dynamicStyles.detailCard]}>
+            <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{lawyerProfile.address || 'Not provided'}</Text>
           </View>
         )}
 
         <Text style={styles.label}>Professional Biography</Text>
         {editMode ? (
           <TextInput
-            style={[styles.input, styles.textArea]}
+            style={[styles.input, styles.textArea, dynamicStyles.input]}
             value={editedData.bio}
             onChangeText={(text) => setEditedData({...editedData, bio: text})}
             multiline
             numberOfLines={4}
             placeholder="Brief biography about your legal practice..."
-            placeholderTextColor="rgba(255,255,255,0.3)"
+            placeholderTextColor={isDark ? "rgba(255,255,255,0.3)" : "rgba(0,0,0,0.3)"}
           />
         ) : (
-          <View style={styles.detailCard}>
-            <Text style={styles.detailValue}>{lawyerProfile.about || 'Not provided'}</Text>
+          <View style={[styles.detailCard, dynamicStyles.detailCard]}>
+            <Text style={[styles.detailValue, dynamicStyles.detailValue]}>{lawyerProfile.about || 'Not provided'}</Text>
           </View>
         )}
 

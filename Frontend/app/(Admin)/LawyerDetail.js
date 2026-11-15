@@ -110,12 +110,6 @@ export default function LawyerDetail() {
             <Text style={styles.profileSub}>{data.licenseNumber || data.license || 'SBC Verified'} · {data.specialty || 'Advocate'}</Text>
             <Text style={styles.profileSubMuted}>{data.city || 'Karachi, Sindh'} · {data.experience ?? '8'} yrs exp</Text>
           </View>
-          {data.rating > 0 && (
-            <View style={styles.ratingBox}>
-              <Text style={styles.ratingVal}>{data.rating} / 5.0</Text>
-              <Text style={styles.ratingCount}>{data.totalReviews || 0} reviews</Text>
-            </View>
-          )}
         </View>
 
         {/* TABS */}
@@ -171,7 +165,6 @@ export default function LawyerDetail() {
             </Section>
 
             <Section title="Practice Information">
-              <InfoRow label="Consultation Fee"      value={data.fee || 'Pro Bono / Subsidized'} />
               <InfoRow label="Available Days"        value={data.availableDays || 'Mon – Fri'} />
               <InfoRow label="Courts of Practice"    value={data.courts || 'High Court of Sindh, City Courts'} />
             </Section>
@@ -191,8 +184,6 @@ export default function LawyerDetail() {
                   { label: 'Total Cases',   value: data.totalCases || data.cases || 42 },
                   { label: 'Active Matters',value: data.activeCases || 11 },
                   { label: 'Disposed/Won',  value: data.completedCases || 31 },
-                  { label: 'Rating',        value: data.rating > 0 ? `${data.rating} / 5.0` : '4.8 / 5.0' },
-                  { label: 'Reviews',       value: data.totalReviews || 19 },
                 ].map((item, i) => (
                   <View key={i} style={styles.perfCard}>
                     <Text style={styles.perfVal}>{item.value}</Text>

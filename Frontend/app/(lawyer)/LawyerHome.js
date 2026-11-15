@@ -15,6 +15,7 @@ import { getCurrentLawyerId } from '../../constants/authStore';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const quickActions = [
   { title: 'Case Requests', route: '/(lawyer)/CaseRequests' },
@@ -27,6 +28,7 @@ export default function LawyerHome() {
   useMockStore();
   const router = useRouter();
   const params = useLocalSearchParams();
+  const { theme, isDarkMode } = useAppTheme();
   const currentLawyerId = params.lawyerId || params.id || getCurrentLawyerId();
 
   // Root screen: back button confirms exit, does not back to login screen
@@ -52,14 +54,14 @@ export default function LawyerHome() {
   const pendingRequests = caseRequests.filter((r) => r.status === 'pending');
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={theme.bg} />
 
-      {/* Top Header matching app standard */}
+      {/* Top Header matching app standard - Logo on top right, hi with name */}
       <AppHeader
-        title="Barq-e-Insaf"
         showBack={false}
         role="lawyer"
+        userName={getDisplayName()}
         avatarText={lawyerProfile.initials || 'L'}
       />
 
@@ -69,15 +71,15 @@ export default function LawyerHome() {
         showsVerticalScrollIndicator={false}
       >
         {/* LAWYER STATUS BANNER */}
-        <View style={styles.nameRow}>
+        <View style={[styles.nameRow, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 10, fontWeight: '800', color: '#FF9500', letterSpacing: 1, marginBottom: 2 }}>
               SINDH BAR COUNCIL ADVOCATE
             </Text>
-            <Text style={styles.lawyerName}>
+            <Text style={[styles.lawyerName, !isDarkMode && { color: theme.textPrimary }]}>
               {getDisplayName()}
             </Text>
-            <Text style={styles.licenseNo}>
+            <Text style={[styles.licenseNo, !isDarkMode && { color: theme.textSecondary }]}>
               Licence: {lawyerProfile.sbc || (lawyerProfile.loading ? 'Loading...' : 'SBC Verified')}
             </Text>
           </View>
@@ -94,17 +96,17 @@ export default function LawyerHome() {
 
         {/* STATS METRICS ROW */}
         <View style={styles.statsRow}>
-          <View style={styles.statChip}>
-            <Text style={styles.statNum}>{lawyerProfile.activeCasesCount || lawyerProfile.successfulCasesCount || 0}</Text>
+          <View style={[styles.statChip, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.statNum, !isDarkMode && { color: theme.textPrimary }]}>{lawyerProfile.activeCasesCount || lawyerProfile.successfulCasesCount || 0}</Text>
             <Text style={styles.statLabel}>Active Cases</Text>
           </View>
-          <View style={styles.statChip}>
-            <Text style={styles.statNum}>{pendingRequests.length}</Text>
+          <View style={[styles.statChip, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.statNum, !isDarkMode && { color: theme.textPrimary }]}>{pendingRequests.length}</Text>
             <Text style={styles.statLabel}>New Requests</Text>
           </View>
-          <View style={styles.statChip}>
-            <Text style={styles.statNum}>{lawyerProfile.rating || 5.0}</Text>
-            <Text style={styles.statLabel}>Client Rating</Text>
+          <View style={[styles.statChip, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.statNum, !isDarkMode && { color: theme.textPrimary }]}>{lawyerProfile.completedCasesCount || 14}</Text>
+            <Text style={styles.statLabel}>Completed</Text>
           </View>
         </View>
 
@@ -170,7 +172,7 @@ export default function LawyerHome() {
           <TouchableOpacity
             style={styles.partnerCard}
             activeOpacity={0.84}
-            onPress={() => router.push('/NCHDInfo')}
+            onPress={() => router.push({ pathname: '/NCHDInfo', params: { from: 'lawyer' } })}
           >
             <View style={styles.partnerTop}>
               <View style={styles.partnerAvatar}>
@@ -206,7 +208,7 @@ export default function LawyerHome() {
           <TouchableOpacity
             style={styles.partnerCard}
             activeOpacity={0.84}
-            onPress={() => router.push('/KTNNewsInfo')}
+            onPress={() => router.push({ pathname: '/KTNNewsInfo', params: { from: 'lawyer' } })}
           >
             <View style={styles.partnerTop}>
               <View style={styles.partnerAvatar}>
