@@ -9,12 +9,15 @@ const {
   getCitizenCases,
   createCitizenCase,
   updateCitizenCase,
+  requestCaseMediaCoverage,
+  requestCaseNgoAid,
   getCitizenConsultations,
   createCitizenConsultation,
   getCitizenVault,
   addCitizenVaultItem,
   deleteCitizenVaultItem,
   getAllNgos,
+  getAllMedia,
 } = require('../controllers/citizenController');
 const { protect } = require('../middleware/auth');
 
@@ -25,8 +28,9 @@ router.post('/login',    loginCitizen);
 // ── PROTECTED CURRENT USER ──
 router.get('/me', protect, getMe);
 
-// ── NGO / MEDIA DIRECTORY (FOR CITIZENS) ──
-router.get('/ngos', getAllNgos);
+// ── NGO & MEDIA DIRECTORIES (FOR CITIZENS) ──
+router.get('/ngos',  getAllNgos);
+router.get('/media', getAllMedia);
 
 // ── CITIZEN PROFILE BY ID ──
 router.get('/:id',         getCitizenById);
@@ -37,6 +41,8 @@ router.put('/:id/profile', updateCitizenProfile);
 router.get('/:id/cases',  getCitizenCases);
 router.post('/:id/cases', createCitizenCase);
 router.put('/:id/cases/:caseId', updateCitizenCase);
+router.post('/:id/cases/:caseId/media-request', requestCaseMediaCoverage);
+router.post('/:id/cases/:caseId/ngo-request',   requestCaseNgoAid);
 
 // ── CITIZEN CONSULTATION REQUESTS ──
 router.get('/:id/consultations',  getCitizenConsultations);

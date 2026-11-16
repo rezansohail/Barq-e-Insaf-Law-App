@@ -54,6 +54,10 @@ class CitizenService {
   async getAllNgos(filter) {
     throw new Error('getAllNgos() method not implemented');
   }
+
+  async getAllMedia(filter) {
+    throw new Error('getAllMedia() method not implemented');
+  }
 }
 
 module.exports = CitizenService;

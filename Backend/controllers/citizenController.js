@@ -142,6 +142,40 @@ const updateCitizenCase = async (req, res) => {
   }
 };
 
+// POST /api/citizens/:id/cases/:caseId/media-request
+const requestCaseMediaCoverage = async (req, res) => {
+  try {
+    const result = await citizenService.requestCaseMediaCoverage(req.params.id, req.params.caseId, req.body);
+    return res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+// POST /api/citizens/:id/cases/:caseId/ngo-request
+const requestCaseNgoAid = async (req, res) => {
+  try {
+    const result = await citizenService.requestCaseNgoAid(req.params.id, req.params.caseId, req.body);
+    return res.status(200).json({
+      success: true,
+      ...result,
+    });
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 // GET /api/citizens/:id/consultations
 const getCitizenConsultations = async (req, res) => {
   try {
@@ -232,6 +266,20 @@ const getAllNgos = async (req, res) => {
   }
 };
 
+// GET /api/citizens/media or GET /api/media
+const getAllMedia = async (req, res) => {
+  try {
+    const media = await citizenService.getAllMedia(req.query);
+    return res.status(200).json(media);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   registerCitizen,
   loginCitizen,
@@ -241,10 +289,13 @@ module.exports = {
   getCitizenCases,
   createCitizenCase,
   updateCitizenCase,
+  requestCaseMediaCoverage,
+  requestCaseNgoAid,
   getCitizenConsultations,
   createCitizenConsultation,
   getCitizenVault,
   addCitizenVaultItem,
   deleteCitizenVaultItem,
   getAllNgos,
+  getAllMedia,
 };
