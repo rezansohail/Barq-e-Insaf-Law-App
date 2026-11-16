@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import AppHeader from '../components/AppHeader';
 import { useAppTheme } from '../context/ThemeContext';
+import { useAppNavigation } from '../hooks/useAppNavigation';
+import { getMediaProfile, subscribeToStore } from '../constants/ngoMediaStore';
 
 const { width } = Dimensions.get('window');
 
@@ -22,247 +25,159 @@ export default function KTNNewsInfo() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { isDark } = useAppTheme();
+  const [profile, setProfile] = useState(getMediaProfile());
+
+  const targetHome = params.from === 'lawyer' ? '/(lawyer)/LawyerHome' : '/(citizen)/CitizenHome';
+
+  // Hardware back returns directly to the user's home screen
+  useAppNavigation({ isHome: false, homeRoute: targetHome });
+
+  useEffect(() => {
+    return subscribeToStore(() => {
+      setProfile(getMediaProfile());
+    });
+  }, []);
 
   const handleBack = () => {
-    if (params.from === 'lawyer') {
-      router.replace('/(lawyer)/LawyerHome');
-    } else if (params.from === 'citizen') {
-      router.replace('/(citizen)/CitizenHome');
-    } else if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/(citizen)/CitizenHome');
-    }
+    router.replace(targetHome);
   };
 
   const handleEmailPress = async (email) => {
-    const url = `mailto:${email}?subject=Legal%20Grievance%20Story%20-%20Barq-e-Insaf`;
+    const url = `mailto:${email}?subject=Broadcast%20Investigation%20Lead%20-%20Barq-e-Insaf`;
     try {
       const supported = await Linking.canOpenURL(url);
       if (supported) {
         await Linking.openURL(url);
       } else {
-        Alert.alert(
-          'Contact Newsroom',
-          `Please send your legal story or case grievance to:\n\n${email}`,
-          [{ text: 'OK' }]
-        );
+        Alert.alert('Newsdesk Contact', `Please email directly to:\n\n${email}`);
       }
     } catch (_) {
-      Alert.alert(
-        'Contact Newsroom',
-        `Please send your legal story or case grievance to:\n\n${email}`,
-        [{ text: 'OK' }]
-      );
+      Alert.alert('Newsdesk Contact', `Please email directly to:\n\n${email}`);
     }
   };
 
-  const dynamicStyles = {
-    safe: {
-      flex: 1,
-      backgroundColor: isDark ? '#060201' : '#FAF7F2',
-    },
-    scroll: {
-      flex: 1,
-      backgroundColor: isDark ? '#060201' : '#FAF7F2',
-    },
-    heroCard: {
-      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
-      borderColor: isDark ? 'rgba(255, 149, 0, 0.35)' : 'rgba(255, 149, 0, 0.20)',
-    },
-    orgTitle: {
-      color: isDark ? '#FFFFFF' : '#1A0F07',
-    },
-    heroDesc: {
-      color: isDark ? 'rgba(255, 235, 215, 0.85)' : '#332211',
-    },
-    reachOutCard: {
-      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
-      borderColor: isDark ? '#FF9500' : 'rgba(255, 149, 0, 0.4)',
-    },
-    reachOutTitle: {
-      color: isDark ? '#FFFFFF' : '#1A0F07',
-    },
-    reachOutSub: {
-      color: isDark ? 'rgba(255, 235, 215, 0.75)' : '#554433',
-    },
-    emailContainer: {
-      backgroundColor: isDark ? 'rgba(24, 12, 5, 0.95)' : '#F5EBE1',
-      borderColor: isDark ? 'rgba(255, 160, 40, 0.25)' : 'rgba(255, 149, 0, 0.2)',
-    },
-    infoCard: {
-      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
-      borderColor: isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.18)',
-    },
-    infoParagraph: {
-      color: isDark ? 'rgba(255, 235, 215, 0.85)' : '#332211',
-    },
-    bulletItem: {
-      color: isDark ? 'rgba(255, 230, 205, 0.78)' : '#443322',
-    },
-    boldText: {
-      color: isDark ? '#FFFFFF' : '#1A0F07',
-    },
+  const handlePhonePress = (phone) => {
+    const clean = phone.replace(/[^\d+]/g, '');
+    Linking.openURL(`tel:${clean}`).catch(() => {
+      Alert.alert('Whistleblower Helpline', `Helpline: ${phone}`);
+    });
   };
 
-  return (
-    <SafeAreaView style={dynamicStyles.safe}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
+  const bg = isDark ? '#060201' : '#FAF7F2';
+  const cardBg = isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF';
+  const cardBorder = isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)';
+  const textPrimary = isDark ? '#FFFFFF' : '#1A0F07';
+  const textSecondary = isDark ? 'rgba(255, 235, 215, 0.85)' : '#4A3B32';
+  const textMuted = isDark ? 'rgba(255, 200, 150, 0.65)' : '#7A6B60';
 
-      {/* Top Header */}
+  return (
+    <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        translucent
+        backgroundColor={isDark ? '#0A0402' : '#FAF7F2'}
+      />
+
       <AppHeader
-        title="KTN News Overview"
+        title="KTN News Desk"
         showBack={true}
         onBack={handleBack}
-        homeRoute={params.from === 'lawyer' ? '/(lawyer)/LawyerHome' : '/(citizen)/CitizenHome'}
+        homeRoute={targetHome}
       />
 
       <ScrollView
-        style={dynamicStyles.scroll}
+        style={styles.scroll}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* HERO CARD */}
-        <View style={[styles.heroCard, dynamicStyles.heroCard]}>
-          <View style={styles.heroTop}>
-            <View style={styles.logoSlot}>
-              <Image
-                source={require('../assets/images/media.png')}
-                style={styles.logoImg}
-                resizeMode="contain"
-              />
+        {/* TOP HALF HERO BANNER IMAGE (matching Image 1 reference) */}
+        <View style={styles.topHeroContainer}>
+          <Image
+            source={require('../assets/images/media.png')}
+            style={styles.heroImage}
+            resizeMode="cover"
+          />
+          <LinearGradient
+            colors={['transparent', 'rgba(10, 4, 2, 0.65)', 'rgba(6, 2, 1, 0.95)']}
+            style={styles.heroGradient}
+          />
+          <View style={styles.heroOverlayContent}>
+            <View style={styles.badgePill}>
+              <Text style={styles.badgePillText}>{profile.categoryBadge}</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <View style={styles.badgePill}>
-                <Text style={styles.badgePillText}>24/7 SINDHI BROADCAST JOURNALISM</Text>
-              </View>
-              <Text style={[styles.orgTitle, dynamicStyles.orgTitle]}>
-                KTN News (Kawish Television Network)
-              </Text>
-              <Text style={styles.orgSubtitle}>
-                کے ٽي اين نيوز · Premier Sindhi News Channel
-              </Text>
-            </View>
-          </View>
-
-          <Text style={[styles.heroDesc, dynamicStyles.heroDesc]}>
-            Launched in October 2007 by Kawish Group of Publications, KTN News is Pakistan’s first 24-hour private Sindhi news television channel. It is renowned for high court and trial court reporting, investigative journalism on social and legal injustices, and providing a powerful public microphone for aggrieved citizens across Sindh.
-          </Text>
-        </View>
-
-        {/* PICTURE SLOTS SECTION */}
-        <Text style={styles.sectionHeading}>Newsroom & Court Press Gallery</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.galleryScroll}
-        >
-          {/* Picture Slot 1: Official Emblem */}
-          <View style={styles.pictureCard}>
-            <View style={[styles.pictureImgSlot, { backgroundColor: '#180B04', justifyContent: 'center', alignItems: 'center' }]}>
-              <Image
-                source={require('../assets/images/media.png')}
-                style={{ width: '85%', height: '85%' }}
-                resizeMode="contain"
-              />
-            </View>
-            <Text style={styles.pictureCaption}>Broadcast Brand Identity</Text>
-            <Text style={styles.pictureSub}>Karachi Central Studio</Text>
-          </View>
-
-          {/* Picture Slot 2: Court Reporting Unit */}
-          <View style={styles.pictureCard}>
-            <View style={[styles.pictureImgSlot, { backgroundColor: 'rgba(255, 149, 0, 0.12)', justifyContent: 'center', alignItems: 'center' }]}>
-              <Text style={{ color: '#FFB74D', fontSize: 13, fontWeight: '800' }}>PRESS</Text>
-              <Text style={{ color: '#FFB74D', fontSize: 11, fontWeight: '800', marginTop: 4 }}>High Court Bureau</Text>
-            </View>
-            <Text style={styles.pictureCaption}>Legal & Court Affairs</Text>
-            <Text style={styles.pictureSub}>Sindh High Court Press Room</Text>
-          </View>
-
-          {/* Picture Slot 3: Public Grievance Desk */}
-          <View style={styles.pictureCard}>
-            <View style={[styles.pictureImgSlot, { backgroundColor: 'rgba(20, 10, 4, 0.85)', justifyContent: 'center', alignItems: 'center' }]}>
-              <Text style={{ color: '#FFB74D', fontSize: 13, fontWeight: '800' }}>DESK</Text>
-              <Text style={{ color: '#FFB74D', fontSize: 11, fontWeight: '800', marginTop: 4 }}>Awami Ijtima Desk</Text>
-            </View>
-            <Text style={styles.pictureCaption}>Investigative Journalism</Text>
-            <Text style={styles.pictureSub}>Human Rights & Civil Coverage</Text>
-          </View>
-        </ScrollView>
-
-        {/* REACH OUT VIA EMAIL CARD (FOCUSED CONTACT) */}
-        <View style={styles.reachOutCard}>
-          <View style={styles.reachOutHeader}>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.reachOutTitle}>Contact KTN News via Email</Text>
-              <Text style={styles.reachOutSub}>
-                Citizens and lawyers facing judicial delays, human rights violations, land-grabbing, or police non-compliance can submit their legal stories directly to the newsroom via email only.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.emailContainer}>
-            <Text style={styles.emailLabel}>Editorial Newsroom & Grievance Desk:</Text>
-            <Text style={styles.emailValue}>news@ktnnews.tv</Text>
-            <TouchableOpacity
-              style={styles.emailBtn}
-              activeOpacity={0.84}
-              onPress={() => handleEmailPress('news@ktnnews.tv')}
-            >
-              <Text style={styles.emailBtnText}>Email news@ktnnews.tv</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={[styles.emailContainer, { marginTop: 10 }]}>
-            <Text style={styles.emailLabel}>Official Legal & Public Interest Inquiries:</Text>
-            <Text style={styles.emailValue}>info@ktnnews.tv</Text>
-            <TouchableOpacity
-              style={[styles.emailBtn, { backgroundColor: 'rgba(255, 149, 0, 0.18)', borderWidth: 1, borderColor: '#FF9500' }]}
-              activeOpacity={0.84}
-              onPress={() => handleEmailPress('info@ktnnews.tv')}
-            >
-              <Text style={[styles.emailBtnText, { color: '#FFB74D' }]}>Email info@ktnnews.tv</Text>
-            </TouchableOpacity>
-          </View>
-
-          <Text style={styles.reachOutNotice}>
-            Investigative Protocol: Please attach relevant court orders, FIR copies, or advocate representation references for prioritized editorial scrutiny.
-          </Text>
-        </View>
-
-        {/* MISSION & VISION */}
-        <View style={styles.infoCard}>
-          <Text style={styles.infoCardHeading}>Editorial Mission & Journalism Mandate</Text>
-          <Text style={styles.infoParagraph}>
-            KTN News champions transparency and civil justice for the people of Sindh. Its newsroom operates on an uncompromising mandate to spotlight legal injustices that often go unreported in mainstream federal media.
-          </Text>
-          <View style={styles.bulletList}>
-            <Text style={styles.bulletItem}>• <Text style={styles.boldText}>Judicial Scrutiny</Text>: Rigorous live coverage of bail hearings, constitutional petitions, and public interest litigations (PILs) at the Sindh High Court.</Text>
-            <Text style={styles.bulletItem}>• <Text style={styles.boldText}>Combating Feudal & Extra-Legal Coercion</Text>: Exposing illegal Jirga decrees, forced dispossession (Kabza), bonded agricultural labor, and honor-killing cases.</Text>
-            <Text style={styles.bulletItem}>• <Text style={styles.boldText}>Amplifying Vulnerable Voices</Text>: Providing prime-time coverage for unrepresented rural litigants who cannot afford legal representation or public visibility.</Text>
+            <Text style={styles.heroTitle}>{profile.name}</Text>
+            <Text style={styles.heroSubtitle}>{profile.nativeName}</Text>
           </View>
         </View>
 
-        {/* NETWORK & REGIONAL BUREAUS */}
-        <View style={styles.infoCard}>
-          <Text style={styles.infoCardHeading}>Broadcast Bureaus & Coverage Across Sindh</Text>
-          <Text style={styles.infoParagraph}>
-            Operating specialized legal correspondents in every district of Sindh with direct uplink to central studios:
-          </Text>
-          <View style={styles.districtTagsRow}>
-            {['Karachi (HQ)', 'Hyderabad', 'Sukkur', 'Larkana', 'Nawabshah', 'Mirpurkhas', 'Thatta', 'Jacobabad', 'Shikarpur', 'Islamabad Bureau'].map((b) => (
-              <View key={b} style={styles.districtPill}>
-                <Text style={styles.districtPillText}>{b}</Text>
-              </View>
-            ))}
+        {/* STATS CHIPS ROW */}
+        <View style={styles.statsRow}>
+          <View style={[styles.statChip, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            <Text style={styles.statVal}>30</Text>
+            <Text style={[styles.statLbl, { color: textMuted }]}>Districts Covered</Text>
           </View>
-          <Text style={styles.addressLine}>
-            Central News Complex: Kawish Television Network, Media City / Saddar, Karachi & Hyderabad, Sindh.
+          <View style={[styles.statChip, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            <Text style={styles.statVal}>24/7</Text>
+            <Text style={[styles.statLbl, { color: textMuted }]}>Live Satellite</Text>
+          </View>
+          <View style={[styles.statChip, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            <Text style={styles.statVal}>118+</Text>
+            <Text style={[styles.statLbl, { color: textMuted }]}>Exposés Aired</Text>
+          </View>
+        </View>
+
+        {/* MANDATE CARD */}
+        <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+          <Text style={[styles.cardHeading, { color: textPrimary }]}>Investigative Journalism Mission</Text>
+          <Text style={[styles.cardBodyText, { color: textSecondary }]}>
+            {profile.description}
           </Text>
         </View>
 
-        <View style={{ height: 30 }} />
+        {/* DIRECT OUTREACH & WHISTLEBLOWER DESK */}
+        <View style={[styles.reachOutCard, { backgroundColor: cardBg, borderColor: '#FF9500' }]}>
+          <Text style={[styles.cardHeading, { color: textPrimary }]}>Direct Whistleblower Outreach</Text>
+          <Text style={[styles.cardSubText, { color: textSecondary }]}>
+            Submit your evidence dossier directly to the KTN Newsroom investigative bureau:
+          </Text>
+
+          {/* Email button */}
+          <TouchableOpacity
+            style={styles.actionBtn}
+            onPress={() => handleEmailPress(profile.email)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.actionBtnLabel}>CENTRAL NEWSDESK EMAIL</Text>
+            <Text style={styles.actionBtnValue}>{profile.email}</Text>
+          </TouchableOpacity>
+
+          {/* Phone button */}
+          <TouchableOpacity
+            style={[styles.actionBtn, { marginTop: 10 }]}
+            onPress={() => handlePhonePress(profile.phone)}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.actionBtnLabel}>CONFIDENTIAL WHISTLEBLOWER RELAY</Text>
+            <Text style={styles.actionBtnValue}>{profile.phone} · {profile.helpline}</Text>
+          </TouchableOpacity>
+
+          {/* Address */}
+          <View style={styles.addressBox}>
+            <Text style={styles.addressLabel}>CENTRAL BROADCAST HEADQUARTERS</Text>
+            <Text style={[styles.addressText, { color: textSecondary }]}>{profile.officeAddress}</Text>
+          </View>
+        </View>
+
+        {/* KEY INVESTIGATIVE BEATS */}
+        <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder, marginBottom: 30 }]}>
+          <Text style={[styles.cardHeading, { color: textPrimary }]}>Verified Investigative Beats</Text>
+          {profile.keyFocus.map((focus, idx) => (
+            <View key={idx} style={styles.focusRow}>
+              <View style={styles.bulletDot} />
+              <Text style={[styles.focusText, { color: textSecondary }]}>{focus}</Text>
+            </View>
+          ))}
+        </View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -271,252 +186,170 @@ export default function KTNNewsInfo() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#060201',
   },
   scroll: {
     flex: 1,
   },
   content: {
-    padding: 16,
     paddingBottom: 40,
   },
-  heroCard: {
-    backgroundColor: 'rgba(22, 10, 4, 0.82)',
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 16,
-    borderWidth: 1.2,
-    borderColor: 'rgba(255, 160, 40, 0.28)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  heroTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 14,
-    marginBottom: 12,
-  },
-  logoSlot: {
-    width: 64,
-    height: 64,
-    borderRadius: 18,
-    backgroundColor: 'rgba(255, 149, 0, 0.12)',
-    borderWidth: 1.5,
-    borderColor: '#FF9500',
-    justifyContent: 'center',
-    alignItems: 'center',
+  topHeroContainer: {
+    width: width,
+    height: 240,
+    position: 'relative',
     overflow: 'hidden',
+    borderBottomLeftRadius: 28,
+    borderBottomRightRadius: 28,
   },
-  logoImg: {
-    width: 52,
-    height: 52,
+  heroImage: {
+    width: '100%',
+    height: '100%',
+  },
+  heroGradient: {
+    ...StyleSheet.absoluteFillObject,
+  },
+  heroOverlayContent: {
+    position: 'absolute',
+    bottom: 16,
+    left: 20,
+    right: 20,
   },
   badgePill: {
     alignSelf: 'flex-start',
-    backgroundColor: 'rgba(255, 149, 0, 0.18)',
-    borderRadius: 6,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    marginBottom: 4,
+    backgroundColor: 'rgba(255, 149, 0, 0.28)',
     borderWidth: 1,
-    borderColor: 'rgba(255, 149, 0, 0.35)',
-  },
-  badgePillText: {
-    color: '#FFB74D',
-    fontSize: 9.5,
-    fontWeight: '800',
-    letterSpacing: 0.5,
-  },
-  orgTitle: {
-    fontSize: 16,
-    fontWeight: '900',
-    color: '#FFF5E8',
-    letterSpacing: 0.2,
-    lineHeight: 22,
-  },
-  orgSubtitle: {
-    fontSize: 11,
-    color: 'rgba(255, 220, 180, 0.65)',
-    marginTop: 2,
-    fontWeight: '600',
-  },
-  heroDesc: {
-    fontSize: 12.5,
-    color: 'rgba(255, 240, 225, 0.82)',
-    lineHeight: 19,
-    borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 149, 0, 0.15)',
-    paddingTop: 12,
-  },
-  sectionHeading: {
-    fontSize: 13.5,
-    fontWeight: '800',
-    color: '#FFB74D',
-    marginBottom: 10,
-    marginTop: 4,
-    letterSpacing: 0.3,
-  },
-  galleryScroll: {
-    gap: 12,
-    paddingBottom: 14,
-  },
-  pictureCard: {
-    width: width * 0.56,
-    backgroundColor: 'rgba(22, 10, 4, 0.78)',
-    borderRadius: 16,
-    padding: 10,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.22)',
-  },
-  pictureImgSlot: {
-    width: '100%',
-    height: 110,
-    borderRadius: 12,
-    backgroundColor: 'rgba(25, 12, 5, 0.8)',
-    overflow: 'hidden',
-    marginBottom: 8,
-  },
-  pictureCaption: {
-    fontSize: 12,
-    fontWeight: '800',
-    color: '#FFF5E8',
-  },
-  pictureSub: {
-    fontSize: 10,
-    color: 'rgba(255, 220, 180, 0.55)',
-    marginTop: 2,
-  },
-  reachOutCard: {
-    backgroundColor: 'rgba(28, 12, 4, 0.88)',
-    borderRadius: 20,
-    padding: 16,
-    marginVertical: 14,
-    borderWidth: 1.4,
-    borderColor: '#FF9500',
-    shadowColor: '#FF9500',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 10,
-    elevation: 4,
-  },
-  reachOutHeader: {
-    flexDirection: 'row',
-    alignItems: 'flex-start',
-    gap: 12,
-    marginBottom: 12,
-  },
-  reachOutIcon: {
-    fontSize: 26,
-  },
-  reachOutTitle: {
-    fontSize: 15,
-    fontWeight: '900',
-    color: '#FFF5E8',
-  },
-  reachOutSub: {
-    fontSize: 11.5,
-    color: 'rgba(255, 220, 180, 0.75)',
-    lineHeight: 16,
-    marginTop: 3,
-  },
-  emailContainer: {
-    backgroundColor: 'rgba(15, 7, 2, 0.9)',
-    borderRadius: 12,
-    padding: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.2)',
-  },
-  emailLabel: {
-    fontSize: 10.5,
-    color: 'rgba(255, 220, 180, 0.6)',
-    fontWeight: '600',
-    marginBottom: 2,
-  },
-  emailValue: {
-    fontSize: 14,
-    fontWeight: '900',
-    color: '#FF9500',
-    marginBottom: 8,
-    letterSpacing: 0.4,
-  },
-  emailBtn: {
-    backgroundColor: '#FF9500',
-    borderRadius: 10,
-    paddingVertical: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  emailBtnText: {
-    color: '#0A0301',
-    fontWeight: '900',
-    fontSize: 12,
-    letterSpacing: 0.3,
-  },
-  reachOutNotice: {
-    fontSize: 10,
-    color: 'rgba(255, 220, 180, 0.5)',
-    fontStyle: 'italic',
-    marginTop: 10,
-    textAlign: 'center',
-  },
-  infoCard: {
-    backgroundColor: 'rgba(22, 10, 4, 0.78)',
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.22)',
-  },
-  infoCardHeading: {
-    fontSize: 13.5,
-    fontWeight: '800',
-    color: '#FFB74D',
-    marginBottom: 8,
-  },
-  infoParagraph: {
-    fontSize: 12.5,
-    color: 'rgba(255, 235, 215, 0.8)',
-    lineHeight: 19,
-    marginBottom: 10,
-  },
-  bulletList: {
-    gap: 8,
-  },
-  bulletItem: {
-    fontSize: 12,
-    color: 'rgba(255, 230, 205, 0.78)',
-    lineHeight: 18,
-  },
-  boldText: {
-    color: '#FFF5E8',
-    fontWeight: '800',
-  },
-  districtTagsRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 6,
-    marginVertical: 10,
-  },
-  districtPill: {
-    backgroundColor: 'rgba(255, 149, 0, 0.12)',
+    borderColor: '#FFA726',
     borderRadius: 8,
     paddingHorizontal: 10,
     paddingVertical: 4,
+    marginBottom: 8,
+  },
+  badgePillText: {
+    color: '#FFEED6',
+    fontSize: 9.5,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+  },
+  heroTitle: {
+    color: '#FFFFFF',
+    fontSize: 19,
+    fontWeight: '800',
+    lineHeight: 24,
+    letterSpacing: -0.2,
+  },
+  heroSubtitle: {
+    color: 'rgba(255, 220, 180, 0.85)',
+    fontSize: 12,
+    marginTop: 4,
+    fontWeight: '600',
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    paddingHorizontal: 16,
+    marginTop: 16,
+    marginBottom: 12,
+  },
+  statChip: {
+    flex: 1,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: 'rgba(255, 149, 0, 0.25)',
+    paddingVertical: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  districtPillText: {
-    fontSize: 11,
+  statVal: {
+    color: '#FF9500',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  statLbl: {
+    fontSize: 10.5,
+    fontWeight: '600',
+    marginTop: 2,
+  },
+  card: {
+    marginHorizontal: 16,
+    marginTop: 10,
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 18,
+  },
+  reachOutCard: {
+    marginHorizontal: 16,
+    marginTop: 14,
+    borderRadius: 18,
+    borderWidth: 1.5,
+    padding: 18,
+  },
+  cardHeading: {
+    fontSize: 16,
+    fontWeight: '800',
+    letterSpacing: -0.2,
+    marginBottom: 8,
+  },
+  cardSubText: {
+    fontSize: 12.5,
+    lineHeight: 18,
+    marginBottom: 14,
+  },
+  cardBodyText: {
+    fontSize: 13,
+    lineHeight: 20,
+  },
+  actionBtn: {
+    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    borderRadius: 12,
+    borderWidth: 1.2,
+    borderColor: '#FF9500',
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+  },
+  actionBtnLabel: {
     color: '#FFB74D',
-    fontWeight: '700',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
   },
-  addressLine: {
-    fontSize: 11,
-    color: 'rgba(255, 220, 180, 0.65)',
-    marginTop: 6,
-    lineHeight: 16,
+  actionBtnValue: {
+    color: '#FFFFFF',
+    fontSize: 13.5,
+    fontWeight: '700',
+    marginTop: 2,
+  },
+  addressBox: {
+    marginTop: 14,
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 160, 40, 0.2)',
+  },
+  addressLabel: {
+    color: '#FFB74D',
+    fontSize: 10,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    marginBottom: 3,
+  },
+  addressText: {
+    fontSize: 12,
+    lineHeight: 17,
+  },
+  focusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 160, 40, 0.1)',
+  },
+  bulletDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#FF9500',
+    marginRight: 10,
+  },
+  focusText: {
+    fontSize: 13,
+    fontWeight: '500',
   },
 });

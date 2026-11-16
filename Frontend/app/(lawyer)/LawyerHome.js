@@ -89,7 +89,7 @@ export default function LawyerHome() {
             !lawyerProfile.isVerified && { backgroundColor: 'rgba(245, 158, 11, 0.18)', borderColor: 'rgba(245, 158, 11, 0.4)' }
           ]}>
             <Text style={[styles.verifiedText, !lawyerProfile.isVerified && { color: '#f59e0b' }]}>
-              {lawyerProfile.isVerified ? '✓ SBC Verified' : 'Pending Verification'}
+              {lawyerProfile.isVerified ? 'SBC Verified' : 'Pending Verification'}
             </Text>
           </View>
         </View>

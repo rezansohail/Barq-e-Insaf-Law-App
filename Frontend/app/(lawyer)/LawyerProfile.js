@@ -15,7 +15,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useMockStore, lawyerProfile, updateLawyerProfile, fetchLawyerDashboard } from './MockStore';
-import { getCurrentLawyerId } from '../../constants/authStore';
+import { getCurrentLawyerId, clearSession } from '../../constants/authStore';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
@@ -33,6 +33,24 @@ export default function LawyerProfile() {
   const [saving, setSaving] = useState(false);
   
   const currentLawyerId = params.lawyerId || params.id || getCurrentLawyerId();
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out of your advocate account?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await clearSession();
+            router.replace('/LoginScreen');
+          },
+        },
+      ]
+    );
+  };
 
   // Local state for editing
   const [editedData, setEditedData] = useState({
@@ -198,7 +216,7 @@ export default function LawyerProfile() {
             !lawyerProfile.isVerified && { backgroundColor: 'rgba(217, 119, 6, 0.25)', borderColor: '#f59e0b' }
           ]}>
             <Text style={styles.statusPillText}>
-              {lawyerProfile.isVerified ? '✓ SBC Verified Advocate' : 'Bar Verification Pending'}
+              {lawyerProfile.isVerified ? 'SBC Verified Advocate' : 'Bar Verification Pending'}
             </Text>
           </View>
         </View>
@@ -399,6 +417,24 @@ export default function LawyerProfile() {
             )}
           </TouchableOpacity>
         )}
+
+        {/* TERMS AND CONDITIONS LINK */}
+        <TouchableOpacity
+          style={styles.termsBtn}
+          onPress={() => router.push('/TermsScreen')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.termsBtnText}>View Terms & Conditions</Text>
+        </TouchableOpacity>
+
+        {/* SIGN OUT BUTTON ON PAGE BELOW WHOLE PROFILE CONTENT */}
+        <TouchableOpacity
+          style={styles.signOutBtn}
+          onPress={handleSignOut}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.signOutBtnText}>Sign Out of Advocate Account</Text>
+        </TouchableOpacity>
 
       </ScrollView>
 
@@ -642,5 +678,36 @@ const styles = StyleSheet.create({
     color: '#FFB74D',
     textAlign: 'center',
     fontWeight: '600',
+  },
+  termsBtn: {
+    marginTop: 18,
+    marginBottom: 10,
+    backgroundColor: 'rgba(255, 149, 0, 0.12)',
+    borderRadius: 14,
+    paddingVertical: 13,
+    alignItems: 'center',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 175, 50, 0.35)',
+  },
+  termsBtnText: {
+    color: '#FFB74D',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  signOutBtn: {
+    marginBottom: 20,
+    backgroundColor: 'rgba(239, 68, 68, 0.14)',
+    borderRadius: 14,
+    paddingVertical: 13,
+    alignItems: 'center',
+    borderWidth: 1.2,
+    borderColor: 'rgba(239, 68, 68, 0.45)',
+  },
+  signOutBtnText: {
+    color: '#EF4444',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.3,
   },
 });

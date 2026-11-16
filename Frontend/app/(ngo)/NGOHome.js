@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, StatusBar, ActivityIndicator, Alert, Modal, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './NGOHome.styles';
@@ -9,6 +9,8 @@ import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { fetchRealSindhCases } from '../../constants/realCasesStore';
 import { useAppTheme } from '../../context/ThemeContext';
 import SindhCasesMap from '../../components/SindhCasesMap';
+import { clearSession } from '../../constants/authStore';
+import { getNGOProfile, updateNGOProfile, subscribeToStore } from '../../constants/ngoMediaStore';
 
 export default function NGOHome() {
   const router = useRouter();
@@ -17,6 +19,37 @@ export default function NGOHome() {
 
   const [realCases, setRealCases] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [ngoProfile, setNgoProfile] = useState(getNGOProfile());
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editDesc, setEditDesc] = useState(ngoProfile.description);
+  const [editEmail, setEditEmail] = useState(ngoProfile.email);
+  const [editPhone, setEditPhone] = useState(ngoProfile.phone);
+  const [editHelpline, setEditHelpline] = useState(ngoProfile.helpline);
+  const [editAddress, setEditAddress] = useState(ngoProfile.officeAddress);
+
+  useEffect(() => {
+    return subscribeToStore(() => {
+      const p = getNGOProfile();
+      setNgoProfile(p);
+      setEditDesc(p.description);
+      setEditEmail(p.email);
+      setEditPhone(p.phone);
+      setEditHelpline(p.helpline);
+      setEditAddress(p.officeAddress);
+    });
+  }, []);
+
+  const handleSaveProfile = () => {
+    updateNGOProfile({
+      description: editDesc,
+      email: editEmail,
+      phone: editPhone,
+      helpline: editHelpline,
+      officeAddress: editAddress,
+    });
+    setShowEditModal(false);
+    Alert.alert('Profile Updated', 'Your organization info is now updated for Citizens and Advocates.');
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -34,6 +67,24 @@ export default function NGOHome() {
   const propertyCount = realCases.filter((c) => /property|land/i.test(c.type)).length;
   const familyCount = realCases.filter((c) => /family|custody|khula/i.test(c.type)).length;
   const otherCount = Math.max(0, totalCases - propertyCount - familyCount);
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out of NGO Portal',
+      'Are you sure you want to end your NGO session?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await clearSession();
+            router.replace('/LoginScreen');
+          },
+        },
+      ]
+    );
+  };
 
   const safeBg = isDarkMode ? '#080402' : '#FAF8F5';
 
@@ -147,7 +198,108 @@ export default function NGOHome() {
             <Text style={[styles.insightLabel, { color: isDarkMode ? 'rgba(255, 235, 215, 0.7)' : '#664530' }]}>Sindh Coverage</Text>
           </View>
         </View>
+
+        {/* EDIT ORGANIZATION INFO (LIVE FOR CITIZENS & ADVOCATES) */}
+        <TouchableOpacity
+          style={[styles.termsBtn, { backgroundColor: 'rgba(255, 149, 0, 0.15)', borderColor: '#FF9500' }]}
+          onPress={() => setShowEditModal(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.termsBtnText, { color: '#FFB74D' }]}>Edit Organization Public Profile</Text>
+        </TouchableOpacity>
+
+        {/* TERMS AND CONDITIONS LINK */}
+        <TouchableOpacity
+          style={styles.termsBtn}
+          onPress={() => router.push('/TermsScreen')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.termsBtnText}>View Terms & Conditions</Text>
+        </TouchableOpacity>
+
+        {/* SIGN OUT BUTTON BELOW PAGE CONTENT */}
+        <TouchableOpacity
+          style={styles.signOutBtn}
+          onPress={handleSignOut}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.signOutBtnText}>Sign Out of NGO Portal</Text>
+        </TouchableOpacity>
       </ScrollView>
+
+      {/* EDIT MODAL */}
+      <Modal
+        visible={showEditModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowEditModal(false)}
+      >
+        <View style={{ flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', padding: 20 }}>
+          <View style={{ backgroundColor: isDarkMode ? '#170905' : '#FFFFFF', borderRadius: 20, padding: 20, borderWidth: 1, borderColor: 'rgba(255, 149, 0, 0.35)', maxHeight: '85%' }}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <Text style={{ fontSize: 18, fontWeight: '800', color: isDarkMode ? '#FFFFFF' : '#1A0C04', marginBottom: 6 }}>
+                Edit Organization Profile
+              </Text>
+              <Text style={{ fontSize: 12, color: isDarkMode ? 'rgba(255, 220, 180, 0.7)' : '#7C5238', marginBottom: 16 }}>
+                Updates will be visible live to citizens and lawyers on NCHD Overview screen.
+              </Text>
+
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#FF9500', marginBottom: 4 }}>MISSION / MANDATE</Text>
+              <TextInput
+                style={{ backgroundColor: isDarkMode ? 'rgba(30, 15, 8, 0.9)' : '#F5EBE1', borderRadius: 10, padding: 12, color: isDarkMode ? '#FFF' : '#000', fontSize: 13, marginBottom: 12, minHeight: 70, textAlignVertical: 'top' }}
+                value={editDesc}
+                onChangeText={setEditDesc}
+                multiline
+              />
+
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#FF9500', marginBottom: 4 }}>OFFICIAL DESK EMAIL</Text>
+              <TextInput
+                style={{ backgroundColor: isDarkMode ? 'rgba(30, 15, 8, 0.9)' : '#F5EBE1', borderRadius: 10, padding: 12, color: isDarkMode ? '#FFF' : '#000', fontSize: 13, marginBottom: 12 }}
+                value={editEmail}
+                onChangeText={setEditEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#FF9500', marginBottom: 4 }}>PHONE NUMBER</Text>
+              <TextInput
+                style={{ backgroundColor: isDarkMode ? 'rgba(30, 15, 8, 0.9)' : '#F5EBE1', borderRadius: 10, padding: 12, color: isDarkMode ? '#FFF' : '#000', fontSize: 13, marginBottom: 12 }}
+                value={editPhone}
+                onChangeText={setEditPhone}
+              />
+
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#FF9500', marginBottom: 4 }}>HELPLINE</Text>
+              <TextInput
+                style={{ backgroundColor: isDarkMode ? 'rgba(30, 15, 8, 0.9)' : '#F5EBE1', borderRadius: 10, padding: 12, color: isDarkMode ? '#FFF' : '#000', fontSize: 13, marginBottom: 12 }}
+                value={editHelpline}
+                onChangeText={setEditHelpline}
+              />
+
+              <Text style={{ fontSize: 11, fontWeight: '700', color: '#FF9500', marginBottom: 4 }}>OFFICE ADDRESS</Text>
+              <TextInput
+                style={{ backgroundColor: isDarkMode ? 'rgba(30, 15, 8, 0.9)' : '#F5EBE1', borderRadius: 10, padding: 12, color: isDarkMode ? '#FFF' : '#000', fontSize: 13, marginBottom: 18 }}
+                value={editAddress}
+                onChangeText={setEditAddress}
+              />
+
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: 'rgba(255,255,255,0.1)', paddingVertical: 12, borderRadius: 10, alignItems: 'center' }}
+                  onPress={() => setShowEditModal(false)}
+                >
+                  <Text style={{ color: isDarkMode ? '#FFF' : '#333', fontWeight: '700' }}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={{ flex: 1, backgroundColor: '#FF9500', paddingVertical: 12, borderRadius: 10, alignItems: 'center' }}
+                  onPress={handleSaveProfile}
+                >
+                  <Text style={{ color: '#000', fontWeight: '800' }}>Save Changes</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
 
       {/* Consistent Bottom Nav */}
       <BottomNavBar role="ngo" activeTab="home" />

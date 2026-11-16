@@ -140,7 +140,7 @@ export default function NGOExportReports() {
                 <Text style={styles.toggleDesc}>Attach certificate timestamps and advocate chamber verification</Text>
               </View>
               <View style={[styles.checkbox, includeBiometric && styles.checkboxActive]}>
-                {includeBiometric && <Text style={styles.checkMark}>✓</Text>}
+                {includeBiometric && <View style={styles.checkInner} />}
               </View>
             </TouchableOpacity>
 
@@ -156,7 +156,7 @@ export default function NGOExportReports() {
                 <Text style={styles.toggleDesc}>Stamp official serial number for government petitioning</Text>
               </View>
               <View style={[styles.checkbox, includeNCHD && styles.checkboxActive]}>
-                {includeNCHD && <Text style={styles.checkMark}>✓</Text>}
+                {includeNCHD && <View style={styles.checkInner} />}
               </View>
             </TouchableOpacity>
           </View>
@@ -332,10 +332,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FF9500',
     borderColor: '#FF9500',
   },
-  checkMark: {
-    color: '#0A0402',
-    fontSize: 13,
-    fontWeight: '900',
+  checkInner: {
+    width: 10,
+    height: 10,
+    borderRadius: 3,
+    backgroundColor: '#0A0402',
   },
   divider: {
     height: 1,

@@ -9,6 +9,7 @@ import Svg, { Path } from 'react-native-svg';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const ALL_LAWYERS = [
   { id: '1', name: 'Adv. Tariq Mansoor', specialty: 'Property & Civil', license: 'SBC-4421', cnic: '42101-7788990-1', city: 'Karachi', district: 'Karachi Central', status: 'Active', cases: 180 },
@@ -21,6 +22,7 @@ const STATUSES = ['All', 'Active', 'Pending'];
 
 export default function LawyerManagement() {
   const router = useRouter();
+  const { isDark, theme } = useAppTheme();
   const [lawyers, setLawyers] = useState(ALL_LAWYERS);
   const [search, setSearch] = useState('');
   const [selectedSpecialty, setSelectedSpecialty] = useState('All');
@@ -49,9 +51,17 @@ export default function LawyerManagement() {
     setLawyers(prev => prev.filter(l => l.id !== id));
   };
 
+  const bg = isDark ? '#060201' : '#FAF7F2';
+  const cardBg = isDark ? 'rgba(22, 10, 4, 0.78)' : '#FFFFFF';
+  const cardBorder = isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)';
+  const textPrimary = isDark ? '#FFF5E8' : '#1A0F07';
+  const textSecondary = isDark ? 'rgba(255, 220, 180, 0.65)' : '#6B5442';
+  const inputBg = isDark ? 'rgba(25, 12, 5, 0.75)' : '#FFFFFF';
+  const inputBorder = isDark ? 'rgba(255, 160, 40, 0.25)' : 'rgba(255, 149, 0, 0.25)';
+
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
 
       {/* Modern '< Lawyer Registry' Header */}
       <AppHeader
@@ -63,14 +73,14 @@ export default function LawyerManagement() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
         {/* Search */}
-        <View style={styles.searchBox}>
+        <View style={[styles.searchBox, { backgroundColor: inputBg, borderColor: inputBorder }]}>
           <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
             <Path d="M21 21l-4.35-4.35M19 11a8 8 0 11-16 0 8 8 0 0116 0z" stroke="#FF9500" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
           </Svg>
           <TextInput
-            style={styles.searchInput}
+            style={[styles.searchInput, { color: textPrimary }]}
             placeholder="Search by advocate name, SBC license, district..."
-            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+            placeholderTextColor={isDark ? "rgba(255, 220, 180, 0.35)" : "#9C8E84"}
             value={search}
             onChangeText={setSearch}
           />
@@ -81,29 +91,43 @@ export default function LawyerManagement() {
           {STATUSES.map(st => (
             <TouchableOpacity
               key={st}
-              style={[styles.chip, selectedStatus === st && styles.chipActive]}
+              style={[
+                styles.chip,
+                {
+                  backgroundColor: selectedStatus === st ? '#FF9500' : isDark ? 'rgba(25, 12, 5, 0.72)' : '#F0E8DD',
+                  borderColor: selectedStatus === st ? '#FFA726' : isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)',
+                },
+              ]}
               onPress={() => setSelectedStatus(st)}
               activeOpacity={0.75}
             >
-              <Text style={[styles.chipTxt, selectedStatus === st && styles.chipTxtActive]}>{st}</Text>
+              <Text
+                style={[
+                  styles.chipTxt,
+                  { color: selectedStatus === st ? '#0A0301' : isDark ? 'rgba(255, 220, 180, 0.65)' : '#6B5442' },
+                  selectedStatus === st && styles.chipTxtActive,
+                ]}
+              >
+                {st}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
         {/* Lawyer Cards */}
         {filtered.length === 0 ? (
-          <Text style={styles.emptyTxt}>No advocates found matching criteria.</Text>
+          <Text style={[styles.emptyTxt, { color: textSecondary }]}>No advocates found matching criteria.</Text>
         ) : (
           filtered.map(l => (
-            <View key={l.id} style={styles.card}>
+            <View key={l.id} style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
               <View style={styles.cardTop}>
                 <View style={styles.avatar}>
                   <Text style={styles.avatarTxt}>{l.name.slice(0, 2).toUpperCase()}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.cardName}>{l.name}</Text>
+                  <Text style={[styles.cardName, { color: textPrimary }]}>{l.name}</Text>
                   <Text style={styles.cardSub}>{l.license} · {l.specialty}</Text>
-                  <Text style={styles.cardDistrict}>CNIC: {l.cnic} · {l.district || l.city}</Text>
+                  <Text style={[styles.cardDistrict, { color: textSecondary }]}>CNIC: {l.cnic} · {l.district || l.city}</Text>
                 </View>
                 <View style={[styles.statusBadge, l.status === 'Active' ? styles.statusActive : styles.statusPending]}>
                   <Text style={[styles.statusTxt, l.status === 'Active' ? styles.statusTxtActive : styles.statusTxtPending]}>
@@ -119,7 +143,7 @@ export default function LawyerManagement() {
                     onPress={() => handleApprove(l.id)}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.approveBtnTxt}>✓ APPROVE SBC LICENSE</Text>
+                    <Text style={styles.approveBtnTxt}>APPROVE SBC LICENSE</Text>
                   </TouchableOpacity>
                 )}
                 <TouchableOpacity 

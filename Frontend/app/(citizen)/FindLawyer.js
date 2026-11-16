@@ -18,13 +18,15 @@ import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
 
-const specialties = ['All', 'Property', 'Family', 'Civil', 'Criminal'];
+const TYPE_OPTIONS = ['All Types', 'Property Law', 'Family Law'];
+const DISTRICT_OPTIONS = ['All Districts', 'Karachi', 'Hyderabad', 'Sukkur', 'Larkana', 'Thatta', 'Mirpur Khas'];
 
 export default function FindLawyer() {
   useMockStore();
   const router = useRouter();
   const { theme, isDarkMode } = useAppTheme();
-  const [activeFilter, setActiveFilter] = useState('All');
+  const [selectedType, setSelectedType] = useState('All Types');
+  const [selectedDistrict, setSelectedDistrict] = useState('All Districts');
   const [search, setSearch] = useState('');
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [showLawyerProfile, setShowLawyerProfile] = useState(false);
@@ -33,15 +35,32 @@ export default function FindLawyer() {
   useAppNavigation({ isHome: false, homeRoute: '/(citizen)/CitizenHome' });
 
   useEffect(() => {
-    fetchLawyersList(activeFilter);
-  }, [activeFilter]);
+    fetchLawyersList();
+  }, []);
 
   const filtered = lawyers.filter(l => {
-    const matchSpec = activeFilter === 'All' || (l.spec && l.spec.toLowerCase().includes(activeFilter.toLowerCase()));
-    const matchSearch = (l.name || '').toLowerCase().includes(search.toLowerCase()) || 
-      (l.district && l.district.toLowerCase().includes(search.toLowerCase())) ||
-      (l.spec && l.spec.toLowerCase().includes(search.toLowerCase()));
-    return matchSpec && matchSearch;
+    // 1. Legal Type filter (Property / Family)
+    let matchType = true;
+    if (selectedType === 'Property Law') {
+      matchType = /property|land|real estate|tenancy/i.test(l.spec || '');
+    } else if (selectedType === 'Family Law') {
+      matchType = /family|custody|khula|divorce/i.test(l.spec || '');
+    }
+
+    // 2. District filter
+    let matchDistrict = true;
+    if (selectedDistrict !== 'All Districts') {
+      matchDistrict = (l.district || l.location || '').toLowerCase().includes(selectedDistrict.toLowerCase());
+    }
+
+    // 3. Search query
+    const q = search.trim().toLowerCase();
+    const matchSearch = !q ||
+      (l.name || '').toLowerCase().includes(q) ||
+      (l.district && l.district.toLowerCase().includes(q)) ||
+      (l.spec && l.spec.toLowerCase().includes(q));
+
+    return matchType && matchDistrict && matchSearch;
   });
 
   const handleBookConsultation = (lawyer) => {
@@ -80,33 +99,67 @@ export default function FindLawyer() {
           />
         </View>
 
-        {/* FILTER CHIPS */}
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}
-        >
-          {specialties.map((spec) => (
-            <TouchableOpacity
-              key={spec}
-              style={[
-                styles.filterChip,
-                activeFilter === spec && styles.filterChipActive,
-              ]}
-              onPress={() => setActiveFilter(spec)}
-              activeOpacity={0.75}
-            >
-              <Text
+        {/* FILTER 1: CASE TYPE (FAMILY / PROPERTY) */}
+        <View style={styles.filterSection}>
+          <Text style={styles.filterSectionLabel}>Legal Type (Family / Property)</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            {TYPE_OPTIONS.map((type) => (
+              <TouchableOpacity
+                key={type}
                 style={[
-                  styles.filterText,
-                  activeFilter === spec && styles.filterTextActive,
+                  styles.filterChip,
+                  selectedType === type && styles.filterChipActive,
                 ]}
+                onPress={() => setSelectedType(type)}
+                activeOpacity={0.75}
               >
-                {spec}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
+                <Text
+                  style={[
+                    styles.filterText,
+                    selectedType === type && styles.filterTextActive,
+                  ]}
+                >
+                  {type}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+
+        {/* FILTER 2: SINDH DISTRICT */}
+        <View style={styles.filterSection}>
+          <Text style={styles.filterSectionLabel}>District (Sindh)</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.filterRow}
+          >
+            {DISTRICT_OPTIONS.map((dist) => (
+              <TouchableOpacity
+                key={dist}
+                style={[
+                  styles.filterChip,
+                  selectedDistrict === dist && styles.filterChipActive,
+                ]}
+                onPress={() => setSelectedDistrict(dist)}
+                activeOpacity={0.75}
+              >
+                <Text
+                  style={[
+                    styles.filterText,
+                    selectedDistrict === dist && styles.filterTextActive,
+                  ]}
+                >
+                  {dist}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
 
         {/* ADVOCATE CARDS */}
         {filtered.length === 0 ? (
@@ -170,7 +223,7 @@ export default function FindLawyer() {
                 <View style={styles.modalHeader}>
                   <Text style={styles.modalTitle}>Advocate Profile</Text>
                   <TouchableOpacity onPress={() => setShowLawyerProfile(false)} style={styles.closeBtn}>
-                    <Text style={styles.closeBtnText}>✕</Text>
+                    <Text style={styles.closeBtnText}>X</Text>
                   </TouchableOpacity>
                 </View>
 

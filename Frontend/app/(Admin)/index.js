@@ -1,42 +1,61 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StatusBar, StyleSheet, Dimensions, Alert, Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
 import TopHeaderMenu from '../../components/TopHeaderMenu';
 import LanguagePeekingTab from '../../components/LanguagePeekingTab';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import { clearSession } from '../../constants/authStore';
+import { getAdminUnreadNotificationStatus, subscribeToStore } from '../../constants/ngoMediaStore';
 
 const { width } = Dimensions.get('window');
 
 const STATS = [
-  { label: 'Registered Lawyers',    value: '12', delta: 'Sindh Bar Council',  color: '#FF9500', tag: 'LAW' },
-  { label: 'Verified Advocates',    value: '10', delta: 'Active SBC License', color: '#166534', tag: 'VER' },
-  { label: 'Registered Citizens',   value: '24', delta: 'Sindh Jurisdictions',color: '#FFA726', tag: 'CIT' },
-  { label: 'Accredited NGOs/Media', value: '2',  delta: 'NCHD & KTN News',   color: '#1e40af', tag: 'ORG' },
-  { label: 'Active Vault Cases',    value: '8',  delta: 'Under Counsel',     color: '#FF7043', tag: 'ACT' },
-  { label: 'Disposed Legal Cases',  value: '16', delta: 'Completed Matters', color: '#FFB74D', tag: 'DIS' },
-];
-
-const SYSTEM_ACTIVITIES = [
-  { title: 'Sindh Bar Council Registry Audit', sub: 'Advocate license verification active and online', color: '#4ade80' },
-  { title: 'Neon PostgreSQL Cloud Database', sub: 'Connection pool healthy · Latency 42ms', color: '#60a5fa' },
-  { title: 'Evidence Vault Integrity Check', sub: 'AES-256 file encryption operational for citizen records', color: '#f59e0b' },
-  { title: 'NCHD & KTN News Desk Endpoints', sub: 'Public interest email desks verified & reachable', color: '#FF9500' },
+  { label: 'Total Citizens Registered', value: '24', delta: 'Sindh Jurisdictions', color: '#FFA726', tag: 'CIT' },
+  { label: 'Total Lawyers Registered',  value: '12', delta: 'Sindh Bar Council',   color: '#FF9500', tag: 'LAW' },
+  { label: 'Total Cases Registered',    value: '24', delta: '8 Active · 16 Disposed', color: '#FF7043', tag: 'CAS' },
+  { label: 'Total NGOs & Media',        value: '6',  delta: 'Accredited Portals',  color: '#38BDF8', tag: 'ORG' },
 ];
 
 export default function AdminHome() {
   const router = useRouter();
   const { isDark, theme } = useAppTheme();
+  const [hasUnread, setHasUnread] = useState(getAdminUnreadNotificationStatus());
+
+  useEffect(() => {
+    return subscribeToStore(() => {
+      setHasUnread(getAdminUnreadNotificationStatus());
+    });
+  }, []);
 
   // Enforce double-back to exit on Home, never fall back to login screen
   useAppNavigation({ isHome: true, homeRoute: '/(Admin)' });
 
   const goTo = (screen) => router.push(`/(Admin)/${screen}`);
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out of Admin',
+      'Are you sure you want to end your administrative session?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await clearSession();
+            router.replace('/LoginScreen');
+          },
+        },
+      ]
+    );
+  };
 
   const handleSystemHealthCheck = () => {
     Alert.alert(
@@ -114,17 +133,39 @@ export default function AdminHome() {
           </View>
         </View>
         <View style={s.headerRight}>
-          <Text style={{ fontSize: 12, fontWeight: '700', color: isDark ? '#FFF2DF' : '#1A0F07' }}>
-            hi, Admin
+          <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#FFF2DF' : '#1A0F07' }}>
+            Admin
           </Text>
-          <View style={s.liveDot} />
+          <TouchableOpacity
+            style={[
+              s.topBellBtn,
+              {
+                backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : 'rgba(245, 240, 235, 0.9)',
+                borderColor: isDark ? 'rgba(255, 170, 60, 0.35)' : 'rgba(234, 88, 12, 0.35)',
+              },
+            ]}
+            onPress={() => router.push('/(Admin)/Notifications')}
+            activeOpacity={0.75}
+            accessibilityLabel="Notifications"
+          >
+            <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+              <Path
+                d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"
+                stroke={isDark ? '#FFE4C4' : '#1A0F07'}
+                strokeWidth={1.8}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </Svg>
+            {hasUnread && <View style={s.unreadGreenDot} />}
+          </TouchableOpacity>
           <TopHeaderMenu role="admin" avatarText="AD" />
         </View>
       </View>
 
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
 
-        {/* ── STATS GRID ── */}
+        {/* ── STATS GRID (ONLY 4 COUNTS) ── */}
         <Text style={[s.secTitle, dynamicStyles.secTitle]}>App Ecosystem Overview</Text>
         <View style={s.statsGrid}>
           {STATS.map((st, i) => (
@@ -144,8 +185,8 @@ export default function AdminHome() {
           {[
             { tag: 'LAW', label: 'Lawyer Management', sub: 'Verify SBC licenses', screen: 'LawyerManagement', color: '#FF9500' },
             { tag: 'CIT', label: 'Citizen Management', sub: 'Manage vaults & cases', screen: 'CitizenManagement', color: '#FFA726' },
-            { tag: 'NGO', label: 'NGO & Media Registry', sub: 'NCHD & KTN News', screen: 'NGOManagement', color: '#FF7043' },
-            { tag: 'SYS', label: 'Cloud DB Status', sub: 'Postgres & API status', isAction: true, color: '#4ade80' },
+            { tag: 'NGO', label: 'NGO Management', sub: 'NCHD & Relief Organizations', screen: 'NGOManagement', color: '#FF7043' },
+            { tag: 'MED', label: 'Media Management', sub: 'KTN News & Journalism Desk', screen: 'MediaManagement', color: '#38BDF8' },
           ].map((item, i) => (
             <TouchableOpacity
               key={i} style={[s.quickCard, dynamicStyles.quickCard]}
@@ -172,20 +213,25 @@ export default function AdminHome() {
           ))}
         </View>
 
-        {/* ── REAL APP SYSTEM AUDIT ── */}
-        <View style={[s.section, dynamicStyles.section, { marginBottom: 100 }]}>
-          <Text style={[s.sectionTitle, dynamicStyles.sectionTitle]}>System & Security Audit Log</Text>
-          {SYSTEM_ACTIVITIES.map((item, i) => (
-            <View key={i} style={s.activityItem}>
-              <View style={[s.activityDot, { backgroundColor: item.color }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={[s.activityTitle, dynamicStyles.activityTitle]}>{item.title}</Text>
-                <Text style={[s.activitySub, dynamicStyles.activitySub]}>{item.sub}</Text>
-              </View>
-            </View>
-          ))}
-        </View>
+        {/* ── TERMS & CONDITIONS LINK ── */}
+        <TouchableOpacity
+          style={s.termsBtn}
+          onPress={() => router.push('/TermsScreen')}
+          activeOpacity={0.8}
+        >
+          <Text style={s.termsBtnText}>View Platform Terms & Conditions</Text>
+        </TouchableOpacity>
 
+        {/* ── SIGN OUT BUTTON BELOW PAGE CONTENT ── */}
+        <TouchableOpacity
+          style={s.signOutBtn}
+          onPress={handleSignOut}
+          activeOpacity={0.85}
+        >
+          <Text style={s.signOutBtnText}>SIGN OUT OF ADMINISTRATIVE CONSOLE</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: 90 }} />
       </ScrollView>
 
       {/* Consistent Bottom Nav */}
@@ -202,6 +248,8 @@ const s = StyleSheet.create({
   headerTitle:   { fontSize: 18, fontWeight: '800', color: '#FFEED6', letterSpacing: -0.3 },
   headerSub:     { fontSize: 11, color: 'rgba(255, 180, 80, 0.65)', marginTop: 2, fontWeight: '500' },
   headerRight:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  topBellBtn:    { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  unreadGreenDot:{ position: 'absolute', top: 5, right: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e', borderWidth: 1.5, borderColor: '#0A0402' },
   liveDot:       { width: 7, height: 7, borderRadius: 4, backgroundColor: '#4ade80' },
   liveText:      { fontSize: 11, color: '#4ade80', fontWeight: '700' },
   avatar:        { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255, 149, 0, 0.15)', borderWidth: 1.5, borderColor: 'rgba(255, 170, 60, 0.3)', justifyContent: 'center', alignItems: 'center', marginLeft: 4 },
@@ -254,4 +302,34 @@ const s = StyleSheet.create({
   navLabel:      { fontSize: 9, fontWeight: '600', color: 'rgba(255, 235, 215, 0.45)', letterSpacing: 0.2 },
   navLabelActive:{ color: '#FF9500' },
   navDot:        { width: 4, height: 4, borderRadius: 2, backgroundColor: '#FF9500', marginTop: 1 },
+  termsBtn: {
+    backgroundColor: 'rgba(255, 149, 0, 0.12)',
+    borderRadius: 14,
+    paddingVertical: 13,
+    alignItems: 'center',
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 175, 50, 0.35)',
+    marginBottom: 10,
+  },
+  termsBtnText: {
+    color: '#FFB74D',
+    fontSize: 12.5,
+    fontWeight: '800',
+    letterSpacing: 0.3,
+  },
+  signOutBtn: {
+    backgroundColor: 'rgba(239, 68, 68, 0.14)',
+    borderRadius: 14,
+    paddingVertical: 14,
+    alignItems: 'center',
+    borderWidth: 1.2,
+    borderColor: 'rgba(239, 68, 68, 0.45)',
+    marginBottom: 10,
+  },
+  signOutBtnText: {
+    color: '#EF4444',
+    fontSize: 12.5,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+  },
 });

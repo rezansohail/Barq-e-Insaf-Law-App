@@ -9,6 +9,7 @@ import Svg, { Path } from 'react-native-svg';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const PER_PAGE = 5;
@@ -131,12 +132,19 @@ const DETAIL_TABS = ['Organization', 'Verification', 'Statistics', 'Account'];
 // ─── DETAIL VIEW ──────────────────────────────────────────────────────────────
 function NGODetail({ ngo: n, onBack }) {
   const [tab, setTab] = useState('Organization');
+  const { isDark } = useAppTheme();
   const sc = statusColors[n.status] || statusColors['Pending'];
   const initials = (n.name || '').split(' ').map(w => w[0]).join('').slice(0, 2);
 
+  const bg = isDark ? '#060201' : '#FAF7F2';
+  const cardBg = isDark ? 'rgba(22, 10, 4, 0.78)' : '#FFFFFF';
+  const cardBorder = isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)';
+  const textPrimary = isDark ? '#FFF5E8' : '#1A0F07';
+  const textSecondary = isDark ? 'rgba(255, 220, 180, 0.65)' : '#6B5442';
+
   return (
-    <SafeAreaView style={s.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+    <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
 
       {/* Modern Header */}
       <AppHeader
@@ -154,14 +162,14 @@ function NGODetail({ ngo: n, onBack }) {
       <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
         {/* Hero Card */}
-        <View style={s.heroCard}>
+        <View style={[s.heroCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
           <View style={s.heroAvatar}>
             <Text style={s.heroAvatarTxt}>{initials}</Text>
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={s.heroName}>{n.name}</Text>
+            <Text style={[s.heroName, { color: textPrimary }]}>{n.name}</Text>
             <Text style={s.heroSub}>{n.id} · {n.type}</Text>
-            <Text style={s.heroSubMuted}>{n.city} · Reg: {n.registrationNo}</Text>
+            <Text style={[s.heroSubMuted, { color: textSecondary }]}>{n.city} · Reg: {n.registrationNo}</Text>
           </View>
         </View>
 
@@ -253,13 +261,13 @@ function NGODetail({ ngo: n, onBack }) {
 
             <DSec title="Administrative Actions">
               <TouchableOpacity style={s.actPrimary} activeOpacity={0.8}>
-                <Text style={s.actPrimaryTxt}>✓ VERIFY & APPROVE NGO</Text>
+                <Text style={s.actPrimaryTxt}>VERIFY & APPROVE NGO</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.actWarn} activeOpacity={0.8}>
                 <Text style={s.actWarnTxt}>Suspend Operations</Text>
               </TouchableOpacity>
               <TouchableOpacity style={s.actDanger} activeOpacity={0.8}>
-                <Text style={s.actDangerTxt}>✕ Delete Registry Entry</Text>
+                <Text style={s.actDangerTxt}>Delete Registry Entry</Text>
               </TouchableOpacity>
             </DSec>
           </>
@@ -293,6 +301,7 @@ function IR({ label, value, highlight }) {
 // ─── MAIN LIST VIEW ──────────────────────────────────────────────────────────
 export default function NGOManagement() {
   const router = useRouter();
+  const { isDark } = useAppTheme();
   const [data, setData]         = useState(INITIAL_NGOS);
   const [search, setSearch]     = useState('');
   const [status, setStatus]     = useState('All');
@@ -320,6 +329,14 @@ export default function NGOManagement() {
   const handleDelete  = id => setData(p => p.filter(n => n.id !== id));
   const handleVerify  = id => setData(p => p.map(n => n.id === id ? { ...n, verificationStatus: 'Verified', status: 'Active' } : n));
 
+  const bg = isDark ? '#060201' : '#FAF7F2';
+  const cardBg = isDark ? 'rgba(22, 10, 4, 0.78)' : '#FFFFFF';
+  const cardBorder = isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)';
+  const textPrimary = isDark ? '#FFF5E8' : '#1A0F07';
+  const textSecondary = isDark ? 'rgba(255, 220, 180, 0.65)' : '#6B5442';
+  const inputBg = isDark ? 'rgba(25, 12, 5, 0.75)' : '#FFFFFF';
+  const inputBorder = isDark ? 'rgba(255, 160, 40, 0.25)' : 'rgba(255, 149, 0, 0.25)';
+
   if (detail) {
     return <NGODetail ngo={detail} onBack={() => setDetail(null)} />;
   }
@@ -327,8 +344,8 @@ export default function NGOManagement() {
   const pendingCount = data.filter(n => n.verificationStatus === 'Pending').length;
 
   return (
-    <SafeAreaView style={s.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+    <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
 
       {/* Modern '< NGO Directory' Header */}
       <AppHeader
@@ -348,20 +365,20 @@ export default function NGOManagement() {
       <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
 
         {/* Search */}
-        <View style={s.searchBox}>
+        <View style={[s.searchBox, { backgroundColor: inputBg, borderColor: inputBorder }]}>
           <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
             <Path d="M21 21l-4.35-4.35M19 11a8 8 0 11-16 0 8 8 0 0116 0z" stroke="#FF9500" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
           </Svg>
           <TextInput
-            style={s.searchInput}
+            style={[s.searchInput, { color: textPrimary }]}
             placeholder="Search NGO name, ID, city..."
-            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+            placeholderTextColor={isDark ? "rgba(255, 220, 180, 0.35)" : "#9C8E84"}
             value={search}
             onChangeText={t => { setSearch(t); reset(); }}
           />
           {search ? (
             <TouchableOpacity onPress={() => { setSearch(''); reset(); }}>
-              <Text style={s.clearX}>✕</Text>
+              <Text style={s.clearX}>X</Text>
             </TouchableOpacity>
           ) : null}
         </View>
@@ -371,11 +388,25 @@ export default function NGOManagement() {
           {STATUSES.map(st => (
             <TouchableOpacity
               key={st}
-              style={[s.chip, status === st && s.chipActive]}
+              style={[
+                s.chip,
+                {
+                  backgroundColor: status === st ? '#FF9500' : isDark ? 'rgba(25, 12, 5, 0.72)' : '#F0E8DD',
+                  borderColor: status === st ? '#FFA726' : isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)',
+                },
+              ]}
               onPress={() => { setStatus(st); reset(); }}
               activeOpacity={0.75}
             >
-              <Text style={[s.chipTxt, status === st && s.chipTxtActive]}>{st}</Text>
+              <Text
+                style={[
+                  s.chipTxt,
+                  { color: status === st ? '#0A0301' : isDark ? 'rgba(255, 220, 180, 0.65)' : '#6B5442' },
+                  status === st && s.chipTxtActive,
+                ]}
+              >
+                {st}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -385,11 +416,25 @@ export default function NGOManagement() {
           {TYPES.map(t => (
             <TouchableOpacity
               key={t}
-              style={[s.chip, type === t && s.chipActive]}
+              style={[
+                s.chip,
+                {
+                  backgroundColor: type === t ? '#FF9500' : isDark ? 'rgba(25, 12, 5, 0.72)' : '#F0E8DD',
+                  borderColor: type === t ? '#FFA726' : isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)',
+                },
+              ]}
               onPress={() => { setType(t); reset(); }}
               activeOpacity={0.75}
             >
-              <Text style={[s.chipTxt, type === t && s.chipTxtActive]}>{t}</Text>
+              <Text
+                style={[
+                  s.chipTxt,
+                  { color: type === t ? '#0A0301' : isDark ? 'rgba(255, 220, 180, 0.65)' : '#6B5442' },
+                  type === t && s.chipTxtActive,
+                ]}
+              >
+                {t}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
@@ -397,22 +442,22 @@ export default function NGOManagement() {
         {/* NGO List */}
         {paginated.length === 0 ? (
           <View style={s.empty}>
-            <Text style={s.emptyTxt}>No organizations found matching criteria.</Text>
+            <Text style={[s.emptyTxt, { color: textSecondary }]}>No organizations found matching criteria.</Text>
           </View>
         ) : (
           paginated.map(n => {
             const sc = statusColors[n.status] || statusColors['Pending'];
             const initials = (n.name || '').split(' ').map(w => w[0]).join('').slice(0, 2);
             return (
-              <View key={n.id} style={s.card}>
+              <View key={n.id} style={[s.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
                 <View style={s.cardTop}>
                   <View style={s.avatar}>
                     <Text style={s.avatarTxt}>{initials}</Text>
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={s.cardName}>{n.name}</Text>
+                    <Text style={[s.cardName, { color: textPrimary }]}>{n.name}</Text>
                     <Text style={s.cardSub}>{n.type} · {n.city}</Text>
-                    <Text style={s.cardReg}>Reg: {n.registrationNo}</Text>
+                    <Text style={[s.cardReg, { color: textSecondary }]}>Reg: {n.registrationNo}</Text>
                   </View>
                   <View style={[s.statusBadge, { backgroundColor: sc.bg, borderColor: sc.border }]}>
                     <Text style={[s.statusTxt, { color: sc.text }]}>{n.status}</Text>
@@ -420,20 +465,20 @@ export default function NGOManagement() {
                 </View>
 
                 {/* Metrics */}
-                <View style={s.statsRow}>
+                <View style={[s.statsRow, { backgroundColor: isDark ? 'rgba(15, 7, 2, 0.85)' : '#F7F3EE', borderColor: isDark ? 'rgba(255, 160, 40, 0.15)' : 'rgba(0,0,0,0.06)' }]}>
                   <View style={s.statItem}>
-                    <Text style={s.statVal}>{n.totalCases}</Text>
-                    <Text style={s.statLbl}>Cases</Text>
+                    <Text style={[s.statVal, { color: textPrimary }]}>{n.totalCases}</Text>
+                    <Text style={[s.statLbl, { color: textSecondary }]}>Cases</Text>
                   </View>
                   <View style={s.statDiv} />
                   <View style={s.statItem}>
-                    <Text style={s.statVal}>{n.totalBeneficiaries}</Text>
-                    <Text style={s.statLbl}>Beneficiaries</Text>
+                    <Text style={[s.statVal, { color: textPrimary }]}>{n.totalBeneficiaries}</Text>
+                    <Text style={[s.statLbl, { color: textSecondary }]}>Beneficiaries</Text>
                   </View>
                   <View style={s.statDiv} />
                   <View style={s.statItem}>
-                    <Text style={s.statVal}>{n.totalLawyers}</Text>
-                    <Text style={s.statLbl}>Advocates</Text>
+                    <Text style={[s.statVal, { color: textPrimary }]}>{n.totalLawyers}</Text>
+                    <Text style={[s.statLbl, { color: textSecondary }]}>Advocates</Text>
                   </View>
                 </View>
 

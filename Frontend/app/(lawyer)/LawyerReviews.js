@@ -11,16 +11,12 @@ const reviewsList = [
   {
     clientName: 'Rezan Sohail',
     caseType: 'Property Dispute',
-    score: '5.0',
-    rating: '★★★★★',
     comment: 'Exceptional legal representation. The advocate guided our civil matter thoroughly with proper court filings.',
     date: '12 Nov 2026',
   },
   {
     clientName: 'Farooq Ahmed',
     caseType: 'Inheritance Matter',
-    score: '4.8',
-    rating: '★★★★★',
     comment: 'Very professional chamber consultancy. Clear advice on inheritance succession certificates.',
     date: '08 Nov 2026',
   },
@@ -29,10 +25,6 @@ const reviewsList = [
 export default function LawyerReviews() {
   const router = useRouter();
   const reviewCount = reviewsList.length;
-  const averageScore = reviewCount > 0
-    ? reviewsList.reduce((sum, r) => sum + Number(r.score || 0), 0) / reviewCount
-    : 4.9;
-  const filledStars = Math.round(averageScore);
 
   // Hardware back returns to LawyerHome
   useAppNavigation({ isHome: false, homeRoute: '/(lawyer)/LawyerHome' });
@@ -50,13 +42,12 @@ export default function LawyerReviews() {
       />
 
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        {/* Rating Summary Card */}
+        {/* Feedback Summary Card */}
         <View style={styles.summaryCard}>
-          <Text style={styles.summaryScore}>{averageScore.toFixed(1)}</Text>
-          <Text style={styles.summaryStars}>{'★'.repeat(filledStars)}{'☆'.repeat(5 - filledStars)}</Text>
-          <Text style={styles.summarySub}>Based on {reviewCount} verified client consultation{reviewCount === 1 ? '' : 's'}</Text>
+          <Text style={styles.summaryScore}>{reviewCount}</Text>
+          <Text style={styles.summarySub}>Verified client consultations on record</Text>
           <View style={styles.verifiedBadge}>
-            <Text style={styles.verifiedText}>✓ Verified by Barq-e-Insaf & SBC</Text>
+            <Text style={styles.verifiedText}>Verified by Barq-e-Insaf & SBC</Text>
           </View>
         </View>
 
@@ -75,7 +66,7 @@ export default function LawyerReviews() {
                 <Text style={styles.caseType}>{item.caseType}</Text>
               </View>
               <View style={styles.scorePill}>
-                <Text style={styles.scoreText}>★ {item.score}</Text>
+                <Text style={styles.scoreText}>Verified Pro Bono</Text>
               </View>
             </View>
 

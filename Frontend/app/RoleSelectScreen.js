@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,6 +8,7 @@ import {
   Platform,
   ScrollView,
   useWindowDimensions,
+  BackHandler,
 } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -94,6 +95,16 @@ const roles = [
 export default function RoleSelectScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
+
+  // Hardware back navigates normally back to StartScreen
+  useEffect(() => {
+    const onBackPress = () => {
+      router.replace('/StartScreen');
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, [router]);
 
   // Load Plus Jakarta Sans
   const [fontsLoaded] = useFonts({

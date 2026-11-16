@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path, Rect } from 'react-native-svg';
 import styles from './CitizenHome.styles';
 import {
@@ -97,35 +98,59 @@ export default function CitizenHome() {
           </View>
         </View>
 
-        {/* BUILD A CASE PRIMARY CTA */}
+        {/* BUILD A CASE PRIMARY CTA - LIQUID GLASS BUTTON */}
         <TouchableOpacity
           style={styles.buildCaseBtn}
           activeOpacity={0.85}
           onPress={handleBuildCase}
         >
-          <View style={styles.buildCaseContent}>
-            <View style={styles.buildCaseIconBox}>
-              <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
-                  fill="#FF7A00"
-                  stroke="#FF7A00"
-                  strokeWidth={1.5}
+          <LinearGradient
+            colors={
+              isDarkMode
+                ? [
+                    'rgba(255, 149, 0, 0.38)',
+                    'rgba(255, 122, 0, 0.22)',
+                    'rgba(24, 25, 36, 0.90)',
+                  ]
+                : [
+                    '#FF9500',
+                    '#F97316',
+                    '#EA580C',
+                  ]
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.buildCaseGradient}
+          >
+            {/* Top Liquid Glass Highlight Sheen */}
+            <View style={styles.glassSheen} pointerEvents="none" />
+
+            <View style={styles.buildCaseContent}>
+              <View style={[styles.buildCaseIconBox, !isDarkMode && { backgroundColor: 'rgba(255, 255, 255, 0.25)', borderColor: 'rgba(255, 255, 255, 0.5)' }]}>
+                <Svg width={22} height={22} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+                    fill={isDarkMode ? '#FFD180' : '#FFFFFF'}
+                    stroke={isDarkMode ? '#FF9500' : '#FFFFFF'}
+                    strokeWidth={1.2}
+                  />
+                </Svg>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.buildCaseBtnText}>BUILD YOUR CASE</Text>
+                <Text style={[styles.buildCaseBtnSub, !isDarkMode && { color: 'rgba(255, 255, 255, 0.95)' }]}>
+                  Start legal intake with facts, sections & evidence
+                </Text>
+              </View>
+              <View style={[styles.glassArrowPill, !isDarkMode && { backgroundColor: 'rgba(255, 255, 255, 0.3)' }]}>
+                <Image
+                  source={require('../../assets/images/arrow.png')}
+                  style={[styles.buildCaseArrowImg, !isDarkMode && { tintColor: '#FFFFFF' }]}
+                  resizeMode="contain"
                 />
-              </Svg>
+              </View>
             </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.buildCaseBtnText}>BUILD YOUR CASE</Text>
-              <Text style={styles.buildCaseBtnSub}>
-                Start legal intake with facts, sections & evidence
-              </Text>
-            </View>
-            <Image
-              source={require('../../assets/images/arrow.png')}
-              style={styles.buildCaseArrowImg}
-              resizeMode="contain"
-            />
-          </View>
+          </LinearGradient>
         </TouchableOpacity>
 
         {/* VERIFIED LAWYERS NEAR YOU */}

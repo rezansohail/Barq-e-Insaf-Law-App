@@ -11,6 +11,8 @@ import {
   Animated,
   Easing,
   useWindowDimensions,
+  BackHandler,
+  ToastAndroid,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -154,6 +156,25 @@ function TwinklingStar({ star }) {
 export default function StartScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
+  const lastBackPressRef = useRef(0);
+
+  // Pre-login root screen: double-press back to exit app
+  useEffect(() => {
+    const onBackPress = () => {
+      const now = Date.now();
+      if (lastBackPressRef.current && now - lastBackPressRef.current < 2000) {
+        BackHandler.exitApp();
+        return true;
+      }
+      lastBackPressRef.current = now;
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+      }
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, []);
 
   // Load fonts – Cinzel for the title, Playfair for the tagline
   const [cinzelLoaded] = useCinzel({ Cinzel_700Bold });

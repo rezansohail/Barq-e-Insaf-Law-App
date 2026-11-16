@@ -106,20 +106,29 @@ export default function AIChatFloatingButton() {
       >
         <TouchableOpacity style={styles.fabBtn} activeOpacity={0.88} onPress={() => setModalVisible(true)}>
           <LinearGradient
-            colors={['#3b82f6', '#1d4ed8', '#0F2744']}
+            colors={['#161726', '#0F1018', '#1A0E06']}
             style={styles.fabGradient}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 1 }}
           >
-            {/* Inner Glow Circle & Lightning Symbol */}
+            {/* Inner Electric Blue Rim Halo to match Chatbot interior */}
+            <View style={styles.blueRimHalo} pointerEvents="none" />
+
+            {/* Inner Glow Circle with Chatbot Blue & Orange Legal Lightning */}
             <View style={styles.glowCircle}>
-              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#FFD700" />
+              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+                  fill="#FFA726"
+                  stroke="#FF9500"
+                  strokeWidth={1.2}
+                />
               </Svg>
             </View>
 
-            {/* AI Assistant Label Tag */}
+            {/* Bottom AI Legal Tag Pill in Black & Orange with Subtle Blue Border */}
             <View style={styles.aiTagPill}>
+              <View style={styles.aiBlueDot} />
               <Text style={styles.aiTagText}>AI LEGAL</Text>
             </View>
           </LinearGradient>
@@ -145,7 +154,7 @@ export default function AIChatFloatingButton() {
                 </View>
               </View>
               <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
-                <Text style={styles.closeBtnText}>✕</Text>
+                <Text style={styles.closeBtnText}>X</Text>
               </TouchableOpacity>
             </View>
 
@@ -205,42 +214,75 @@ export default function AIChatFloatingButton() {
 const styles = StyleSheet.create({
   draggableFab: { position: 'absolute', top: 0, left: 0, zIndex: 9999, elevation: 12 },
   fabBtn: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
     elevation: 10,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 6 },
+    shadowColor: '#FF9500',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.45,
     shadowRadius: 10,
   },
   fabGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: 34,
-    justify: 'center',
+    borderRadius: 33,
+    justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#fbbf24',
+    borderColor: '#FF9500',
     padding: 2,
+    overflow: 'hidden',
+  },
+  blueRimHalo: {
+    position: 'absolute',
+    top: 2,
+    left: 2,
+    right: 2,
+    bottom: 2,
+    borderRadius: 31,
+    borderWidth: 1.4,
+    borderColor: 'rgba(59, 130, 246, 0.65)',
   },
   glowCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justify: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#121829',
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.40)',
+    justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
   },
   fabIcon: { fontSize: 24 },
   aiTagPill: {
-    backgroundColor: '#fbbf24',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#0F111A',
     paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 8,
+    paddingVertical: 1.5,
+    borderRadius: 7,
     marginTop: -4,
+    borderWidth: 1,
+    borderColor: '#3B82F6',
   },
-  aiTagText: { color: '#0F2744', fontSize: 8, fontWeight: '900', letterSpacing: 0.5 },
+  aiBlueDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#38BDF8',
+  },
+  aiTagText: {
+    color: '#FFA726',
+    fontSize: 7.5,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: '#0F172A', borderTopLeftRadius: 28, borderTopRightRadius: 28, height: SCREEN_HEIGHT * 0.84 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#020617', borderTopLeftRadius: 28, borderTopRightRadius: 28 },

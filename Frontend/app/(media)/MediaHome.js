@@ -24,6 +24,8 @@ import { useAppTheme } from '../../context/ThemeContext';
 import SindhCasesMap from '../../components/SindhCasesMap';
 import api from '../../constants/api';
 import { useMockStore, activeCases, updateCase } from '../(citizen)/MockStore';
+import { clearSession } from '../../constants/authStore';
+import { getMediaProfile, updateMediaProfile, subscribeToStore } from '../../constants/ngoMediaStore';
 
 // Initial verified citizen coverage leads in Sindh for immediate newsroom triage
 const INITIAL_LEADS = [
@@ -84,6 +86,39 @@ export default function MediaHome() {
   const [broadcastLink, setBroadcastLink] = useState('');
   const [isBreakingNews, setIsBreakingNews] = useState(false);
   const [publishedStories, setPublishedStories] = useState([]);
+
+  // Newsroom desk profile state
+  const [mediaProfile, setMediaProfile] = useState(getMediaProfile());
+  const [showEditProfileModal, setShowEditProfileModal] = useState(false);
+  const [editDesc, setEditDesc] = useState(mediaProfile.description);
+  const [editEmail, setEditEmail] = useState(mediaProfile.email);
+  const [editPhone, setEditPhone] = useState(mediaProfile.phone);
+  const [editHelpline, setEditHelpline] = useState(mediaProfile.helpline);
+  const [editAddress, setEditAddress] = useState(mediaProfile.officeAddress);
+
+  useEffect(() => {
+    return subscribeToStore(() => {
+      const p = getMediaProfile();
+      setMediaProfile(p);
+      setEditDesc(p.description);
+      setEditEmail(p.email);
+      setEditPhone(p.phone);
+      setEditHelpline(p.helpline);
+      setEditAddress(p.officeAddress);
+    });
+  }, []);
+
+  const handleSaveProfile = () => {
+    updateMediaProfile({
+      description: editDesc,
+      email: editEmail,
+      phone: editPhone,
+      helpline: editHelpline,
+      officeAddress: editAddress,
+    });
+    setShowEditProfileModal(false);
+    Alert.alert('Newsdesk Profile Updated', 'Bureau information is now updated for Citizens and Advocates.');
+  };
 
   // Fetch real cases and calculate / fetch heatmap analytics
   useEffect(() => {
@@ -215,6 +250,24 @@ export default function MediaHome() {
     Alert.alert(
       'Story Published',
       'Verified investigative report is now live on the Barq-e-Insaf public broadcast bulletin.'
+    );
+  };
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out of Media Bureau',
+      'Are you sure you want to end your KTN News session?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await clearSession();
+            router.replace('/LoginScreen');
+          },
+        },
+      ]
     );
   };
 
@@ -512,6 +565,33 @@ export default function MediaHome() {
             </Text>
           </View>
         </View>
+
+        {/* EDIT NEWSDESK PUBLIC PROFILE */}
+        <TouchableOpacity
+          style={[styles.termsBtn, { backgroundColor: 'rgba(255, 149, 0, 0.15)', borderColor: '#FF9500' }]}
+          onPress={() => setShowEditProfileModal(true)}
+          activeOpacity={0.8}
+        >
+          <Text style={[styles.termsBtnText, { color: '#FFB74D' }]}>Edit Newsdesk Public Profile</Text>
+        </TouchableOpacity>
+
+        {/* TERMS AND CONDITIONS LINK */}
+        <TouchableOpacity
+          style={styles.termsBtn}
+          onPress={() => router.push('/TermsScreen')}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.termsBtnText}>View Terms & Conditions</Text>
+        </TouchableOpacity>
+
+        {/* SIGN OUT BUTTON BELOW WHOLE CONTENT */}
+        <TouchableOpacity
+          style={styles.signOutBtn}
+          onPress={handleSignOut}
+          activeOpacity={0.85}
+        >
+          <Text style={styles.signOutBtnText}>Sign Out of Media Bureau</Text>
+        </TouchableOpacity>
       </ScrollView>
 
       {/* POP-UP MODAL: + PUBLISH STORY */}
@@ -599,6 +679,86 @@ export default function MediaHome() {
                 <Text style={styles.modalSubmitText}>Publish Official Story</Text>
               </TouchableOpacity>
             </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* POP-UP MODAL: EDIT NEWSDESK PROFILE */}
+      <Modal
+        visible={showEditProfileModal}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setShowEditProfileModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalContainer, { maxHeight: '85%' }]}>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Edit Newsdesk Public Profile</Text>
+                <TouchableOpacity onPress={() => setShowEditProfileModal(false)}>
+                  <Text style={styles.modalCloseText}>X</Text>
+                </TouchableOpacity>
+              </View>
+
+              <Text style={{ fontSize: 12, color: 'rgba(255, 220, 180, 0.7)', marginBottom: 14 }}>
+                Updates will be visible live to citizens and lawyers on KTN News Overview screen.
+              </Text>
+
+              <Text style={styles.fieldLabel}>Editorial Mission & Focus</Text>
+              <TextInput
+                style={[styles.modalInput, styles.modalTextArea, { minHeight: 70 }]}
+                multiline
+                value={editDesc}
+                onChangeText={setEditDesc}
+              />
+
+              <Text style={styles.fieldLabel}>Central Newsdesk Email</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={editEmail}
+                onChangeText={setEditEmail}
+                keyboardType="email-address"
+                autoCapitalize="none"
+              />
+
+              <Text style={styles.fieldLabel}>Phone / Switchboard</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={editPhone}
+                onChangeText={setEditPhone}
+              />
+
+              <Text style={styles.fieldLabel}>Whistleblower Helpline</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={editHelpline}
+                onChangeText={setEditHelpline}
+              />
+
+              <Text style={styles.fieldLabel}>Headquarters Office Address</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={editAddress}
+                onChangeText={setEditAddress}
+              />
+
+              <View style={[styles.modalBtnRow, { marginTop: 16 }]}>
+                <TouchableOpacity
+                  style={styles.modalCancelBtn}
+                  onPress={() => setShowEditProfileModal(false)}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalSubmitBtn}
+                  onPress={handleSaveProfile}
+                  activeOpacity={0.8}
+                >
+                  <Text style={styles.modalSubmitText}>Save Changes</Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
