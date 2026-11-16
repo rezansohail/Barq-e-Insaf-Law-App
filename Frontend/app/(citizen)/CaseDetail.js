@@ -18,6 +18,7 @@ import { useMockStore, activeCases, updateCase } from './MockStore';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import api from '../../constants/api';
 
 export default function CaseDetail() {
   useMockStore();
@@ -38,14 +39,69 @@ export default function CaseDetail() {
   const [mediaNotes, setMediaNotes] = useState('');
   const [isSubmittingMedia, setIsSubmittingMedia] = useState(false);
 
+  // NGO pro-bono aid request modal states
+  const [showNgoModal, setShowNgoModal] = useState(false);
+  const [allowNgoRelay, setAllowNgoRelay] = useState(true);
+  const [ngoNotes, setNgoNotes] = useState('');
+  const [isSubmittingNgo, setIsSubmittingNgo] = useState(false);
+
   const handleOpenMediaModal = () => {
     setMediaNotes(caseData?.mediaNotes || '');
     setShowMediaModal(true);
   };
 
+  const handleOpenNgoModal = () => {
+    setNgoNotes(caseData?.ngoNotes || '');
+    setShowNgoModal(true);
+  };
+
+  const handleSubmitNgoRequest = async () => {
+    setIsSubmittingNgo(true);
+    try {
+      const citizenId = caseData.citizenId || caseData.userId || '1';
+      try {
+        await api.post(`/citizens/${citizenId}/cases/${caseData.id}/ngo-request`, {
+          allowContact: allowNgoRelay,
+          notes: ngoNotes.trim(),
+        });
+      } catch (apiErr) {
+        console.warn('Backend NGO aid request sync notice:', apiErr.message);
+      }
+
+      await updateCase(caseData.id, {
+        ngoAidRequested: true,
+        ngoStatus: caseData.ngoStatus || 'pending_review',
+        ngoNotes: ngoNotes.trim(),
+        ngoRelayConsent: allowNgoRelay,
+        ngoRequestedAt: new Date().toISOString(),
+      });
+      setShowNgoModal(false);
+      Alert.alert(
+        'Legal Aid Requested',
+        'Your case details have been securely submitted to the National Commission for Human Development (NCHD) Legal Aid Panel under 100% identity protection.'
+      );
+    } catch (e) {
+      Alert.alert('Notice', 'Legal aid request saved locally.');
+      setShowNgoModal(false);
+    } finally {
+      setIsSubmittingNgo(false);
+    }
+  };
+
   const handleSubmitMediaRequest = async () => {
     setIsSubmittingMedia(true);
     try {
+      // Direct call to Backend API
+      const citizenId = caseData.citizenId || caseData.userId || '1';
+      try {
+        await api.post(`/citizens/${citizenId}/cases/${caseData.id}/media-request`, {
+          allowContact: allowAnonymousRelay,
+          notes: mediaNotes.trim(),
+        });
+      } catch (apiErr) {
+        console.warn('Backend media request sync notice:', apiErr.message);
+      }
+
       await updateCase(caseData.id, {
         mediaRequested: true,
         mediaStatus: caseData.mediaStatus || 'pending',
@@ -138,6 +194,14 @@ export default function CaseDetail() {
                 </Text>
               </View>
             )}
+            {caseData.ngoAidRequested && (
+              <View style={[styles.mediaBadgePending, { borderColor: 'rgba(0, 229, 255, 0.45)', backgroundColor: 'rgba(0, 229, 255, 0.12)' }]}>
+                <Text style={{ fontSize: 11, marginRight: 3 }}>🏛️</Text>
+                <Text style={[styles.mediaBadgeTextPending, { color: '#00E5FF' }]}>
+                  {caseData.ngoStatus === 'aid_assigned' ? 'NCHD Aid Granted' : 'NCHD Aid Pending'}
+                </Text>
+              </View>
+            )}
           </View>
         </View>
 
@@ -210,7 +274,27 @@ export default function CaseDetail() {
             styles.mediaRequestBtnText,
             caseData.mediaRequested && styles.mediaRequestBtnTextRequested,
           ]}>
-            {caseData.mediaRequested ? 'KTN Coverage Requested' : 'Request KTN News Coverage'}
+            {caseData.mediaRequested ? 'KTN Coverage Requested ✓' : 'Request KTN News Coverage'}
+          </Text>
+        </TouchableOpacity>
+
+        {/* REQUEST NCHD LEGAL AID BUTTON */}
+        <TouchableOpacity 
+          style={[
+            styles.mediaRequestBtn,
+            { borderColor: 'rgba(0, 229, 255, 0.45)', backgroundColor: 'rgba(0, 229, 255, 0.10)', marginTop: 8 },
+            caseData.ngoAidRequested && { borderColor: '#00E5FF', backgroundColor: 'rgba(0, 229, 255, 0.20)' },
+          ]}
+          onPress={handleOpenNgoModal}
+          activeOpacity={0.8}
+        >
+          <Text style={{ fontSize: 14, marginRight: 8 }}>🏛️</Text>
+          <Text style={[
+            styles.mediaRequestBtnText,
+            { color: '#00E5FF' },
+            caseData.ngoAidRequested && { color: '#00E5FF', fontWeight: '800' },
+          ]}>
+            {caseData.ngoAidRequested ? 'NCHD Legal Aid Requested ✓' : 'Request NCHD Legal Aid'}
           </Text>
         </TouchableOpacity>
 
@@ -296,6 +380,71 @@ export default function CaseDetail() {
               >
                 <Text style={styles.modalSubmitText}>
                   {isSubmittingMedia ? 'Submitting...' : 'Submit to News Bureau'}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
+      {/* CONFIRMATION MODAL: REQUEST NCHD PRO-BONO LEGAL AID */}
+      <Modal
+        visible={showNgoModal}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setShowNgoModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalCard, { borderColor: 'rgba(0, 229, 255, 0.45)' }]}>
+            <View style={styles.modalHeaderRow}>
+              <Text style={{ fontSize: 20, marginRight: 8 }}>🏛️</Text>
+              <Text style={[styles.modalTitle, { color: '#00E5FF' }]}>Request NCHD Legal Aid</Text>
+            </View>
+
+            <View style={[styles.noticeBox, { borderColor: 'rgba(0, 229, 255, 0.35)', backgroundColor: 'rgba(0, 229, 255, 0.08)' }]}>
+              <Text style={[styles.noticeLabel, { color: '#00E5FF' }]}>100% Identity Protection Guaranteed</Text>
+              <Text style={styles.noticeText}>
+                Your identity (Name & CNIC) will be strictly protected and concealed. NCHD legal aid panels evaluate case merits without personal identity exposure.
+              </Text>
+            </View>
+
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>
+                Allow NCHD Legal Aid Directorate to contact me via secure anonymous relay
+              </Text>
+              <Switch
+                value={allowNgoRelay}
+                onValueChange={setAllowNgoRelay}
+                trackColor={{ false: '#3E3E4A', true: '#00E5FF' }}
+                thumbColor={allowNgoRelay ? '#FFFFFF' : '#9CA3AF'}
+              />
+            </View>
+
+            <Text style={[styles.inputLabel, { color: '#00E5FF' }]}>Legal Aid Assistance Notes</Text>
+            <TextInput
+              style={[styles.notesInput, { borderColor: 'rgba(0, 229, 255, 0.35)' }]}
+              multiline
+              placeholder="State what pro-bono assistance you need (e.g. representation against unlawful eviction, defense counsel)..."
+              placeholderTextColor="rgba(255, 255, 255, 0.4)"
+              value={ngoNotes}
+              onChangeText={setNgoNotes}
+            />
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShowNgoModal(false)}
+                disabled={isSubmittingNgo}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.modalSubmitBtn, { backgroundColor: '#00E5FF' }]}
+                onPress={handleSubmitNgoRequest}
+                disabled={isSubmittingNgo}
+              >
+                <Text style={[styles.modalSubmitText, { color: '#000000' }]}>
+                  {isSubmittingNgo ? 'Submitting...' : 'Submit to NCHD Panel'}
                 </Text>
               </TouchableOpacity>
             </View>

@@ -7,41 +7,96 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
+  ActivityIndicator,
+  Linking,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import LiquidGlassButton from '../../components/LiquidGlassButton';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import api, { BASE_URL } from '../../constants/api';
 
 export default function MediaExportReports() {
   const router = useRouter();
-  const { isDarkMode, theme } = useAppTheme();
+  const { isDarkMode } = useAppTheme();
   useAppNavigation({ isHome: false, homeRoute: '/(media)/MediaHome' });
 
   const [selectedFormat, setSelectedFormat] = useState('PDF');
   const [includeBiometric, setIncludeBiometric] = useState(true);
   const [includeKTN, setIncludeKTN] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(null);
 
   const formats = [
-    { id: 'PDF', label: 'PDF Press Packet', icon: 'PDF', desc: 'Formatted for broadcast newsroom and editorial publication' },
-    { id: 'CSV', label: 'CSV Tabular Data', icon: 'CSV', desc: 'Raw tabular case data for investigative journalism' },
-    { id: 'JSON', label: 'JSON Feed', icon: 'JSON', desc: 'Structured data for KTN News journalism & research archives' },
+    { id: 'PDF', label: 'PDF Press Packet', icon: 'PDF', desc: '1-Page official judicial press brief for newsroom dissemination' },
   ];
 
-  const handleGenerate = () => {
-    setGenerating(true);
-    setTimeout(() => {
-      setGenerating(false);
+  // DIRECT 1-TAP INSTANT GENERATE & DOWNLOAD
+  const handleDirectDownload = async () => {
+    try {
+      setGenerating(true);
+      setDownloadSuccess(null);
+
+      // 1. Call Backend API to compile the official 1-page report
+      const res = await api.post('/media/reports/export', {
+        format: selectedFormat.toLowerCase(),
+        range: 'This Month',
+        includeAnonymizedDockets: includeBiometric,
+        includeEditorialSeal: includeKTN,
+      });
+
+      const reportData = res.data;
+      if (!reportData?.downloadUrl) {
+        throw new Error('Server did not return a valid download URL.');
+      }
+
+      // 2. Build direct absolute download URL
+      const base = BASE_URL.replace(/\/api\/?$/, '');
+      const fullUrl = reportData.downloadUrl.startsWith('http')
+        ? reportData.downloadUrl
+        : `${base}${reportData.downloadUrl.startsWith('/') ? '' : '/'}${reportData.downloadUrl}`;
+
+      const filename = `${reportData.reportId || 'PRESS-REPORT'}.${selectedFormat.toLowerCase()}`;
+
+      // 3. Trigger immediate download right inside the app
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        // Direct browser file download without leaving page
+        const link = document.createElement('a');
+        link.href = fullUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        // Mobile in-app browser or native download handler
+        try {
+          await WebBrowser.openBrowserAsync(fullUrl);
+        } catch (_) {
+          await Linking.openURL(fullUrl);
+        }
+      }
+
+      // 4. Set instant on-screen success confirmation
+      setDownloadSuccess({
+        reportId: reportData.reportId,
+        format: reportData.format || selectedFormat,
+        fullUrl,
+        timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      });
+    } catch (err) {
+      console.error('[DIRECT_DOWNLOAD] Error:', err.message);
       Alert.alert(
-        'Press Packet Ready',
-        `The official Sindh Legal Accessibility ${selectedFormat} report has been compiled successfully under KTN News editorial standards.`,
-        [{ text: 'Download File', onPress: () => router.replace('/(media)/MediaHome') }]
+        'Export Notice',
+        'Could not complete instant download. Please check your connection to the newsroom server.'
       );
-    }, 1200);
+    } finally {
+      setGenerating(false);
+    }
   };
 
   const safeBg = isDarkMode ? '#13131A' : '#FAF8F5';
@@ -58,9 +113,41 @@ export default function MediaExportReports() {
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <View style={[styles.card, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.94)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
+        {/* SUCCESS NOTIFICATION CARD (SHOWN DIRECTLY IN-APP AFTER 1-CLICK DOWNLOAD) */}
+        {downloadSuccess && (
+          <View style={[styles.successCard, { backgroundColor: isDarkMode ? 'rgba(16, 185, 129, 0.12)' : '#ECFDF5', borderColor: '#10B981' }]}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                <Text style={{ fontSize: 16 }}>✓</Text>
+                <Text style={{ color: '#10B981', fontSize: 13, fontWeight: '800' }}>
+                  {downloadSuccess.format} Downloaded Directly
+                </Text>
+              </View>
+              <Text style={{ color: '#6EE7B7', fontSize: 10, fontWeight: '700' }}>
+                {downloadSuccess.timestamp} PKT
+              </Text>
+            </View>
+
+            <Text style={{ color: isDarkMode ? '#E5E7EB' : '#1A0C04', fontSize: 11.5, fontWeight: '700', marginTop: 6 }}>
+              {downloadSuccess.reportId}
+            </Text>
+            <Text style={{ color: isDarkMode ? '#9CA3AF' : '#475569', fontSize: 10.5, marginTop: 2 }}>
+              1-Page Official Judicial Dossier generated & saved directly to your device.
+            </Text>
+
+            <TouchableOpacity
+              style={{ marginTop: 8, alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 8, backgroundColor: 'rgba(16, 185, 129, 0.2)', borderRadius: 6 }}
+              onPress={handleDirectDownload}
+            >
+              <Text style={{ color: '#10B981', fontSize: 10.5, fontWeight: '800' }}>⬇ Re-Download File</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {/* OUTPUT FORMAT SELECTOR */}
+        <View style={[styles.card, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
           <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Select Output Format</Text>
-          <Text style={[styles.cardSub, { color: isDarkMode ? 'rgba(255, 235, 215, 0.7)' : '#664530' }]}>
+          <Text style={[styles.cardSub, { color: isDarkMode ? '#9CA3AF' : '#664530' }]}>
             Choose compilation standard for news dissemination
           </Text>
 
@@ -69,7 +156,7 @@ export default function MediaExportReports() {
               key={fmt.id}
               style={[
                 styles.formatOption,
-                { backgroundColor: isDarkMode ? 'rgba(16, 8, 4, 0.92)' : '#F5F1E9' },
+                { backgroundColor: isDarkMode ? '#14151E' : '#F5F1E9' },
                 selectedFormat === fmt.id && styles.formatOptionActive,
               ]}
               onPress={() => setSelectedFormat(fmt.id)}
@@ -79,15 +166,15 @@ export default function MediaExportReports() {
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.formatLabel, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>{fmt.label}</Text>
-                <Text style={[styles.formatDesc, { color: isDarkMode ? 'rgba(255, 235, 215, 0.65)' : '#664530' }]}>{fmt.desc}</Text>
+                <Text style={[styles.formatDesc, { color: isDarkMode ? '#9CA3AF' : '#664530' }]}>{fmt.desc}</Text>
               </View>
             </TouchableOpacity>
           ))}
         </View>
 
-        {/* Verification Checkboxes */}
-        <View style={[styles.card, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.94)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
-          <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Editorial Compliance</Text>
+        {/* EDITORIAL VERIFICATION CHECKBOXES */}
+        <View style={[styles.card, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
+          <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Editorial Compliance Standards</Text>
 
           <TouchableOpacity
             style={styles.checkRow}
@@ -97,7 +184,7 @@ export default function MediaExportReports() {
               {includeBiometric && <View style={styles.checkInner} />}
             </View>
             <Text style={[styles.checkLabel, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
-              Anonymize All Litigant Personal Identifiers
+              Anonymize All Litigant Personal Identifiers (100% Protected)
             </Text>
           </TouchableOpacity>
 
@@ -114,10 +201,11 @@ export default function MediaExportReports() {
           </TouchableOpacity>
         </View>
 
+        {/* 1-TAP INSTANT GENERATE & DOWNLOAD BUTTON */}
         <View style={styles.actionBox}>
           <LiquidGlassButton
-            title={generating ? 'COMPILING PRESS PACKET...' : `GENERATE ${selectedFormat} PACKET`}
-            onPress={handleGenerate}
+            title={generating ? 'DOWNLOADING PRESS PACKET...' : '⬇ DOWNLOAD OFFICIAL PDF DIRECTLY'}
+            onPress={handleDirectDownload}
             disabled={generating}
           />
         </View>
@@ -132,6 +220,12 @@ export default function MediaExportReports() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: '#080402' },
   scrollContent: { padding: 16, paddingBottom: 110 },
+  successCard: {
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1.2,
+    marginBottom: 14,
+  },
   card: {
     borderRadius: 18,
     padding: 16,
@@ -158,60 +252,60 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   formatOptionActive: {
-    borderColor: '#FF7A00',
-    backgroundColor: 'rgba(255, 122, 0, 0.12)',
+    borderColor: '#FF9500',
+    backgroundColor: 'rgba(255, 149, 0, 0.12)',
   },
   formatIconBox: {
     width: 44,
     height: 44,
     borderRadius: 10,
-    backgroundColor: 'rgba(255, 140, 0, 0.2)',
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
     alignItems: 'center',
     justifyContent: 'center',
   },
   formatIconBoxActive: {
-    backgroundColor: '#FF7A00',
+    backgroundColor: '#FF9500',
   },
   formatIconText: {
-    fontSize: 11,
-    fontWeight: '800',
-    color: '#FFFFFF',
+    fontSize: 12,
+    fontWeight: '900',
+    color: '#FFB74D',
   },
   formatLabel: {
     fontSize: 13,
     fontWeight: '700',
-    marginBottom: 2,
   },
   formatDesc: {
-    fontSize: 10.5,
-    lineHeight: 14,
+    fontSize: 11,
+    marginTop: 2,
   },
   checkRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 8,
-    gap: 12,
+    gap: 10,
+    paddingVertical: 10,
   },
   checkbox: {
     width: 20,
     height: 20,
-    borderRadius: 5,
+    borderRadius: 6,
     borderWidth: 1.5,
-    borderColor: '#FF9500',
+    borderColor: '#9CA3AF',
     alignItems: 'center',
     justifyContent: 'center',
   },
   checkboxActive: {
-    backgroundColor: '#FF7A00',
+    borderColor: '#FF9500',
+    backgroundColor: '#FF9500',
   },
   checkInner: {
     width: 8,
     height: 8,
     borderRadius: 2,
-    backgroundColor: '#FFFFFF',
+    backgroundColor: '#000000',
   },
   checkLabel: {
-    fontSize: 12.5,
+    fontSize: 12,
     fontWeight: '600',
     flex: 1,
   },

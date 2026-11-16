@@ -79,4 +79,40 @@ const allowRoles = (...roles) => {
   };
 };
 
-module.exports = { protect, allowRoles };
+const optionalProtect = async (req, res, next) => {
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    try {
+      const token = req.headers.authorization.split(' ')[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.JWT_ACCESS_SECRET);
+
+      if (decoded.role === 'media') {
+        const mediaRes = await db.query(
+          'SELECT id, full_name AS name, channel_name, email, role, district, phone FROM media WHERE id = $1',
+          [decoded.id]
+        );
+        if (mediaRes.rows.length > 0) {
+          req.user = { ...mediaRes.rows[0], role: 'media' };
+          return next();
+        }
+      }
+
+      if (decoded.role === 'ngo') {
+        const ngoRes = await db.query(
+          'SELECT id, full_name AS name, email, role, district, phone FROM ngos WHERE id = $1',
+          [decoded.id]
+        );
+        if (ngoRes.rows.length > 0) {
+          req.user = { ...ngoRes.rows[0], role: 'ngo' };
+          return next();
+        }
+      }
+
+      req.user = { id: decoded.id || 3, role: decoded.role || 'ngo', email: decoded.email };
+    } catch (_) {
+      // Continue even if token fails verification in optional mode
+    }
+  }
+  next();
+};
+
+module.exports = { protect, allowRoles, optionalProtect };

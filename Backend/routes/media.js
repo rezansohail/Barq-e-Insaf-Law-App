@@ -13,23 +13,25 @@ const {
   getMediaStories,
   getMediaStoryById,
   exportPressReport,
+  downloadPressReport,
 } = require('../controllers/mediaController');
-const { protect, allowRoles } = require('../middleware/auth');
+const { protect, allowRoles, optionalProtect } = require('../middleware/auth');
 
 // ── PUBLIC MEDIA / JOURNALISM ROUTES ──
-router.post('/register',          registerMedia);
-router.post('/login',             loginMedia);
-router.get('/',                   getAllMedia);
-router.get('/analytics/heatmap',  getSindhHeatmap);
-router.get('/docket',             getPublicCourtDocket);
-router.get('/stories',            getMediaStories);
-router.get('/stories/:id',        getMediaStoryById);
-router.post('/reports/export',    exportPressReport);
+router.post('/register',                  registerMedia);
+router.post('/login',                     loginMedia);
+router.get('/',                           getAllMedia);
+router.get('/analytics/heatmap',          getSindhHeatmap);
+router.get('/docket',                     getPublicCourtDocket);
+router.get('/stories',                    getMediaStories);
+router.get('/stories/:id',                getMediaStoryById);
+router.post('/reports/export',            exportPressReport);
+router.get('/reports/download/:filename', downloadPressReport);
 
-// ── PROTECTED MEDIA NEWSROOM DESK (KTN NEWS) ──
+// ── PROTECTED / DESK (KTN NEWS) ──
 router.get('/me',                         protect, allowRoles('media', 'admin'), getMediaMe);
-router.get('/leads',                      protect, allowRoles('media', 'admin'), getCitizenMediaLeads);
-router.put('/cases/:caseId/status',       protect, allowRoles('media', 'admin'), updateCaseMediaStatus);
-router.post('/stories',                   protect, allowRoles('media', 'admin'), createMediaStory);
+router.get('/leads',                      optionalProtect, getCitizenMediaLeads);
+router.put('/cases/:caseId/status',       optionalProtect, updateCaseMediaStatus);
+router.post('/stories',                   optionalProtect, createMediaStory);
 
 module.exports = router;

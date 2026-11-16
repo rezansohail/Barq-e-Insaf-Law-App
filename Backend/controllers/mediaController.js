@@ -204,6 +204,25 @@ const exportPressReport = async (req, res) => {
   }
 };
 
+// GET /api/media/reports/download/:filename
+const downloadPressReport = async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const { buffer, contentType, filename: outFilename } = await mediaService.downloadReportFile(filename);
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${outFilename}"`);
+    res.setHeader('Content-Length', buffer.length);
+    return res.status(200).send(buffer);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message || 'Failed to download report',
+    });
+  }
+};
+
 module.exports = {
   registerMedia,
   loginMedia,
@@ -217,4 +236,5 @@ module.exports = {
   getMediaStories,
   getMediaStoryById,
   exportPressReport,
+  downloadPressReport,
 };

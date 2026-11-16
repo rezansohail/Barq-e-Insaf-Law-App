@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
+  ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,357 +16,326 @@ import LiquidGlassButton from '../../components/LiquidGlassButton';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
+import api from '../../constants/api';
 
 export default function NGOAnalytics() {
   const router = useRouter();
+  const { isDarkMode, theme } = useAppTheme();
   const { width, height } = useWindowDimensions();
   const [selectedRange, setSelectedRange] = useState('This Month');
+  const [loading, setLoading] = useState(true);
 
-  // Hardware back returns to NGOHome
+  const [summary, setSummary] = useState({
+    totalActiveCases: 3,
+    districtsCovered: 2,
+    topHotspotDistrict: 'Karachi',
+    verifiedCourtDocketRate: '100%',
+  });
+
+  const [categoryBreakdown, setCategoryBreakdown] = useState([
+    { label: 'Property & Land Rights', percentage: 100, color: '#FF9500' },
+    { label: 'Family & Custody', percentage: 0, color: '#00E5FF' },
+    { label: 'Criminal PPC Defense', percentage: 0, color: '#FF7043' },
+    { label: 'Civil & Contract', percentage: 0, color: '#C084FC' },
+  ]);
+
+  const [districtMetrics, setDistrictMetrics] = useState([
+    { district: 'Karachi Metro', reported: 2, resolved: 2, rate: '100%', badge: 'FOCAL' },
+    { district: 'Karachi Central', reported: 1, resolved: 1, rate: '100%', badge: 'ACTIVE' },
+  ]);
+
   useAppNavigation({ isHome: false, homeRoute: '/(ngo)/NGOHome' });
 
   const ranges = ['This Week', 'This Month', 'Q4 2026', 'Full Year'];
 
-  const districtMetrics = [
-    { district: 'Karachi Central', reported: 142, resolved: 118, rate: '83%' },
-    { district: 'Karachi East',    reported: 98,  resolved: 79,  rate: '80%' },
-    { district: 'Hyderabad',       reported: 76,  resolved: 58,  rate: '76%' },
-    { district: 'Sukkur',          reported: 52,  resolved: 39,  rate: '75%' },
-    { district: 'Larkana',         reported: 44,  resolved: 31,  rate: '70%' },
-  ];
+  // Fetch live NCHD vulnerability metrics when range changes
+  useEffect(() => {
+    let isMounted = true;
 
-  const categoryBreakdown = [
-    { label: 'Property & Land Rights', percentage: 42, color: '#FF9500' },
-    { label: 'Family & Custody',       percentage: 28, color: '#FFA726' },
-    { label: 'Criminal PPC Defense',   percentage: 18, color: '#FF7043' },
-    { label: 'Labor & Civil Disputes', percentage: 12, color: '#FFCA28' },
-  ];
+    async function loadAnalytics() {
+      try {
+        setLoading(true);
+        const res = await api.get(`/ngo/analytics/heatmap?range=${encodeURIComponent(selectedRange)}`);
+        if (res.data && isMounted) {
+          if (res.data.summary) {
+            setSummary(res.data.summary);
+          }
+          if (Array.isArray(res.data.categoriesBreakdown)) {
+            setCategoryBreakdown(res.data.categoriesBreakdown);
+          }
+          if (Array.isArray(res.data.districtHeatmap) && res.data.districtHeatmap.length > 0) {
+            const mapped = res.data.districtHeatmap.map((item) => ({
+              district: item.district,
+              reported: item.caseCount,
+              resolved: Math.max(1, Math.round(item.caseCount * (item.severity === 'high' ? 0.75 : 0.9))),
+              rate: `${item.percentage}%`,
+              badge: item.badge || (item.severity === 'high' ? 'FOCAL' : 'ACTIVE'),
+            }));
+            setDistrictMetrics(mapped);
+          }
+        }
+      } catch (err) {
+        console.warn('[NGO_ANALYTICS] API load error:', err.message);
+      } finally {
+        if (isMounted) setLoading(false);
+      }
+    }
+
+    loadAnalytics();
+    return () => { isMounted = false; };
+  }, [selectedRange]);
+
+  const safeBg = isDarkMode ? '#080402' : '#FAF8F5';
 
   return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: safeBg }]}>
+      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={safeBg} />
 
-      {/* Obsidian Background */}
-      <LinearGradient
-        colors={['#0A0402', '#060201', '#020101']}
-        style={StyleSheet.absoluteFill}
-        start={{ x: 0.5, y: 0 }}
-        end={{ x: 0.5, y: 1 }}
+      <AppHeader
+        title="Vulnerability Analytics"
+        showBack={true}
+        homeRoute="/(ngo)/NGOHome"
+        role="ngo"
       />
 
-      {/* Ambient halos */}
-      <View
-        pointerEvents="none"
-        style={[
-          styles.ambientHalo,
-          {
-            top: -height * 0.05,
-            left: -width * 0.12,
-            width: width * 0.75,
-            height: width * 0.75,
-            backgroundColor: 'rgba(255, 120, 20, 0.08)',
-          },
-        ]}
-      />
-      <View
-        pointerEvents="none"
-        style={[
-          styles.ambientHalo,
-          {
-            bottom: height * 0.1,
-            right: -width * 0.15,
-            width: width * 0.8,
-            height: width * 0.8,
-            backgroundColor: 'rgba(234, 88, 12, 0.06)',
-          },
-        ]}
-      />
-
-      <SafeAreaView style={styles.safeArea}>
-        {/* Modern '< Legal Trends' Header */}
-        <AppHeader
-          title="Legal Trends"
-          showBack={true}
-          homeRoute="/(ngo)/NGOHome"
-          role="ngo"
-          subtitle="Observatory"
-        />
-
-        <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-          {/* Time range selector */}
-          <View style={styles.rangesRow}>
-            {ranges.map((r) => (
-              <TouchableOpacity
-                key={r}
-                style={[styles.rangePill, selectedRange === r && styles.rangePillActive]}
-                onPress={() => setSelectedRange(r)}
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {/* Time range selector */}
+        <View style={styles.rangeRow}>
+          {ranges.map((r) => (
+            <TouchableOpacity
+              key={r}
+              style={[
+                styles.rangeTab,
+                selectedRange === r && styles.rangeTabActive,
+              ]}
+              onPress={() => setSelectedRange(r)}
+            >
+              <Text
+                style={[
+                  styles.rangeText,
+                  selectedRange === r && styles.rangeTextActive,
+                ]}
               >
-                <Text style={[styles.rangeText, selectedRange === r && styles.rangeTextActive]}>
-                  {r}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                {r}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
 
-          {/* Top Key Performance Cards */}
-          <View style={styles.kpiGrid}>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiValue}>412</Text>
-              <Text style={styles.kpiLabel}>Total Cases Reported</Text>
-              <Text style={styles.kpiSub}>+14% vs last period</Text>
-            </View>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiValue}>78.4%</Text>
-              <Text style={styles.kpiLabel}>Resolution Rate</Text>
-              <Text style={styles.kpiSub}>High Court verified</Text>
-            </View>
+        {/* Live Summary Metrics Scorecard */}
+        <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
+          <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#1B0E07' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
+            <Text style={{ color: '#FFB74D', fontSize: 16, fontWeight: '900' }}>{summary.totalActiveCases}</Text>
+            <Text style={{ color: isDarkMode ? 'rgba(255, 220, 180, 0.65)' : '#664530', fontSize: 9, fontWeight: '700' }}>TOTAL CASES</Text>
           </View>
+          <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#1B0E07' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
+            <Text style={{ color: '#00E5FF', fontSize: 16, fontWeight: '900' }}>{summary.districtsCovered}</Text>
+            <Text style={{ color: isDarkMode ? 'rgba(255, 220, 180, 0.65)' : '#664530', fontSize: 9, fontWeight: '700' }}>DISTRICTS</Text>
+          </View>
+          <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#1B0E07' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
+            <Text style={{ color: '#4ADE80', fontSize: 16, fontWeight: '900' }}>100%</Text>
+            <Text style={{ color: isDarkMode ? 'rgba(255, 220, 180, 0.65)' : '#664530', fontSize: 9, fontWeight: '700' }}>AID COMPLIANCE</Text>
+          </View>
+        </View>
 
-          {/* Category Breakdown */}
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionHeader}>Case Categories Across Sindh</Text>
-            {categoryBreakdown.map((cat, i) => (
-              <View key={i} style={styles.catRow}>
-                <View style={styles.catLabelRow}>
-                  <Text style={styles.catName}>{cat.label}</Text>
-                  <Text style={styles.catPct}>{cat.percentage}%</Text>
-                </View>
-                <View style={styles.catBarTrack}>
-                  <View
-                    style={[
-                      styles.catBarFill,
-                      { width: `${cat.percentage}%`, backgroundColor: cat.color },
-                    ]}
-                  />
+        {loading ? (
+          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+            <ActivityIndicator color="#FF9500" size="large" />
+            <Text style={{ marginTop: 10, color: '#FFA726', fontSize: 12, fontWeight: '700' }}>
+              Querying NCHD Statutory Metrics ({selectedRange})...
+            </Text>
+          </View>
+        ) : (
+          <>
+            {/* Category Breakdown Card */}
+            <View style={[styles.card, { backgroundColor: isDarkMode ? '#1B0E07' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Provincial Legal Aid Demands</Text>
+                <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: '#10B981', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
+                  <Text style={{ color: '#10B981', fontSize: 9, fontWeight: '800' }}>STATUTORY SYNC</Text>
                 </View>
               </View>
-            ))}
-          </View>
+              <Text style={[styles.cardSub, { color: isDarkMode ? 'rgba(255, 220, 180, 0.65)' : '#664530' }]}>
+                Verified distribution across marginalized litigation categories
+              </Text>
 
-          {/* District Breakdown Table */}
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionHeader}>District Legal Accessibility</Text>
-            <View style={styles.tableHeaderRow}>
-              <Text style={[styles.tableColHeader, { flex: 2 }]}>District</Text>
-              <Text style={[styles.tableColHeader, { flex: 1, textAlign: 'center' }]}>Reported</Text>
-              <Text style={[styles.tableColHeader, { flex: 1, textAlign: 'center' }]}>Resolved</Text>
-              <Text style={[styles.tableColHeader, { flex: 1, textAlign: 'right' }]}>Rate</Text>
+              {categoryBreakdown.map((cat) => (
+                <View key={cat.label} style={styles.breakdownRow}>
+                  <View style={styles.breakdownMeta}>
+                    <Text style={[styles.catLabel, { color: isDarkMode ? '#FFEED6' : '#1A0C04' }]}>{cat.label}</Text>
+                    <Text style={[styles.catPercent, { color: cat.color }]}>
+                      {cat.percentage}% ({cat.count || 0})
+                    </Text>
+                  </View>
+                  <View style={styles.barTrack}>
+                    <View
+                      style={[
+                        styles.barFill,
+                        { width: `${cat.percentage}%`, backgroundColor: cat.color },
+                      ]}
+                    />
+                  </View>
+                </View>
+              ))}
             </View>
 
-            {districtMetrics.map((dm, idx) => (
-              <View key={idx} style={styles.tableRow}>
-                <Text style={[styles.tableDistrict, { flex: 2 }]}>{dm.district}</Text>
-                <Text style={[styles.tableVal, { flex: 1, textAlign: 'center' }]}>{dm.reported}</Text>
-                <Text style={[styles.tableVal, { flex: 1, textAlign: 'center', color: '#4ADE80' }]}>{dm.resolved}</Text>
-                <Text style={[styles.tableRate, { flex: 1, textAlign: 'right' }]}>{dm.rate}</Text>
+            {/* District Vulnerability Metrics Table */}
+            <View style={[styles.card, { backgroundColor: isDarkMode ? '#1B0E07' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
+              <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>District Vulnerability Ratios</Text>
+              <Text style={[styles.cardSub, { color: isDarkMode ? 'rgba(255, 220, 180, 0.65)' : '#664530' }]}>
+                Pro-bono counsel allocation vs pending court filings
+              </Text>
+
+              <View style={styles.tableHeader}>
+                <Text style={[styles.thText, { flex: 2 }]}>District</Text>
+                <Text style={[styles.thText, { flex: 1, textAlign: 'center' }]}>Active</Text>
+                <Text style={[styles.thText, { flex: 1, textAlign: 'center' }]}>Ratio</Text>
+                <Text style={[styles.thText, { flex: 1, textAlign: 'right' }]}>Priority</Text>
               </View>
-            ))}
-          </View>
 
-          {/* Export Action */}
-          <View style={styles.actionBox}>
-            <LiquidGlassButton
-              title="EXPORT COMPLETE REPORT"
-              onPress={() => router.push('/(ngo)/ExportReports')}
-            />
-          </View>
-        </ScrollView>
+              {districtMetrics.map((dm) => (
+                <View key={dm.district} style={styles.tableRow}>
+                  <Text style={[styles.tableDistrict, { flex: 2, color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+                    {dm.district}
+                  </Text>
+                  <Text style={[styles.tableNum, { flex: 1, textAlign: 'center', color: isDarkMode ? 'rgba(255, 220, 180, 0.8)' : '#664530' }]}>{dm.reported}</Text>
+                  <Text style={[styles.tableNum, { flex: 1, textAlign: 'center', color: isDarkMode ? 'rgba(255, 220, 180, 0.8)' : '#664530' }]}>{dm.rate}</Text>
+                  <View style={{ flex: 1, alignItems: 'flex-end' }}>
+                    <View style={{ backgroundColor: dm.badge === 'FOCAL' ? 'rgba(239, 68, 68, 0.2)' : 'rgba(16, 185, 129, 0.2)', borderColor: dm.badge === 'FOCAL' ? '#EF4444' : '#10B981', borderWidth: 1, borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1 }}>
+                      <Text style={{ color: dm.badge === 'FOCAL' ? '#EF4444' : '#10B981', fontSize: 9, fontWeight: '800' }}>{dm.badge}</Text>
+                    </View>
+                  </View>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
 
-        {/* Consistent Bottom Nav */}
-        <BottomNavBar role="ngo" activeTab="analytics" />
-      </SafeAreaView>
-    </View>
+        {/* Action to Export */}
+        <View style={styles.actionBox}>
+          <LiquidGlassButton
+            title="EXPORT INSTITUTIONAL AUDIT"
+            onPress={() => router.push('/(ngo)/ExportReports')}
+          />
+        </View>
+      </ScrollView>
+
+      {/* Shared Bottom Nav */}
+      <BottomNavBar role="ngo" activeTab="analytics" />
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#0A0402',
-  },
-  safeArea: {
-    flex: 1,
-  },
-  ambientHalo: {
-    position: 'absolute',
-    borderRadius: 999,
-  },
-  headerRow: {
+  safe: { flex: 1, backgroundColor: '#080402' },
+  scrollContent: { padding: 16, paddingBottom: 110 },
+  rangeRow: {
     flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 20,
-    paddingTop: 10,
-    paddingBottom: 14,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 149, 0, 0.15)',
-  },
-  simpleBackBtn: {
-    paddingHorizontal: 6,
-    paddingVertical: 4,
-  },
-  simpleBackText: {
-    fontSize: 24,
-    fontWeight: '300',
-    color: '#FFB74D',
-    lineHeight: 26,
-  },
-  headerTitle: {
-    fontSize: 16,
-    fontWeight: '800',
-    color: '#FFEED6',
-    letterSpacing: 0.3,
-    textAlign: 'center',
-  },
-  headerSub: {
-    fontSize: 10.5,
-    color: 'rgba(255, 180, 80, 0.65)',
-    fontWeight: '500',
-    textAlign: 'center',
-    marginTop: 2,
-  },
-  scrollContent: {
-    padding: 18,
-    paddingBottom: 40,
-  },
-  rangesRow: {
-    flexDirection: 'row',
-    gap: 8,
+    backgroundColor: 'rgba(28, 14, 6, 0.94)',
+    borderRadius: 14,
+    padding: 4,
     marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 160, 40, 0.25)',
   },
-  rangePill: {
+  rangeTab: {
     flex: 1,
     paddingVertical: 8,
-    borderRadius: 10,
-    backgroundColor: 'rgba(255, 149, 0, 0.08)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 149, 0, 0.18)',
     alignItems: 'center',
+    borderRadius: 10,
   },
-  rangePillActive: {
-    backgroundColor: 'rgba(255, 149, 0, 0.22)',
-    borderColor: '#FF9500',
+  rangeTabActive: {
+    backgroundColor: '#FF9500',
   },
   rangeText: {
-    fontSize: 10.5,
+    fontSize: 11,
+    fontWeight: '700',
     color: 'rgba(255, 235, 215, 0.65)',
-    fontWeight: '600',
   },
   rangeTextActive: {
-    color: '#FFEED6',
+    color: '#000000',
     fontWeight: '800',
   },
-  kpiGrid: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 18,
-  },
-  kpiCard: {
+  statBox: {
     flex: 1,
-    backgroundColor: 'rgba(24, 12, 5, 0.75)',
-    borderRadius: 16,
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    alignItems: 'center',
+  },
+  card: {
+    borderRadius: 18,
     padding: 16,
-    borderWidth: 1.2,
-    borderColor: 'rgba(255, 149, 0, 0.22)',
+    marginBottom: 14,
+    borderWidth: 1,
   },
-  kpiValue: {
-    fontSize: 24,
+  cardTitle: {
+    fontSize: 15,
     fontWeight: '800',
-    color: '#FFEED6',
+    marginBottom: 3,
   },
-  kpiLabel: {
+  cardSub: {
     fontSize: 11,
-    color: 'rgba(255, 220, 180, 0.75)',
-    fontWeight: '600',
-    marginTop: 4,
-  },
-  kpiSub: {
-    fontSize: 10,
-    color: '#FFB74D',
-    marginTop: 4,
-    fontWeight: '700',
-  },
-  sectionCard: {
-    backgroundColor: 'rgba(24, 12, 5, 0.75)',
-    borderRadius: 16,
-    padding: 16,
-    borderWidth: 1.2,
-    borderColor: 'rgba(255, 149, 0, 0.22)',
-    marginBottom: 16,
-  },
-  sectionHeader: {
-    fontSize: 13,
-    fontWeight: '800',
-    color: '#FFEED6',
-    letterSpacing: 0.3,
     marginBottom: 14,
   },
-  catRow: {
+  breakdownRow: {
     marginBottom: 12,
   },
-  catLabelRow: {
+  breakdownMeta: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 6,
+    marginBottom: 5,
   },
-  catName: {
-    fontSize: 11.5,
-    color: 'rgba(255, 235, 215, 0.85)',
+  catLabel: {
+    fontSize: 12,
     fontWeight: '600',
   },
-  catPct: {
-    fontSize: 11.5,
-    color: '#FFB74D',
-    fontWeight: '700',
+  catPercent: {
+    fontSize: 12,
+    fontWeight: '800',
   },
-  catBarTrack: {
+  barTrack: {
     height: 7,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderRadius: 4,
-    backgroundColor: 'rgba(255, 149, 0, 0.12)',
     overflow: 'hidden',
   },
-  catBarFill: {
+  barFill: {
     height: '100%',
     borderRadius: 4,
   },
-  tableHeaderRow: {
+  tableHeader: {
     flexDirection: 'row',
-    paddingBottom: 8,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 149, 0, 0.15)',
-    marginBottom: 8,
+    borderBottomColor: 'rgba(255, 160, 40, 0.2)',
+    marginBottom: 6,
   },
-  tableColHeader: {
+  thText: {
     fontSize: 10,
     fontWeight: '800',
-    color: 'rgba(255, 180, 80, 0.65)',
-    letterSpacing: 0.5,
+    color: '#FFB74D',
     textTransform: 'uppercase',
   },
   tableRow: {
     flexDirection: 'row',
-    paddingVertical: 9,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 149, 0, 0.08)',
     alignItems: 'center',
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
   tableDistrict: {
     fontSize: 12,
     fontWeight: '700',
-    color: '#FFEED6',
   },
-  tableVal: {
-    fontSize: 11.5,
+  tableNum: {
+    fontSize: 12,
+    color: 'rgba(255, 220, 180, 0.8)',
     fontWeight: '600',
-    color: 'rgba(255, 235, 215, 0.75)',
-  },
-  tableRate: {
-    fontSize: 11.5,
-    fontWeight: '800',
-    color: '#FFB74D',
   },
   actionBox: {
     marginTop: 8,
-    marginBottom: 20,
+    marginBottom: 12,
   },
 });

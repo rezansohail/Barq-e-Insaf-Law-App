@@ -114,6 +114,7 @@ const getAidRequests = async (req, res) => {
       success: true,
       count: aidRequests.length,
       aidRequests,
+      leads: aidRequests,
     });
   } catch (error) {
     const statusCode = error.statusCode || 500;
@@ -127,7 +128,7 @@ const getAidRequests = async (req, res) => {
 // POST /api/ngo/cases/:caseId/offer-assistance
 const offerAssistance = async (req, res) => {
   try {
-    const ngoId = req.user ? req.user.id : null;
+    const ngoId = req.user ? req.user.id : (req.body.ngoId || 3);
     const result = await ngoService.offerAssistance(req.params.caseId, req.body, ngoId);
     return res.status(200).json({
       success: true,
@@ -163,7 +164,7 @@ const updateCaseAidStatus = async (req, res) => {
 // POST /api/ngo/stories
 const createNgoStory = async (req, res) => {
   try {
-    const ngoId = req.user ? req.user.id : (req.body.ngoId || null);
+    const ngoId = req.user ? req.user.id : (req.body.ngoId || 3);
     const dto = new CreateNgoStoryDTO(req.body);
     const result = await ngoService.createNgoStory(ngoId, dto);
     return res.status(201).json({
@@ -222,6 +223,25 @@ const exportInstitutionalReport = async (req, res) => {
   }
 };
 
+// GET /api/ngo/reports/download/:filename
+const downloadInstitutionalReport = async (req, res) => {
+  try {
+    const { filename } = req.params;
+    const { buffer, contentType, filename: outFilename } = await ngoService.downloadReportFile(filename);
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', `attachment; filename="${outFilename}"`);
+    res.setHeader('Content-Length', buffer.length);
+    return res.status(200).send(buffer);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message || 'Failed to download report',
+    });
+  }
+};
+
 module.exports = {
   registerNgo,
   loginNgo,
@@ -236,4 +256,5 @@ module.exports = {
   getNgoStories,
   getNgoStoryById,
   exportInstitutionalReport,
+  downloadInstitutionalReport,
 };

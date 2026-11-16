@@ -50,6 +50,10 @@ class MediaService {
   async exportPressReport(options) {
     throw new Error('exportPressReport() method not implemented');
   }
+
+  async downloadReportFile(filename) {
+    throw new Error('downloadReportFile() method not implemented');
+  }
 }
 
 module.exports = MediaService;

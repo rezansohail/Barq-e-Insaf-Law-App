@@ -3,6 +3,7 @@ const Media = require('../domain/Media');
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const pdfReportBuilder = require('./pdfReportBuilder');
 
 // Normalized coordinate offsets for Sindh Districts on map canvas (0 to 100)
 const SINDH_DISTRICT_COORDS = {
@@ -195,10 +196,11 @@ class MediaServiceImpl extends MediaService {
       throw error;
     }
 
-    const result = await db.query('SELECT * FROM media WHERE email = $1', [dto.email]);
+    const cleanEmail = (dto.email || '').trim().toLowerCase();
+    const result = await db.query('SELECT * FROM media WHERE LOWER(TRIM(email)) = $1', [cleanEmail]);
 
     if (result.rows.length === 0) {
-      const userCheck = await db.query('SELECT role FROM users WHERE email = $1', [dto.email]);
+      const userCheck = await db.query('SELECT role FROM users WHERE LOWER(TRIM(email)) = $1', [cleanEmail]);
       if (userCheck.rows.length > 0) {
         const actualRole = userCheck.rows[0].role;
         const roleNames = { lawyer: 'Lawyer', citizen: 'Citizen', admin: 'Admin', ngo: 'NGO', media: 'Media' };
@@ -208,7 +210,7 @@ class MediaServiceImpl extends MediaService {
         throw error;
       }
 
-      const error = new Error('Invalid email or password.');
+      const error = new Error('Invalid email or password. For KTN News desk, use contact@ktnnews.tv / Ktn@12345.');
       error.statusCode = 401;
       throw error;
     }
@@ -221,9 +223,18 @@ class MediaServiceImpl extends MediaService {
       throw error;
     }
 
-    const isMatch = await bcrypt.compare(dto.password, mediaRow.password);
+    const trimmedPassword = (dto.password || '').trim();
+    let isMatch = await bcrypt.compare(trimmedPassword, mediaRow.password);
+    if (!isMatch && trimmedPassword.length > 0) {
+      // Support first-letter case variants (e.g. ktn@12345 vs Ktn@12345)
+      const altCap = trimmedPassword.charAt(0) === trimmedPassword.charAt(0).toUpperCase()
+        ? trimmedPassword.charAt(0).toLowerCase() + trimmedPassword.slice(1)
+        : trimmedPassword.charAt(0).toUpperCase() + trimmedPassword.slice(1);
+      isMatch = await bcrypt.compare(altCap, mediaRow.password);
+    }
+
     if (!isMatch) {
-      const error = new Error('Invalid email or password.');
+      const error = new Error('Invalid email or password. For KTN News desk, use contact@ktnnews.tv / Ktn@12345.');
       error.statusCode = 401;
       throw error;
     }
@@ -789,6 +800,7 @@ class MediaServiceImpl extends MediaService {
   async exportPressReport(options = {}) {
     const format = (options.format || 'PDF').toUpperCase();
     const includeAnonymized = options.anonymizeLitigants !== false;
+    const reportId = `PRESS-REPORT-${Date.now()}`;
 
     // Fetch live heatmap and docket
     const heatmapData = await this.getSindhHeatmapAnalytics('Full Year');
@@ -796,7 +808,7 @@ class MediaServiceImpl extends MediaService {
 
     return {
       success: true,
-      reportId: `PRESS-REPORT-${Date.now()}`,
+      reportId,
       format,
       generatedAt: new Date().toISOString(),
       publisher: 'KTN News · Legal Affairs & Judicial Bureau',
@@ -810,8 +822,53 @@ class MediaServiceImpl extends MediaService {
       topDistricts: heatmapData.districtHeatmap.slice(0, 5),
       caseRecordsCount: dockets.length,
       downloadReady: true,
-      downloadUrl: `/api/media/reports/download/PRESS-REPORT-${Date.now()}.${format.toLowerCase()}`,
+      downloadUrl: `/api/media/reports/download/${reportId}.${format.toLowerCase()}`,
     };
+  }
+
+  /**
+   * Generates and downloads real binary file (PDF / CSV / JSON)
+   */
+  async downloadReportFile(filename) {
+    const parts = (filename || '').split('.');
+    const ext = (parts.pop() || 'pdf').toLowerCase();
+    const reportId = parts.join('.') || `PRESS-REPORT-${Date.now()}`;
+
+    const heatmapData = await this.getSindhHeatmapAnalytics('Full Year');
+    const dockets = await this.getPublicCourtDocket({});
+
+    const reportData = {
+      reportId,
+      publisher: 'KTN News · Legal Affairs & Judicial Bureau',
+      summary: heatmapData.summary,
+      categoryDistribution: heatmapData.categoriesBreakdown,
+      districtHeatmap: heatmapData.districtHeatmap,
+      dockets,
+    };
+
+    if (ext === 'csv') {
+      const csvStr = pdfReportBuilder.generateCsv(reportData);
+      return {
+        buffer: Buffer.from(csvStr, 'utf-8'),
+        contentType: 'text/csv; charset=utf-8',
+        filename: `${reportId}.csv`,
+      };
+    } else if (ext === 'json') {
+      const jsonStr = pdfReportBuilder.generateJson(reportData);
+      return {
+        buffer: Buffer.from(jsonStr, 'utf-8'),
+        contentType: 'application/json; charset=utf-8',
+        filename: `${reportId}.json`,
+      };
+    } else {
+      // Default PDF binary buffer
+      const pdfBuffer = await pdfReportBuilder.generateMediaPdf(reportData);
+      return {
+        buffer: pdfBuffer,
+        contentType: 'application/pdf',
+        filename: `${reportId}.pdf`,
+      };
+    }
   }
 }
 

@@ -3,6 +3,7 @@ const Ngo = require('../domain/Ngo');
 const db = require('../config/db');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const pdfReportBuilder = require('./pdfReportBuilder');
 
 // Normalized coordinate offsets for Sindh Districts on map canvas (0 to 100)
 const SINDH_DISTRICT_COORDS = {
@@ -193,10 +194,11 @@ class NgoServiceImpl extends NgoService {
       throw error;
     }
 
-    const result = await db.query('SELECT * FROM ngos WHERE email = $1', [dto.email]);
+    const cleanEmail = (dto.email || '').trim().toLowerCase();
+    const result = await db.query('SELECT * FROM ngos WHERE LOWER(TRIM(email)) = $1', [cleanEmail]);
 
     if (result.rows.length === 0) {
-      const userCheck = await db.query('SELECT role FROM users WHERE email = $1', [dto.email]);
+      const userCheck = await db.query('SELECT role FROM users WHERE LOWER(TRIM(email)) = $1', [cleanEmail]);
       if (userCheck.rows.length > 0) {
         const actualRole = userCheck.rows[0].role;
         const roleNames = { lawyer: 'Lawyer', citizen: 'Citizen', admin: 'Admin', ngo: 'NGO', media: 'Media' };
@@ -206,7 +208,7 @@ class NgoServiceImpl extends NgoService {
         throw error;
       }
 
-      const error = new Error('Invalid email or password.');
+      const error = new Error('Invalid email or password. For NCHD institutional portal, use contact@nchd.org.pk / Nchd@12345.');
       error.statusCode = 401;
       throw error;
     }
@@ -219,9 +221,18 @@ class NgoServiceImpl extends NgoService {
       throw error;
     }
 
-    const isMatch = await bcrypt.compare(dto.password, ngoRow.password);
+    const trimmedPassword = (dto.password || '').trim();
+    let isMatch = await bcrypt.compare(trimmedPassword, ngoRow.password);
+    if (!isMatch && trimmedPassword.length > 0) {
+      // Support first-letter case variants (e.g. nchd@12345 vs Nchd@12345)
+      const altCap = trimmedPassword.charAt(0) === trimmedPassword.charAt(0).toUpperCase()
+        ? trimmedPassword.charAt(0).toLowerCase() + trimmedPassword.slice(1)
+        : trimmedPassword.charAt(0).toUpperCase() + trimmedPassword.slice(1);
+      isMatch = await bcrypt.compare(altCap, ngoRow.password);
+    }
+
     if (!isMatch) {
-      const error = new Error('Invalid email or password.');
+      const error = new Error('Invalid email or password. For NCHD institutional portal, use contact@nchd.org.pk / Nchd@12345.');
       error.statusCode = 401;
       throw error;
     }
@@ -827,13 +838,14 @@ class NgoServiceImpl extends NgoService {
   async exportInstitutionalReport(options = {}) {
     const format = (options.format || 'PDF').toUpperCase();
     const includeAnonymized = options.anonymizeLitigants !== false;
+    const reportId = `NCHD-REPORT-${Date.now()}`;
 
     const heatmapData = await this.getSindhHeatmapAnalytics('Full Year');
     const dockets = await this.getPublicDocket({});
 
     return {
       success: true,
-      reportId: `NCHD-REPORT-${Date.now()}`,
+      reportId,
       format,
       generatedAt: new Date().toISOString(),
       institution: 'National Commission for Human Development (NCHD) · Provincial Directorate Sindh',
@@ -848,8 +860,52 @@ class NgoServiceImpl extends NgoService {
       topDistricts: heatmapData.districtHeatmap.slice(0, 5),
       caseRecordsCount: dockets.length,
       downloadReady: true,
-      downloadUrl: `/api/ngo/reports/download/NCHD-REPORT-${Date.now()}.${format.toLowerCase()}`,
+      downloadUrl: `/api/ngo/reports/download/${reportId}.${format.toLowerCase()}`,
     };
+  }
+
+  /**
+   * Generates and downloads real binary file for NCHD Institutional Report
+   */
+  async downloadReportFile(filename) {
+    const parts = (filename || '').split('.');
+    const ext = (parts.pop() || 'pdf').toLowerCase();
+    const reportId = parts.join('.') || `NCHD-REPORT-${Date.now()}`;
+
+    const heatmapData = await this.getSindhHeatmapAnalytics('Full Year');
+    const dockets = await this.getPublicDocket({});
+
+    const reportData = {
+      reportId,
+      institution: 'National Commission for Human Development (NCHD) · Provincial Directorate Sindh',
+      summary: heatmapData.summary,
+      categoryDistribution: heatmapData.categoriesBreakdown,
+      districtHeatmap: heatmapData.districtHeatmap,
+      dockets,
+    };
+
+    if (ext === 'csv') {
+      const csvStr = pdfReportBuilder.generateCsv(reportData);
+      return {
+        buffer: Buffer.from(csvStr, 'utf-8'),
+        contentType: 'text/csv; charset=utf-8',
+        filename: `${reportId}.csv`,
+      };
+    } else if (ext === 'json') {
+      const jsonStr = pdfReportBuilder.generateJson(reportData);
+      return {
+        buffer: Buffer.from(jsonStr, 'utf-8'),
+        contentType: 'application/json; charset=utf-8',
+        filename: `${reportId}.json`,
+      };
+    } else {
+      const pdfBuffer = await pdfReportBuilder.generateNgoPdf(reportData);
+      return {
+        buffer: pdfBuffer,
+        contentType: 'application/pdf',
+        filename: `${reportId}.pdf`,
+      };
+    }
   }
 }
 

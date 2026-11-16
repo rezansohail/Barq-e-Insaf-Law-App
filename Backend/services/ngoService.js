@@ -54,6 +54,10 @@ class NgoService {
   async exportInstitutionalReport(options) {
     throw new Error('exportInstitutionalReport() method not implemented');
   }
+
+  async downloadReportFile(filename) {
+    throw new Error('downloadReportFile() method not implemented');
+  }
 }
 
 module.exports = NgoService;

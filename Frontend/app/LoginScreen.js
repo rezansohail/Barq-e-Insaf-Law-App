@@ -313,10 +313,12 @@ export default function LoginScreen() {
         targetRoute = '/(media)/MediaHome';
       }
 
-      console.log(`[AUTH] Logging in to ${endpoint} with ${email.trim()}`);
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPassword = password.trim();
+      console.log(`[AUTH] Logging in to ${endpoint} with ${cleanEmail}`);
       const response = await api.post(endpoint, {
-        email: email.trim(),
-        password: password,
+        email: cleanEmail,
+        password: cleanPassword,
       });
 
       console.log('[AUTH] Login response:', response.data);
@@ -776,6 +778,73 @@ export default function LoginScreen() {
                         </>
                       )}
                     </>
+                  )}
+
+                  {/* ── QUICK FILL DEMO CREDENTIALS FOR INSTITUTIONAL ROLES ── */}
+                  {selectedRole === 'media' && (
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: 'rgba(245, 158, 11, 0.15)',
+                        borderWidth: 1,
+                        borderColor: '#F59E0B',
+                        borderRadius: 10,
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        marginBottom: 12,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                      onPress={() => {
+                        setEmail('contact@ktnnews.tv');
+                        setPassword('Ktn@12345');
+                        clearErrors();
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <View>
+                        <Text style={{ color: '#F59E0B', fontSize: 11.5, fontWeight: '800' }}>
+                          ⚡ Quick-Fill KTN News Credentials
+                        </Text>
+                        <Text style={{ color: 'rgba(255, 238, 220, 0.7)', fontSize: 10 }}>
+                          contact@ktnnews.tv · Ktn@12345
+                        </Text>
+                      </View>
+                      <Text style={{ color: '#F59E0B', fontSize: 11, fontWeight: '800' }}>Apply →</Text>
+                    </TouchableOpacity>
+                  )}
+
+                  {selectedRole === 'ngo' && (
+                    <TouchableOpacity
+                      style={{
+                        backgroundColor: 'rgba(16, 185, 129, 0.15)',
+                        borderWidth: 1,
+                        borderColor: '#10B981',
+                        borderRadius: 10,
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        marginBottom: 12,
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                      }}
+                      onPress={() => {
+                        setEmail('contact@nchd.org.pk');
+                        setPassword('Nchd@12345');
+                        clearErrors();
+                      }}
+                      activeOpacity={0.8}
+                    >
+                      <View>
+                        <Text style={{ color: '#10B981', fontSize: 11.5, fontWeight: '800' }}>
+                          ⚡ Quick-Fill NCHD Credentials
+                        </Text>
+                        <Text style={{ color: 'rgba(255, 238, 220, 0.7)', fontSize: 10 }}>
+                          contact@nchd.org.pk · Nchd@12345
+                        </Text>
+                      </View>
+                      <Text style={{ color: '#10B981', fontSize: 11, fontWeight: '800' }}>Apply →</Text>
+                    </TouchableOpacity>
                   )}
 
                   {/* ── COMMON FIELDS ── */}
