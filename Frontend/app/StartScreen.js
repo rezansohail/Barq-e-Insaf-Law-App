@@ -307,7 +307,7 @@ export default function StartScreen() {
                   style={styles.liquidGlassGradient}
                 >
                   <View style={styles.liquidGlassSheen} pointerEvents="none" />
-                  <Text style={styles.buttonText}>EXPLORE PROJECT</Text>
+                  <Text style={styles.buttonText}>EXPLORE APP</Text>
                 </LinearGradient>
               </BlurView>
             </TouchableOpacity>

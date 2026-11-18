@@ -90,15 +90,15 @@ export default function NCHDInfo() {
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {/* TOP HALF HERO BANNER IMAGE (matching Image 1 reference) */}
+        {/* TOP HALF HERO BANNER IMAGE (full width bleed with certain height & bottom black fade) */}
         <View style={styles.topHeroContainer}>
           <Image
-            source={require('../assets/images/ngo1.png')}
+            source={require('../assets/images/ngoinfo.png')}
             style={styles.heroImage}
             resizeMode="cover"
           />
           <LinearGradient
-            colors={['transparent', 'rgba(10, 4, 2, 0.65)', 'rgba(6, 2, 1, 0.95)']}
+            colors={['transparent', 'rgba(0, 0, 0, 0.45)', 'rgba(0, 0, 0, 0.85)', 'rgba(0, 0, 0, 0.98)']}
             style={styles.heroGradient}
           />
           <View style={styles.heroOverlayContent}>
@@ -126,10 +126,10 @@ export default function NCHDInfo() {
           </View>
         </View>
 
-        {/* MANDATE CARD */}
-        <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
-          <Text style={[styles.cardHeading, { color: textPrimary }]}>Institutional Mission & Mandate</Text>
-          <Text style={[styles.cardBodyText, { color: textSecondary }]}>
+        {/* INSTITUTIONAL MISSION & MANDATE (OUT IN THE OPEN) */}
+        <View style={styles.openMissionSection}>
+          <Text style={[styles.openMissionHeading, { color: isDark ? '#FFA726' : '#EA580C' }]}>Institutional Mission & Mandate</Text>
+          <Text style={[styles.openMissionBody, { color: textSecondary }]}>
             {profile.description}
           </Text>
         </View>
@@ -194,19 +194,38 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   topHeroContainer: {
-    width: width,
-    height: 240,
+    width: '100%',
+    height: 250,
     position: 'relative',
     overflow: 'hidden',
-    borderBottomLeftRadius: 28,
-    borderBottomRightRadius: 28,
   },
   heroImage: {
     width: '100%',
     height: '100%',
   },
   heroGradient: {
-    ...StyleSheet.absoluteFillObject,
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '70%',
+  },
+  openMissionSection: {
+    paddingHorizontal: 16,
+    marginTop: 8,
+    marginBottom: 14,
+  },
+  openMissionHeading: {
+    fontSize: 14,
+    fontWeight: '800',
+    letterSpacing: 0.5,
+    textTransform: 'uppercase',
+    marginBottom: 6,
+  },
+  openMissionBody: {
+    fontSize: 13,
+    lineHeight: 20,
+    fontWeight: '400',
   },
   heroOverlayContent: {
     position: 'absolute',

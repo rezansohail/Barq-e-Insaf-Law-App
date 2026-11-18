@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useFonts, RacingSansOne_400Regular } from '@expo-google-fonts/racing-sans-one';
+import { openAIChat } from '../constants/chatBotStore';
 
 const STATUSBAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 36) : 0;
 
@@ -29,7 +30,7 @@ export default function LandingScreen() {
   const [fontsLoaded] = useFonts({ RacingSansOne_400Regular });
 
   const handleAskAI = () => {
-    router.push('/LoginScreen');
+    openAIChat(searchQuery);
   };
 
   return (
@@ -75,32 +76,22 @@ export default function LandingScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* ── 1. HEADER NAV BAR ── */}
         <View style={styles.headerNav}>
-          <TouchableOpacity
-            style={styles.headerBackBtn}
-            onPress={() => router.replace('/StartScreen')}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            accessibilityLabel="Back to Start Screen"
-          >
-            <Image
-              source={require('../assets/images/backarrow.png')}
-              style={{ width: 22, height: 15 }}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-
-          <View style={styles.brandGroup}>
-            <Image
-              source={require('../assets/images/logo.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-            <Text 
-              style={[
-                styles.brandTitle,
-                fontsLoaded ? { fontFamily: 'RacingSansOne_400Regular' } : { fontFamily: 'System' }
-              ]}
+          <View style={styles.leftNavGroup}>
+            <TouchableOpacity
+              style={styles.headerBackBtn}
+              onPress={() => router.replace('/StartScreen')}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityLabel="Back to Start Screen"
             >
-              Barq-e-Insaf
+              <Image
+                source={require('../assets/images/backarrow.png')}
+                style={{ width: 22, height: 15 }}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+
+            <Text style={styles.navTitle}>
+              Explore App
             </Text>
           </View>
 
@@ -124,20 +115,16 @@ export default function LandingScreen() {
               start={{ x: 0.5, y: 0 }}
               end={{ x: 0.5, y: 1 }}
             >
-              <View style={styles.badgePill}>
-                <Text style={styles.badgePillText}>SMART DECISIONS FOR LEGAL MATTERS</Text>
-              </View>
+              <View style={styles.logo}>
+                <Image
+                  source={require('../assets/images/logo.png')}
+                  style={[styles.logoImage, { width: 140, height: 140 }]}
+                  resizeMode="contain"
+                />              
+             </View>
 
-              <Text 
-                style={[
-                  styles.heroTitle,
-                  fontsLoaded ? { fontFamily: 'RacingSansOne_400Regular' } : { fontFamily: 'System' }
-                ]}
-              >
-                Barq-e-Insaf
-              </Text>
               <Text style={styles.heroSubtitle}>
-                Pakistan's Premier AI Legal Assistant & Verified Advocate Network
+                Pakistan's Premier AI Legal Assistant &      Verified Advocate Network
               </Text>
               
               <Text style={styles.heroDesc}>
@@ -148,10 +135,12 @@ export default function LandingScreen() {
               <View style={styles.searchContainer}>
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Ask legal question (PPC Section 302, Divorce, Property)..."
-                  placeholderTextColor="rgba(255, 220, 185, 0.45)"
+                  placeholder="Ask legal question ..."
+                  placeholderTextColor="rgba(235, 228, 221, 0.45)"
                   value={searchQuery}
                   onChangeText={setSearchQuery}
+                  onSubmitEditing={handleAskAI}
+                  returnKeyType="search"
                 />
                 <TouchableOpacity style={styles.askAiBtn} activeOpacity={0.88} onPress={handleAskAI}>
                   <LinearGradient
@@ -213,7 +202,7 @@ export default function LandingScreen() {
                   resizeMode="cover"
                 />
                 <LinearGradient colors={['transparent', 'rgba(10, 4, 2, 0.95)']} style={styles.imageGradient}>
-                  <Text style={styles.cardTag}>BIOMETRIC CONTRACTS</Text>
+                  <Text style={styles.cardTag}>DIGITAL SIGNATURES</Text>
                   <Text style={styles.cardTitle}>Digital Representation Agreements</Text>
                 </LinearGradient>
               </View>
@@ -261,8 +250,8 @@ export default function LandingScreen() {
                 />
               </View>
               <View style={styles.featureTextGroup}>
-                <Text style={styles.featureTitle}>Biometric Contract Signing</Text>
-                <Text style={styles.featureDesc}>Sign Vakalatnama representation agreements securely with simulated biometric fingerprint verification.</Text>
+                <Text style={styles.featureTitle}>Digital Signature</Text>
+                <Text style={styles.featureDesc}>Sign consultation agreements securely with digital signatures</Text>
               </View>
             </View>
           </View>
@@ -270,13 +259,13 @@ export default function LandingScreen() {
           {/* ── 6. GET STARTED CTA CARD ── */}
           <View style={styles.ctaCard}>
             <LinearGradient 
-              colors={['rgba(255, 140, 20, 0.14)', 'rgba(20, 10, 4, 0.7)', 'rgba(10, 4, 2, 0.9)']} 
+              colors={['rgba(255, 132, 0, 0.29)', 'rgba(20, 10, 4, 0.7)', 'rgba(10, 4, 2, 0.9)']} 
               style={styles.ctaGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <Text style={styles.ctaTitle}>Ready to Get Started?</Text>
-              <Text style={styles.ctaSubtitle}>Select your portal to log in as a Citizen, Verified Lawyer, or NGO Administrator.</Text>
+              <Text style={styles.ctaSubtitle}>Select your portal to log in as a Citizen, Lawyer, NGO Administrator, or Media Administrator.</Text>
               
               <TouchableOpacity
                 style={styles.ctaBtn}
@@ -310,7 +299,7 @@ export default function LandingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#060201' },
+  container: { flex: 1, backgroundColor: '#473d3b' },
   safeArea: { flex: 1 },
   ambientHalo: {
     position: 'absolute',
@@ -323,18 +312,23 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
-    paddingTop: STATUSBAR_HEIGHT + 8,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 215, 150, 0.1)',
-    zIndex: 2,
   },
-  brandGroup: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  logoImage: { width: 28, height: 28 },
-  brandTitle: { 
-    fontSize: 18, 
+  leftNavGroup: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  headerBackBtn: {
+    paddingVertical: 4,
+    paddingRight: 4,
+  },
+  navTitle: { 
     color: '#FFF2DF', 
-    letterSpacing: -0.3 
+    fontSize: 18, 
+    fontWeight: '900', 
   },
   signInBtn: { 
     paddingHorizontal: 14, 
@@ -383,15 +377,16 @@ const styles = StyleSheet.create({
     textAlign: 'center' 
   },
   heroSubtitle: { 
-    fontSize: 12, 
+    fontSize: 14, 
     color: '#FF9800', 
     fontWeight: '700', 
-    marginTop: 4, 
+    marginTop: -5, 
+    marginBottom: 5,
     textAlign: 'center' 
   },
   heroDesc: { 
-    fontSize: 12, 
-    color: 'rgba(255, 225, 195, 0.65)', 
+    fontSize: 11, 
+    color: 'rgba(255, 240, 224, 0.65)', 
     textAlign: 'center', 
     marginTop: 8, 
     lineHeight: 18, 
@@ -403,7 +398,7 @@ const styles = StyleSheet.create({
     width: '100%',
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(20, 10, 4, 0.7)',
+    backgroundColor: 'rgba(63, 40, 25, 0.7)',
     borderRadius: 14,
     padding: 5,
     marginTop: 16,
@@ -411,16 +406,16 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(255, 180, 80, 0.2)',
     elevation: 4,
     shadowColor: '#FF7A00',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.15,
-    shadowRadius: 6,
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.13,
+    shadowRadius: 1,
   },
   searchInput: { 
     flex: 1, 
     paddingHorizontal: 12, 
     paddingVertical: 8,
     fontSize: 12, 
-    color: '#FFF2DF' 
+    color: '#ffffff' 
   },
   askAiBtn: { borderRadius: 12, overflow: 'hidden' },
   askAiGradient: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12 },
@@ -462,39 +457,40 @@ const styles = StyleSheet.create({
     flexDirection: 'row', 
     alignItems: 'center', 
     gap: 12, 
-    backgroundColor: 'rgba(20, 10, 4, 0.5)', 
+    backgroundColor: 'rgba(75, 49, 34, 0.5)', 
     padding: 14, 
-    borderRadius: 14, 
+    borderRadius: 13, 
     marginBottom: 10, 
-    borderWidth: 1, 
+    borderWidth: 2, 
     borderColor: 'rgba(255, 180, 80, 0.12)',
-    shadowColor: '#FF7A00',
+    shadowColor: '#ff7b00a6',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
-    shadowRadius: 4,
-    elevation: 2,
+    shadowRadius: 8,
+    elevation: 0.5,
   },
   featureIconCircle: { 
-    width: 38, 
-    height: 38, 
+    width: 45, 
+    height: 45, 
     borderRadius: 19, 
     justifyContent: 'center', 
     alignItems: 'center' 
   },
   featureIcon: { 
-    width: 22, 
-    height: 22 
+    width: 50, 
+    height: 50,
+    borderRadius: 7,
   },
   featureTextGroup: { flex: 1 },
-  featureTitle: { fontSize: 13, fontWeight: '800', color: '#FFF2DF' },
-  featureDesc: { fontSize: 11, color: 'rgba(255, 220, 185, 0.6)', marginTop: 2, lineHeight: 16 },
+  featureTitle: { fontSize: 13, fontWeight: '800', color: '#f5e1c4' },
+  featureDesc: { fontSize: 11, color: 'rgba(233, 224, 216, 0.7)', marginTop: 2, lineHeight: 16 },
   
   // ── CTA ──
   ctaCard: { 
     borderRadius: 20, 
     overflow: 'hidden', 
     marginTop: 2,
-    borderWidth: 1,
+    borderWidth: 3,
     borderColor: 'rgba(255, 180, 80, 0.15)',
   },
   ctaGradient: { padding: 22, alignItems: 'center' },
@@ -505,7 +501,7 @@ const styles = StyleSheet.create({
     textAlign: 'center' 
   },
   ctaSubtitle: { 
-    color: 'rgba(255, 200, 150, 0.7)', 
+    color: 'rgba(255, 215, 178, 0.71)', 
     fontSize: 11, 
     textAlign: 'center', 
     marginTop: 4, 

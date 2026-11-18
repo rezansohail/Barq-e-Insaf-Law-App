@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Constants from 'expo-constants';
 import {
   View,
@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
+import { subscribeToChat, closeAIChat } from '../constants/chatBotStore';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -29,6 +30,7 @@ export default function AIChatFloatingButton() {
   const [modalVisible, setModalVisible] = useState(false);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
+  const scrollViewRef = useRef(null);
 
   const [messages, setMessages] = useState([
     {
@@ -60,16 +62,11 @@ export default function AIChatFloatingButton() {
     })
   ).current;
 
-  // Hide floating button on splash & startup screens
-  const hiddenRoutes = ['/', '/SplashScreen', '/StartScreen', '/OnboardingScreen'];
-  if (hiddenRoutes.includes(pathname)) {
-    return null;
-  }
+  const sendMessage = async (overrideText) => {
+    const textToSend = typeof overrideText === 'string' ? overrideText : inputText;
+    if (!textToSend || textToSend.trim() === '' || loading) return;
 
-  const sendMessage = async () => {
-    if (inputText.trim() === '' || loading) return;
-
-    const userQuery = inputText.trim();
+    const userQuery = textToSend.trim();
     const userMsg = { id: Date.now().toString(), sender: 'user', text: userQuery };
     
     setMessages((prev) => [...prev, userMsg]);
@@ -97,46 +94,75 @@ export default function AIChatFloatingButton() {
     }
   };
 
+  // Listen to openAIChat() triggers across any screen (e.g. LandingScreen "Ask AI")
+  useEffect(() => {
+    return subscribeToChat(({ isOpen, query }) => {
+      if (isOpen) {
+        setModalVisible(true);
+        if (query && query.trim()) {
+          sendMessage(query.trim());
+        }
+      } else {
+        setModalVisible(false);
+      }
+    });
+  }, []);
+
+  const handleClose = () => {
+    setModalVisible(false);
+    closeAIChat();
+  };
+
+  // Hide floating button on splash & startup screens
+  const hiddenRoutes = ['/', '/SplashScreen', '/StartScreen', '/OnboardingScreen'];
+  const isFabHidden = hiddenRoutes.includes(pathname);
+
+  if (isFabHidden && !modalVisible) {
+    return null;
+  }
+
   return (
     <>
-      {/* Draggable Floating Button */}
-      <Animated.View
-        style={[styles.draggableFab, { transform: [{ translateX: pan.x }, { translateY: pan.y }] }]}
-        {...panResponder.panHandlers}
-      >
-        <TouchableOpacity style={styles.fabBtn} activeOpacity={0.88} onPress={() => setModalVisible(true)}>
-          <LinearGradient
-            colors={['#161726', '#0F1018', '#1A0E06']}
-            style={styles.fabGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            {/* Inner Electric Blue Rim Halo to match Chatbot interior */}
-            <View style={styles.blueRimHalo} pointerEvents="none" />
+      {/* Draggable Floating Button (only shown on permitted routes) */}
+      {!isFabHidden && (
+        <Animated.View
+          style={[styles.draggableFab, { transform: [{ translateX: pan.x }, { translateY: pan.y }] }]}
+          {...panResponder.panHandlers}
+        >
+          <TouchableOpacity style={styles.fabBtn} activeOpacity={0.88} onPress={() => setModalVisible(true)}>
+            <LinearGradient
+              colors={['#161726', '#0F1018', '#1A0E06']}
+              style={styles.fabGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              {/* Inner Electric Blue Rim Halo to match Chatbot interior */}
+              <View style={styles.blueRimHalo} pointerEvents="none" />
 
-            {/* Inner Glow Circle with Chatbot Blue & Orange Legal Lightning */}
-            <View style={styles.glowCircle}>
-              <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
-                <Path
-                  d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
-                  fill="#FFA726"
-                  stroke="#FF9500"
-                  strokeWidth={1.2}
-                />
-              </Svg>
-            </View>
+              {/* Inner Glow Circle with Chatbot Blue & Orange Legal Lightning */}
+              <View style={styles.glowCircle}>
+                <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+                    fill="#FFA726"
+                    stroke="#FF9500"
+                    strokeWidth={1.2}
+                  />
+                </Svg>
+              </View>
 
-            {/* Bottom AI Legal Tag Pill in Black & Orange with Subtle Blue Border */}
-            <View style={styles.aiTagPill}>
-              <View style={styles.aiBlueDot} />
-              <Text style={styles.aiTagText}>AI LEGAL</Text>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-      </Animated.View>
+              {/* Bottom AI Legal Tag Pill in Black & Orange with Subtle Blue Border */}
+              <View style={styles.aiTagPill}>
+                <View style={styles.aiBlueDot} />
+                <Text style={styles.aiTagText}>AI LEGAL</Text>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       {/* POPUP AI CHAT MODAL */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={handleClose}>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <SafeAreaView style={styles.modalCard}>
             
@@ -153,13 +179,19 @@ export default function AIChatFloatingButton() {
                   <Text style={styles.headerSub}>Pakistan Penal Code & Legal Guidance</Text>
                 </View>
               </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
+              <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
                 <Text style={styles.closeBtnText}>X</Text>
               </TouchableOpacity>
             </View>
 
             {/* Chat Messages */}
-            <ScrollView style={styles.chatScroll} contentContainerStyle={styles.chatContent} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              ref={scrollViewRef}
+              onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+              style={styles.chatScroll}
+              contentContainerStyle={styles.chatContent}
+              showsVerticalScrollIndicator={false}
+            >
               {messages.map((msg) => (
                 <View key={msg.id} style={[styles.msgBubble, msg.sender === 'user' ? styles.userBubble : styles.aiBubble]}>
                   <Text style={[styles.msgText, msg.sender === 'user' ? styles.userMsgText : styles.aiMsgText]}>{msg.text}</Text>
@@ -193,9 +225,9 @@ export default function AIChatFloatingButton() {
                 placeholderTextColor="#94a3b8"
                 value={inputText}
                 onChangeText={setInputText}
-                onSubmitEditing={sendMessage}
+                onSubmitEditing={() => sendMessage()}
               />
-              <TouchableOpacity style={styles.sendBtn} onPress={sendMessage} disabled={loading}>
+              <TouchableOpacity style={styles.sendBtn} onPress={() => sendMessage()} disabled={loading}>
                 <Image
                   source={require('../assets/images/arrow.png')}
                   style={{ width: 18, height: 13 }}
