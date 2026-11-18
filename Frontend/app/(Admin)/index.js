@@ -128,7 +128,7 @@ export default function AdminHome() {
             resizeMode="contain"
           />
           <View>
-            <Text style={[s.adminNavTitle, { color: isDark ? '#FFF5E8' : '#1A0F07' }]}>Admin Control Panel</Text>
+            <Text style={dynamicStyles.secTitle }>Admin Control Panel</Text>
           </View>
         </View>
         <View style={s.headerRight}>
@@ -244,7 +244,6 @@ export default function AdminHome() {
 const s = StyleSheet.create({
   safe:          { flex: 1, backgroundColor: '#090302' },
   header:        { backgroundColor: '#140704', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: 'rgba(255, 149, 0, 0.15)' },
-  adminNavTitle: { fontSize: 18, fontWeight: '900', letterSpacing: -0.3 },
   headerTitle:   { fontSize: 18, fontWeight: '800', color: '#FFEED6', letterSpacing: -0.3 },
   headerSub:     { fontSize: 11, color: 'rgba(255, 180, 80, 0.65)', marginTop: 2, fontWeight: '500' },
   headerRight:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
