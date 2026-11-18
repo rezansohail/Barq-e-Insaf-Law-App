@@ -9,32 +9,16 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
-<<<<<<< HEAD
 import { useTranslation } from 'react-i18next';
-import TopHeaderMenu from './TopHeaderMenu';
-import { useAppTheme } from '../context/ThemeContext';
-import { getTranslatedAppName } from '../utils/translationHelper';
-=======
 import Svg, { Path } from 'react-native-svg';
 import TopHeaderMenu from './TopHeaderMenu';
 import { useAppTheme } from '../context/ThemeContext';
+import { getTranslatedAppName } from '../utils/translationHelper';
 import { getAdminUnreadNotificationStatus, subscribeToStore } from '../constants/ngoMediaStore';
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
 
 /**
  * AppHeader
- * Top navigation header replicating modern luxury app aesthetics (Image 1 & Image 2)
- *
- * @param {string} title - Screen heading text
- * @param {boolean} showBack - Whether to show the back button (false for home/dashboards)
- * @param {function} onBack - Optional custom back handler
- * @param {function} onBackPress - Alias for onBack
- * @param {string} homeRoute - Route to go back to (e.g. '/(citizen)/CitizenHome')
- * @param {React.ReactNode} rightElement - Optional custom right element
- * @param {boolean} showMenu - Whether to show the top-right menu (default true)
- * @param {string} role - Current role for TopHeaderMenu ('citizen', 'lawyer', 'ngo', 'media', 'admin')
- * @param {string} subtitle - Optional small subtitle / category badge
- * @param {string} userName - Optional user name to display "hi, [Name]" on top right for homepages
+ * Top navigation header replicating modern luxury app aesthetics
  */
 export default function AppHeader({
   title,
@@ -51,12 +35,16 @@ export default function AppHeader({
 }) {
   const router = useRouter();
   const { theme, isDarkMode } = useAppTheme();
-  const [hasUnread, setHasUnread] = useState(getAdminUnreadNotificationStatus());
+  const [hasUnread, setHasUnread] = useState(getAdminUnreadNotificationStatus ? getAdminUnreadNotificationStatus() : false);
 
   useEffect(() => {
-    return subscribeToStore(() => {
-      setHasUnread(getAdminUnreadNotificationStatus());
-    });
+    if (typeof subscribeToStore === 'function') {
+      return subscribeToStore(() => {
+        if (typeof getAdminUnreadNotificationStatus === 'function') {
+          setHasUnread(getAdminUnreadNotificationStatus());
+        }
+      });
+    }
   }, []);
 
   const handleBackPress = () => {
@@ -72,24 +60,19 @@ export default function AppHeader({
     }
   };
 
-<<<<<<< HEAD
   const { i18n, t } = useTranslation();
   const currentLang = i18n?.language || 'en';
 
   const isAppName = title === 'Barq-e-Insaf' || title === 'Barq-e-Insaf ⚡' || title === 'BARQ-E-INSAF';
   let displayTitle = (!showBack && isAppName) ? '' : title;
   if (isAppName) {
-    displayTitle = getTranslatedAppName(currentLang);
+    displayTitle = getTranslatedAppName ? getTranslatedAppName(currentLang) : 'Barq-e-Insaf';
   } else if (title) {
     displayTitle = t(title, title);
   }
-=======
-  const isAppName = title === 'Barq-e-Insaf' || title === 'BARQ-E-INSAF';
-  const displayTitle = (!showBack && isAppName) ? '' : title;
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
 
   return (
-    <View style={[styles.headerContainer, { backgroundColor: theme.headerBg, borderBottomColor: theme.navBorder }]}>
+    <View style={[styles.headerContainer, { backgroundColor: theme?.headerBg || '#0A0402', borderBottomColor: theme?.navBorder || 'rgba(255, 150, 40, 0.16)' }]}>
       {/* Top Specular Sheen line */}
       <View style={styles.topSheen} pointerEvents="none" />
 
@@ -137,7 +120,7 @@ export default function AppHeader({
               <Text
                 style={[
                   styles.headingTitle,
-                  { color: theme.textPrimary },
+                  { color: theme?.textPrimary || '#FFF5E8' },
                   !showBack && styles.headingTitleNoBack,
                 ]}
                 numberOfLines={1}
@@ -152,11 +135,7 @@ export default function AppHeader({
         <View style={styles.rightSection}>
           {!showBack && userName ? (
             <Text style={[styles.hiGreetingText, { color: isDarkMode ? '#FFEED6' : '#1A0C04' }]}>
-<<<<<<< HEAD
               {t('common.greetingHi', 'hi,')} {userName}
-=======
-              {userName}
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
             </Text>
           ) : null}
           {role === 'admin' && (
@@ -273,12 +252,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
-  },
-  homeRightGroup: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-    marginRight: 4,
   },
   hiGreetingText: {
     fontSize: 12.5,
