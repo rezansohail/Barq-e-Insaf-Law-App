@@ -147,7 +147,6 @@ export default StyleSheet.create({
     fontSize: 11,
     fontWeight: '800',
     letterSpacing: 0.5,
-    textTransform: 'uppercase',
   },
   sectionBadge: {
     backgroundColor: 'rgba(239, 68, 68, 0.18)',

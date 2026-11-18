@@ -9,8 +9,10 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import TopHeaderMenu from './TopHeaderMenu';
 import { useAppTheme } from '../context/ThemeContext';
+import { getTranslatedAppName } from '../utils/translationHelper';
 
 /**
  * AppHeader
@@ -56,8 +58,16 @@ export default function AppHeader({
     }
   };
 
+  const { i18n, t } = useTranslation();
+  const currentLang = i18n?.language || 'en';
+
   const isAppName = title === 'Barq-e-Insaf' || title === 'Barq-e-Insaf ⚡' || title === 'BARQ-E-INSAF';
-  const displayTitle = (!showBack && isAppName) ? '' : title;
+  let displayTitle = (!showBack && isAppName) ? '' : title;
+  if (isAppName) {
+    displayTitle = getTranslatedAppName(currentLang);
+  } else if (title) {
+    displayTitle = t(title, title);
+  }
 
   return (
     <View style={[styles.headerContainer, { backgroundColor: theme.headerBg, borderBottomColor: theme.navBorder }]}>
@@ -123,7 +133,7 @@ export default function AppHeader({
         <View style={styles.rightSection}>
           {!showBack && userName ? (
             <Text style={[styles.hiGreetingText, { color: isDarkMode ? '#FFEED6' : '#1A0C04' }]}>
-              hi, {userName}
+              {t('common.greetingHi', 'hi,')} {userName}
             </Text>
           ) : null}
           {rightElement}

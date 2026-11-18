@@ -25,12 +25,14 @@ import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import { useAppTranslation } from '../../utils/translationHelper';
 
 export default function CitizenHome() {
   useMockStore();
   const router = useRouter();
   const params = useLocalSearchParams();
   const { isDarkMode, theme } = useAppTheme();
+  const { t, currentLang, translateDistrict, translateCategory, translateDynamic } = useAppTranslation();
   const currentCitizenId = params.citizenId || params.id || getCurrentCitizenId();
 
   // Root screen: back button confirms exit, does not back to login screen
@@ -70,6 +72,8 @@ export default function CitizenHome() {
   );
   const displayLawyers = localLawyers.length > 0 ? [...localLawyers, ...otherLawyers] : lawyers;
 
+  const districtDisplay = userData.district ? translateDistrict(userData.district) : (currentLang === 'ur' ? 'سندھ' : currentLang === 'sd' ? 'سنڌ' : 'Sindh Province');
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: isDarkMode ? '#080402' : '#FAF8F5' }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={isDarkMode ? '#080402' : '#FAF8F5'} />
@@ -78,7 +82,7 @@ export default function CitizenHome() {
       <AppHeader
         showBack={false}
         role="citizen"
-        userName={userData.name || 'Citizen'}
+        userName={userData.name || (currentLang === 'ur' ? 'شہری' : currentLang === 'sd' ? 'شهري' : 'Citizen')}
         avatarText={userData.dp || 'C'}
       />
 
@@ -87,12 +91,16 @@ export default function CitizenHome() {
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* DISTRICT & PORTAL STATUS BANNER (No Salam) */}
+        {/* DISTRICT & PORTAL STATUS BANNER */}
         <View style={[styles.welcomeBanner, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
           <View style={{ flex: 1 }}>
-            <Text style={styles.greetingSub}>CITIZEN PORTAL</Text>
+            <Text style={styles.greetingSub}>{t('citizen.portalTitle', 'CITIZEN PORTAL')}</Text>
             <Text style={[styles.districtBadgeText, !isDarkMode && { color: theme.textSecondary }]}>
-              District: {userData.district || 'Sindh Province'} · Active Legal Representation & Dossier Vault
+              {currentLang === 'ur'
+                ? `ضلع: ${districtDisplay} · فعال قانونی وکالت اور ثبوت والٹ`
+                : currentLang === 'sd'
+                ? `ضلعو: ${districtDisplay} · فعال قانوني وڪالت ۽ ثبوت والٽ`
+                : `District: ${userData.district || 'Sindh Province'} · Active Legal Representation & Dossier Vault`}
             </Text>
           </View>
         </View>
@@ -115,9 +123,9 @@ export default function CitizenHome() {
               </Svg>
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.buildCaseBtnText}>BUILD YOUR CASE</Text>
+              <Text style={styles.buildCaseBtnText}>{t('citizen.buildCase', 'BUILD YOUR CASE')}</Text>
               <Text style={styles.buildCaseBtnSub}>
-                Start legal intake with facts, sections & evidence
+                {t('citizen.buildCaseSub', 'Start legal intake with facts, sections & evidence')}
               </Text>
             </View>
             <Image
@@ -131,11 +139,11 @@ export default function CitizenHome() {
         {/* VERIFIED LAWYERS NEAR YOU */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionLabel}>
-            Verified Advocates {localLawyers.length > 0 ? `in ${userData.district}` : '(Sindh High Court)'}
+            {t(`Verified Advocates in ${userData.district || 'Karachi'}`)}
           </Text>
           <TouchableOpacity onPress={() => router.push('/(citizen)/FindLawyer')}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={styles.seeAllText}>View All</Text>
+              <Text style={styles.seeAllText}>{t('common.viewAll', 'View All')}</Text>
               <Image
                 source={require('../../assets/images/arrow.png')}
                 style={styles.inlineArrowImg}
@@ -163,32 +171,32 @@ export default function CitizenHome() {
                     <Text style={styles.lawyerAvatarText}>{l.initials || 'ADV'}</Text>
                   </View>
                   <View style={styles.sbcPill}>
-                    <Text style={styles.sbcPillText}>{l.sbc ? `SBC ${l.sbc}` : 'SBC VERIFIED'}</Text>
+                    <Text style={styles.sbcPillText}>{l.sbc ? `SBC ${l.sbc}` : t('citizen.sbcVerified', 'SBC VERIFIED')}</Text>
                   </View>
                 </View>
 
                 <Text style={styles.lawyerName} numberOfLines={1}>{l.name}</Text>
-                <Text style={styles.lawyerSpec} numberOfLines={1}>{l.spec || 'Legal Counsel'}</Text>
+                <Text style={styles.lawyerSpec} numberOfLines={1}>{translateCategory(l.spec) || t('citizen.legalCounsel', 'Legal Counsel')}</Text>
 
                 <View style={styles.lawyerCardFooter}>
-                  <Text style={styles.consultAction}>Request Legal Consultation →</Text>
+                  <Text style={styles.consultAction}>{t('citizen.requestConsultation', 'Request Legal Consultation →')}</Text>
                 </View>
               </TouchableOpacity>
             ))
           ) : (
             <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>Loading verified advocates...</Text>
+              <Text style={styles.emptyText}>{t('common.loading', 'Loading verified advocates...')}</Text>
             </View>
           )}
         </ScrollView>
 
         {/* ACTIVE CASES */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionLabel}>My Active Cases</Text>
+          <Text style={styles.sectionLabel}>{t('citizen.myActiveCases', 'My Active Cases')}</Text>
           {activeCases.length > 0 && (
             <TouchableOpacity onPress={() => router.push('/(citizen)/MyCases')}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                <Text style={styles.seeAllText}>All Cases</Text>
+                <Text style={styles.seeAllText}>{t('common.allCases', 'All Cases')}</Text>
                 <Image
                   source={require('../../assets/images/arrow.png')}
                   style={styles.inlineArrowImg}
@@ -207,9 +215,9 @@ export default function CitizenHome() {
                 <Path d="M8 8h8M8 12h8M8 16h5" stroke="#FFB74D" strokeWidth={1.8} strokeLinecap="round" />
               </Svg>
             </View>
-            <Text style={styles.noCaseTitle}>No Active Cases Yet</Text>
+            <Text style={styles.noCaseTitle}>{t('citizen.noActiveCases', 'No Active Cases Yet')}</Text>
             <Text style={styles.noCaseSub}>
-              Tap here or 'Build Your Case' above to start your first legal dossier.
+              {t('citizen.noCaseSub', "Tap here or 'Build Your Case' above to start your first legal dossier.")}
             </Text>
           </TouchableOpacity>
         ) : (
@@ -222,12 +230,12 @@ export default function CitizenHome() {
             >
               <View style={[styles.caseDot, { backgroundColor: c.status === 'Active' ? '#4ade80' : '#f59e0b' }]} />
               <View style={styles.caseInfo}>
-                <Text style={styles.caseTitle} numberOfLines={1}>{c.title}</Text>
-                <Text style={styles.caseSub}>{c.type || 'Legal Matter'} · {c.district || userData.district || 'Sindh'}</Text>
+                <Text style={styles.caseTitle} numberOfLines={1}>{translateDynamic(c.title)}</Text>
+                <Text style={styles.caseSub}>{translateCategory(c.type || 'Legal Matter')} · {translateDistrict(c.district || userData.district || 'Sindh')}</Text>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: c.status === 'Active' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)' }]}>
                 <Text style={[styles.badgeText, { color: c.status === 'Active' ? '#4ade80' : '#f59e0b' }]}>
-                  {c.status || 'Active'}
+                  {t('common.' + (c.status || 'Active').toLowerCase(), c.status || 'Active')}
                 </Text>
               </View>
             </TouchableOpacity>
@@ -236,7 +244,7 @@ export default function CitizenHome() {
 
         {/* INSTITUTIONAL PARTNERS: NGO & MEDIA */}
         <Text style={[styles.sectionLabel, { marginTop: 20 }]}>
-          Institutional Legal Aid & Media Support
+          {t('citizen.institutionalSupport', 'Institutional Legal Aid & Media Support')}
         </Text>
         <View style={styles.partnerCardsContainer}>
           {/* NCHD Card */}
@@ -255,18 +263,18 @@ export default function CitizenHome() {
               </View>
               <View style={{ flex: 1 }}>
                 <View style={styles.partnerPill}>
-                  <Text style={styles.partnerPillText}>GOVT / NGO LEGAL AID</Text>
+                  <Text style={styles.partnerPillText}>{t('citizen.govtNgoAid', 'GOVT / NGO LEGAL AID')}</Text>
                 </View>
                 <Text style={styles.partnerTitle}>
-                  National Commission for Human Development (NCHD)
+                  {t('National Commission for Human Development (NCHD)')}
                 </Text>
                 <Text style={styles.partnerSub}>
-                  Grassroots legal aid, adult literacy & community relief
+                  {t('Grassroots legal aid, adult literacy & community relief')}
                 </Text>
               </View>
             </View>
             <View style={styles.partnerBottomRow}>
-              <Text style={styles.partnerActionText}>View Info, Mission & Contact Email</Text>
+              <Text style={styles.partnerActionText}>{t('lawyer.viewInfo', 'View Info, Mission & Contact Email')}</Text>
               <Image
                 source={require('../../assets/images/arrow.png')}
                 style={styles.inlineArrowImg}
@@ -291,18 +299,18 @@ export default function CitizenHome() {
               </View>
               <View style={{ flex: 1 }}>
                 <View style={[styles.partnerPill, { backgroundColor: 'rgba(245, 158, 11, 0.18)', borderColor: 'rgba(245, 158, 11, 0.35)' }]}>
-                  <Text style={[styles.partnerPillText, { color: '#F59E0B' }]}>24/7 BROADCAST JOURNALISM</Text>
+                  <Text style={[styles.partnerPillText, { color: '#F59E0B' }]}>{t('24/7 BROADCAST JOURNALISM')}</Text>
                 </View>
                 <Text style={styles.partnerTitle}>
-                  KTN News (Kawish Television Network)
+                  {t('KTN News (Kawish Television Network)')}
                 </Text>
                 <Text style={styles.partnerSub}>
-                  Court reporting, investigative journalism & public grievance desk
+                  {t('Court reporting, investigative journalism & public grievance desk')}
                 </Text>
               </View>
             </View>
             <View style={styles.partnerBottomRow}>
-              <Text style={styles.partnerActionText}>View Info, Mission & Contact Email</Text>
+              <Text style={styles.partnerActionText}>{t('lawyer.viewInfo', 'View Info, Mission & Contact Email')}</Text>
               <Image
                 source={require('../../assets/images/arrow.png')}
                 style={styles.inlineArrowImg}

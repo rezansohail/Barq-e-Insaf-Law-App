@@ -9,11 +9,13 @@ import { useAppNavigation } from '../../hooks/useAppNavigation';
 import SindhCasesMap from '../../components/SindhCasesMap';
 import { fetchRealSindhCases } from '../../constants/realCasesStore';
 import { useAppTheme } from '../../context/ThemeContext';
+import { useAppTranslation } from '../../utils/translationHelper';
 import api from '../../constants/api';
 
 export default function MediaCaseMap() {
   const router = useRouter();
   const { isDarkMode, theme } = useAppTheme();
+  const { t, currentLang, translateDistrict } = useAppTranslation();
   useAppNavigation({ isHome: false, homeRoute: '/(media)/MediaHome' });
 
   const [realCases, setRealCases] = useState([]);
@@ -66,7 +68,7 @@ export default function MediaCaseMap() {
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={safeBg} />
 
       <AppHeader
-        title="Sindh Case Geography"
+        title={t('nav.map', 'Sindh Case Geography')}
         showBack={true}
         homeRoute="/(media)/MediaHome"
         role="media"
@@ -77,7 +79,7 @@ export default function MediaCaseMap() {
         <View style={[styles.introCard, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <Text style={[styles.introTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04', marginBottom: 0 }]}>
-              Sindh Judicial Reporting Map
+              {t('map.judicialMap', 'Sindh Judicial Reporting Map')}
             </Text>
             <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: '#10B981', borderWidth: 1, paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 }}>
               <Text style={{ color: '#10B981', fontSize: 10, fontWeight: '800' }}>LIVE HEATMAP API</Text>
@@ -91,25 +93,33 @@ export default function MediaCaseMap() {
           <View style={{ flexDirection: 'row', gap: 8, marginTop: 12 }}>
             <View style={{ flex: 1, backgroundColor: isDarkMode ? '#12131A' : '#F3EFEA', padding: 8, borderRadius: 10, alignItems: 'center' }}>
               <Text style={{ color: '#FFA726', fontWeight: '900', fontSize: 14 }}>{summary.totalActiveCases || realCases.length}</Text>
-              <Text style={{ color: isDarkMode ? '#9CA3AF' : '#664530', fontSize: 9.5, fontWeight: '700' }}>Active Dockets</Text>
+              <Text style={{ color: isDarkMode ? '#9CA3AF' : '#664530', fontSize: 9.5, fontWeight: '700' }}>
+                {t('map.activeDockets', 'Active Dockets')}
+              </Text>
             </View>
             <View style={{ flex: 1, backgroundColor: isDarkMode ? '#12131A' : '#F3EFEA', padding: 8, borderRadius: 10, alignItems: 'center' }}>
               <Text style={{ color: '#38BDF8', fontWeight: '900', fontSize: 14 }}>{summary.districtsCovered || 2}</Text>
-              <Text style={{ color: isDarkMode ? '#9CA3AF' : '#664530', fontSize: 9.5, fontWeight: '700' }}>Districts</Text>
+              <Text style={{ color: isDarkMode ? '#9CA3AF' : '#664530', fontSize: 9.5, fontWeight: '700' }}>
+                {t('analytics.districts', 'Districts')}
+              </Text>
             </View>
             <View style={{ flex: 1, backgroundColor: isDarkMode ? '#12131A' : '#F3EFEA', padding: 8, borderRadius: 10, alignItems: 'center' }}>
-              <Text style={{ color: '#EF4444', fontWeight: '900', fontSize: 14 }}>{summary.topHotspotDistrict || 'Karachi'}</Text>
-              <Text style={{ color: isDarkMode ? '#9CA3AF' : '#664530', fontSize: 9.5, fontWeight: '700' }}>Top Hotspot</Text>
+              <Text style={{ color: '#EF4444', fontWeight: '900', fontSize: 14 }}>
+                {translateDistrict(summary.topHotspotDistrict || 'Karachi')}
+              </Text>
+              <Text style={{ color: isDarkMode ? '#9CA3AF' : '#664530', fontSize: 9.5, fontWeight: '700' }}>
+                {t('media.hotspotDistrict', 'Top Hotspot')}
+              </Text>
             </View>
           </View>
 
           {/* Category Filter Pills */}
           <View style={{ flexDirection: 'row', gap: 6, marginTop: 12 }}>
             {[
-              { id: 'ALL', label: 'All Dockets' },
-              { id: 'PROPERTY', label: 'Property & Land' },
-              { id: 'FAMILY', label: 'Family' },
-              { id: 'LEADS', label: '🚨 Media Leads' },
+              { id: 'ALL', label: t('map.allDockets', 'All Dockets') },
+              { id: 'PROPERTY', label: t('map.propertyLand', 'Property & Land') },
+              { id: 'FAMILY', label: t('map.family', 'Family') },
+              { id: 'LEADS', label: t('map.mediaLeads', '🚨 Media Leads') },
             ].map((f) => (
               <TouchableOpacity
                 key={f.id}

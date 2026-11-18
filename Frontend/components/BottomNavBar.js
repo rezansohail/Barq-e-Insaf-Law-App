@@ -10,6 +10,7 @@ import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import Svg, { Path, Circle, Rect } from 'react-native-svg';
+import { useAppTranslation } from '../utils/translationHelper';
 import { useAppTheme } from '../context/ThemeContext';
 
 // Tab configuration per role
@@ -176,6 +177,7 @@ export default function BottomNavBar({ role = 'citizen', activeTab = 'home' }) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { theme, isDarkMode } = useAppTheme();
+  const { t } = useAppTranslation();
   const tabs = ROLE_TABS[role] || ROLE_TABS.citizen;
 
   const handleTabPress = (tab) => {
@@ -220,7 +222,7 @@ export default function BottomNavBar({ role = 'citizen', activeTab = 'home' }) {
                     isActive ? styles.tabLabelActive : (isDarkMode ? styles.tabLabelInactiveDark : styles.tabLabelInactiveLight),
                   ]}
                 >
-                  {tab.label}
+                  {t('nav.' + tab.id, tab.label)}
                 </Text>
                 {isActive && <View style={styles.activeDot} />}
               </TouchableOpacity>

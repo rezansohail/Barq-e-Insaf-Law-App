@@ -19,11 +19,13 @@ import TopHeaderMenu from '../../components/TopHeaderMenu';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import { useAppTranslation } from '../../utils/translationHelper';
 import api from '../../constants/api';
 
 export default function MediaHome() {
   const router = useRouter();
   const { isDarkMode } = useAppTheme();
+  const { t, currentLang, appName, translateDistrict, translateCourt, translateDynamic } = useAppTranslation();
   useAppNavigation({ isHome: true, homeRoute: '/(media)/MediaHome' });
 
   const [loading, setLoading] = useState(true);
@@ -200,9 +202,9 @@ export default function MediaHome() {
       <View style={[styles.header, { backgroundColor: isDarkMode ? '#181822' : '#FFFFFF' }]}>
         <View style={styles.headerRow}>
           <View style={styles.brand}>
-            <Text style={[styles.brandName, { color: '#FF9500' }]}>Barq-e-Insaf</Text>
+            <Text style={[styles.brandName, { color: '#FF9500' }]}>{appName}</Text>
             <Text style={[styles.brandSub, { color: isDarkMode ? '#9CA3AF' : '#664530' }]}>
-              KTN News · Legal Affairs & Judicial Bureau
+              {t('media.orgName', 'KTN News · Legal Affairs & Judicial Bureau')}
             </Text>
           </View>
           <View style={styles.headerRight}>
@@ -211,7 +213,7 @@ export default function MediaHome() {
               onPress={() => setShowPublishModal(true)}
               activeOpacity={0.8}
             >
-              <Text style={styles.publishHeaderBtnText}>+ Publish Story</Text>
+              <Text style={styles.publishHeaderBtnText}>{t('media.publishStoryBtn', '+ Publish Story')}</Text>
             </TouchableOpacity>
             <TopHeaderMenu role="media" avatarText="KTN" />
           </View>
@@ -224,7 +226,7 @@ export default function MediaHome() {
               {activeDisputesCount}
             </Text>
             <Text style={[styles.statLabel, { color: isDarkMode ? '#9CA3AF' : '#664530' }]}>
-              Active Disputes
+              {t('media.activeDisputes', 'Active Disputes')}
             </Text>
           </View>
 
@@ -233,16 +235,16 @@ export default function MediaHome() {
               {districtsCoveredCount}
             </Text>
             <Text style={[styles.statLabel, { color: isDarkMode ? '#9CA3AF' : '#664530' }]}>
-              Districts Covered
+              {t('media.districtsCovered', 'Districts Covered')}
             </Text>
           </View>
 
           <View style={[styles.statChip, styles.statChipHotspot]}>
             <Text style={[styles.statNum, { color: '#EF4444' }]}>
-              {hotspotDistrictText}
+              {translateDistrict(hotspotDistrictText)}
             </Text>
             <Text style={[styles.statLabel, { color: '#F87171' }]}>
-              Hotspot District
+              {t('media.hotspotDistrict', 'Hotspot District')}
             </Text>
           </View>
         </View>
@@ -256,8 +258,12 @@ export default function MediaHome() {
           activeOpacity={0.8}
         >
           <Text style={styles.navTileIcon}>🗺️</Text>
-          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Sindh Map</Text>
-          <Text style={[styles.navTileSub, { color: '#38BDF8' }]}>Geographic Radar →</Text>
+          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+            {t('nav.map', 'Sindh Map')}
+          </Text>
+          <Text style={[styles.navTileSub, { color: '#38BDF8' }]}>
+            {t('media.geographicRadar', 'Geographic Radar →')}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -266,8 +272,12 @@ export default function MediaHome() {
           activeOpacity={0.8}
         >
           <Text style={styles.navTileIcon}>📊</Text>
-          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Beat Analytics</Text>
-          <Text style={[styles.navTileSub, { color: '#FFA726' }]}>Dispute Ratios →</Text>
+          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+            {t('nav.analytics', 'Beat Analytics')}
+          </Text>
+          <Text style={[styles.navTileSub, { color: '#FFA726' }]}>
+            {t('media.disputeRatios', 'Dispute Ratios →')}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -276,8 +286,12 @@ export default function MediaHome() {
           activeOpacity={0.8}
         >
           <Text style={styles.navTileIcon}>📄</Text>
-          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Press Packet</Text>
-          <Text style={[styles.navTileSub, { color: '#C084FC' }]}>Export Reports →</Text>
+          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+            {t('nav.reports', 'Press Packet')}
+          </Text>
+          <Text style={[styles.navTileSub, { color: '#C084FC' }]}>
+            {t('media.exportReports', 'Export Reports →')}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -291,13 +305,13 @@ export default function MediaHome() {
         <View style={styles.sectionHeaderRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={[styles.sectionLabel, { color: isDarkMode ? '#FFA726' : '#C2410C' }]}>
-              🚨 Citizen Coverage Leads (Urgent)
+              🚨 {t('media.citizenLeads', 'Citizen Coverage Leads (Urgent)')}
             </Text>
             <View style={styles.sectionBadge}>
-              <Text style={styles.sectionBadgeText}>Urgent</Text>
+              <Text style={styles.sectionBadgeText}>{t('common.urgent', 'Urgent')}</Text>
             </View>
           </View>
-          <Text style={styles.seeAllText}>({leads.length} Leads)</Text>
+          <Text style={styles.seeAllText}>({leads.length} {t('media.leads', 'Leads')})</Text>
         </View>
 
         {loading ? (
@@ -323,17 +337,17 @@ export default function MediaHome() {
                     <Text style={styles.leadRefText}>{lead.leadId || lead.id}</Text>
                   </View>
                   <View style={styles.relayBadge}>
-                    <Text style={styles.relayBadgeText}>Anonymous Relay Available</Text>
+                    <Text style={styles.relayBadgeText}>{t('media.relayActive', 'Anonymous Relay Available')}</Text>
                   </View>
                 </View>
 
                 <Text style={styles.leadDistrictText}>
-                  {lead.district} · {lead.court || 'Sindh Court'}
+                  {translateDistrict(lead.district)} · {translateCourt(lead.court || 'Sindh Court')}
                 </Text>
 
                 <View style={styles.leadSummaryBox}>
                   <Text style={styles.leadSummaryText} numberOfLines={2}>
-                    {lead.title || lead.summary}
+                    {translateDynamic(lead.title || lead.summary)}
                   </Text>
                 </View>
 
@@ -344,7 +358,7 @@ export default function MediaHome() {
                     activeOpacity={0.8}
                   >
                     <Text style={[styles.investigateBtnText, { color: '#FFA726' }]}>
-                      Inspect Details 🔍
+                      {t('media.inspectDetails', 'Inspect Details 🔍')}
                     </Text>
                   </TouchableOpacity>
 
@@ -354,7 +368,7 @@ export default function MediaHome() {
                     activeOpacity={0.8}
                   >
                     <Text style={[styles.investigateBtnText, isInvestigating && styles.investigateBtnTextActive]}>
-                      {isInvestigating ? '✓ Under Investigation' : 'Investigate Case'}
+                      {isInvestigating ? t('media.underInvestigation', '✓ Under Investigation') : t('media.investigateCase', 'Investigate Case')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -368,26 +382,26 @@ export default function MediaHome() {
           <>
             <View style={[styles.sectionHeaderRow, { marginTop: 8 }]}>
               <Text style={[styles.sectionLabel, { color: isDarkMode ? '#FFA726' : '#C2410C' }]}>
-                📰 Recent Verified Broadcasts
+                📰 {t('media.broadcastsHeader', 'Recent Verified Broadcasts')}
               </Text>
-              <Text style={styles.seeAllText}>({publishedStories.length} Published)</Text>
+              <Text style={styles.seeAllText}>({publishedStories.length} {t('media.published', 'Published')})</Text>
             </View>
 
             {publishedStories.slice(0, 2).map((story) => (
               <View key={story.id} style={styles.leadCard}>
                 <View style={styles.leadTopRow}>
                   <View style={[styles.leadRefBadge, { borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                    <Text style={[styles.leadRefText, { color: '#10B981' }]}>BROADCAST VERIFIED</Text>
+                    <Text style={[styles.leadRefText, { color: '#10B981' }]}>{t('media.broadcastVerified', 'BROADCAST VERIFIED')}</Text>
                   </View>
                   {story.is_breaking && (
                     <View style={[styles.sectionBadge, { marginLeft: 0 }]}>
-                      <Text style={styles.sectionBadgeText}>Breaking</Text>
+                      <Text style={styles.sectionBadgeText}>{t('media.breaking', 'Breaking')}</Text>
                     </View>
                   )}
                 </View>
 
                 <Text style={[styles.leadDistrictText, { fontSize: 12.5, fontWeight: '800' }]} numberOfLines={1}>
-                  {story.title || story.headline}
+                  {translateDynamic(story.title || story.headline)}
                 </Text>
 
                 <TouchableOpacity
@@ -396,7 +410,7 @@ export default function MediaHome() {
                   activeOpacity={0.8}
                 >
                   <Text style={[styles.investigateBtnText, { color: '#38BDF8' }]}>
-                    Read Official Story 📖
+                    {t('media.readOfficialStory', 'Read Official Story 📖')}
                   </Text>
                 </TouchableOpacity>
               </View>

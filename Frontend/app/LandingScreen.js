@@ -18,6 +18,7 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useFonts, RacingSansOne_400Regular } from '@expo-google-fonts/racing-sans-one';
+import { useAppTranslation } from '../utils/translationHelper';
 
 const STATUSBAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 36) : 0;
 
@@ -25,6 +26,7 @@ export default function LandingScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const { width, height } = useWindowDimensions();
+  const { t, appName, currentLang } = useAppTranslation();
 
   const [fontsLoaded] = useFonts({ RacingSansOne_400Regular });
 
@@ -97,10 +99,10 @@ export default function LandingScreen() {
             <Text 
               style={[
                 styles.brandTitle,
-                fontsLoaded ? { fontFamily: 'RacingSansOne_400Regular' } : { fontFamily: 'System' }
+                (fontsLoaded && currentLang === 'en') ? { fontFamily: 'RacingSansOne_400Regular' } : { fontFamily: 'System' }
               ]}
             >
-              Barq-e-Insaf
+              {appName}
             </Text>
           </View>
 
@@ -108,7 +110,7 @@ export default function LandingScreen() {
             style={styles.signInBtn}
             onPress={() => router.push('/LoginScreen')}
           >
-            <Text style={styles.signInText}>Sign In</Text>
+            <Text style={styles.signInText}>{t('landing.signIn', 'Sign In')}</Text>
           </TouchableOpacity>
         </View>
 
@@ -125,30 +127,30 @@ export default function LandingScreen() {
               end={{ x: 0.5, y: 1 }}
             >
               <View style={styles.badgePill}>
-                <Text style={styles.badgePillText}>SMART DECISIONS FOR LEGAL MATTERS</Text>
+                <Text style={styles.badgePillText}>{t('landing.badge', 'SMART DECISIONS FOR LEGAL MATTERS')}</Text>
               </View>
 
               <Text 
                 style={[
                   styles.heroTitle,
-                  fontsLoaded ? { fontFamily: 'RacingSansOne_400Regular' } : { fontFamily: 'System' }
+                  (fontsLoaded && currentLang === 'en') ? { fontFamily: 'RacingSansOne_400Regular' } : { fontFamily: 'System' }
                 ]}
               >
-                Barq-e-Insaf
+                {appName}
               </Text>
               <Text style={styles.heroSubtitle}>
-                Pakistan's Premier AI Legal Assistant & Verified Advocate Network
+                {t('landing.heroSubtitle', "Pakistan's Premier AI Legal Assistant & Verified Advocate Network")}
               </Text>
               
               <Text style={styles.heroDesc}>
-                Instant AI legal guidance in Urdu & Sindhi for Pakistan Penal Code, Property, and Family laws, paired with Sindh Bar Council verified advocates.
+                {t('landing.heroDesc', 'Instant AI legal guidance in Urdu & Sindhi for Pakistan Penal Code, Property, and Family laws, paired with Sindh Bar Council verified advocates.')}
               </Text>
 
               {/* ── 3. "Ask AI" SEARCH INPUT BAR ── */}
               <View style={styles.searchContainer}>
                 <TextInput
                   style={styles.searchInput}
-                  placeholder="Ask legal question (PPC Section 302, Divorce, Property)..."
+                  placeholder={t('landing.searchPlaceholder', 'Ask legal question (PPC Section 302, Divorce, Property)...')}
                   placeholderTextColor="rgba(255, 220, 185, 0.45)"
                   value={searchQuery}
                   onChangeText={setSearchQuery}
@@ -161,7 +163,7 @@ export default function LandingScreen() {
                     end={{ x: 1, y: 0 }}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-                      <Text style={styles.askAiText}>Ask AI</Text>
+                      <Text style={styles.askAiText}>{t('landing.askAi', 'Ask AI')}</Text>
                       <Image
                         source={require('../assets/images/arrow.png')}
                         style={{ width: 14, height: 10 }}
@@ -176,7 +178,7 @@ export default function LandingScreen() {
 
           {/* ── 4. VISUAL SHOWCASE CAROUSEL ── */}
           <View style={styles.showcaseSection}>
-            <Text style={styles.sectionHeader}>Explore Legal Access Across Pakistan</Text>
+            <Text style={styles.sectionHeader}>{t('landing.exploreTitle', 'Explore Legal Access Across Pakistan')}</Text>
 
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.carouselContainer}>
               {/* Image 1 */}
@@ -187,8 +189,8 @@ export default function LandingScreen() {
                   resizeMode="cover"
                 />
                 <LinearGradient colors={['transparent', 'rgba(10, 4, 2, 0.95)']} style={styles.imageGradient}>
-                  <Text style={styles.cardTag}>24/7 AI LEGAL RESEARCH</Text>
-                  <Text style={styles.cardTitle}>Pakistan Penal Code & Precedents</Text>
+                  <Text style={styles.cardTag}>{t('landing.card1Tag', '24/7 AI LEGAL RESEARCH')}</Text>
+                  <Text style={styles.cardTitle}>{t('landing.card1Title', 'Pakistan Penal Code & Precedents')}</Text>
                 </LinearGradient>
               </View>
 
@@ -200,8 +202,8 @@ export default function LandingScreen() {
                   resizeMode="cover"
                 />
                 <LinearGradient colors={['transparent', 'rgba(10, 4, 2, 0.95)']} style={styles.imageGradient}>
-                  <Text style={styles.cardTag}>SBC VERIFIED ADVOCATES</Text>
-                  <Text style={styles.cardTitle}>Verified Bar Council Advocate Network</Text>
+                  <Text style={styles.cardTag}>{t('landing.card2Tag', 'SBC VERIFIED ADVOCATES')}</Text>
+                  <Text style={styles.cardTitle}>{t('landing.card2Title', 'Verified Bar Council Advocate Network')}</Text>
                 </LinearGradient>
               </View>
 
@@ -213,8 +215,8 @@ export default function LandingScreen() {
                   resizeMode="cover"
                 />
                 <LinearGradient colors={['transparent', 'rgba(10, 4, 2, 0.95)']} style={styles.imageGradient}>
-                  <Text style={styles.cardTag}>BIOMETRIC CONTRACTS</Text>
-                  <Text style={styles.cardTitle}>Digital Representation Agreements</Text>
+                  <Text style={styles.cardTag}>{t('landing.card3Tag', 'BIOMETRIC CONTRACTS')}</Text>
+                  <Text style={styles.cardTitle}>{t('landing.card3Title', 'Digital Representation Agreements')}</Text>
                 </LinearGradient>
               </View>
             </ScrollView>
@@ -222,7 +224,7 @@ export default function LandingScreen() {
 
           {/* ── 5. CORE PLATFORM CAPABILITIES ── */}
           <View style={styles.featuresSection}>
-            <Text style={styles.sectionHeader}>Why Barq-e-Insaf?</Text>
+            <Text style={styles.sectionHeader}>{t('landing.whyTitle', 'Why Barq-e-Insaf?')}</Text>
 
             <View style={styles.featureBox}>
               <View style={[styles.featureIconCircle, { backgroundColor: 'rgba(255, 152, 0, 0.15)' }]}>
@@ -233,8 +235,8 @@ export default function LandingScreen() {
                 />
               </View>
               <View style={styles.featureTextGroup}>
-                <Text style={styles.featureTitle}>Multilingual AI Legal Research</Text>
-                <Text style={styles.featureDesc}>Get instant responses in Urdu, Sindhi, and English for PPC, property disputes, and labor rights.</Text>
+                <Text style={styles.featureTitle}>{t('landing.feature1Title', 'Multilingual AI Legal Research')}</Text>
+                <Text style={styles.featureDesc}>{t('landing.feature1Desc', 'Get instant responses in Urdu, Sindhi, and English for PPC, property disputes, and labor rights.')}</Text>
               </View>
             </View>
 
@@ -247,8 +249,8 @@ export default function LandingScreen() {
                 />
               </View>
               <View style={styles.featureTextGroup}>
-                <Text style={styles.featureTitle}>SBC Verified Advocate Directory</Text>
-                <Text style={styles.featureDesc}>Connect with certified Sindh Bar Council lawyers with transparent client ratings and misconduct reporting.</Text>
+                <Text style={styles.featureTitle}>{t('landing.feature2Title', 'SBC Verified Advocate Directory')}</Text>
+                <Text style={styles.featureDesc}>{t('landing.feature2Desc', 'Connect with certified Sindh Bar Council lawyers with transparent client ratings and misconduct reporting.')}</Text>
               </View>
             </View>
 
@@ -261,8 +263,8 @@ export default function LandingScreen() {
                 />
               </View>
               <View style={styles.featureTextGroup}>
-                <Text style={styles.featureTitle}>Biometric Contract Signing</Text>
-                <Text style={styles.featureDesc}>Sign Vakalatnama representation agreements securely with simulated biometric fingerprint verification.</Text>
+                <Text style={styles.featureTitle}>{t('landing.feature3Title', 'Biometric Contract Signing')}</Text>
+                <Text style={styles.featureDesc}>{t('landing.feature3Desc', 'Sign Vakalatnama representation agreements securely with simulated biometric fingerprint verification.')}</Text>
               </View>
             </View>
           </View>
@@ -275,8 +277,8 @@ export default function LandingScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-              <Text style={styles.ctaTitle}>Ready to Get Started?</Text>
-              <Text style={styles.ctaSubtitle}>Select your portal to log in as a Citizen, Verified Lawyer, or NGO Administrator.</Text>
+              <Text style={styles.ctaTitle}>{t('landing.ctaTitle', 'Ready to Get Started?')}</Text>
+              <Text style={styles.ctaSubtitle}>{t('landing.ctaSubtitle', 'Select your portal to log in as a Citizen, Verified Lawyer, or NGO Administrator.')}</Text>
               
               <TouchableOpacity
                 style={styles.ctaBtn}
@@ -290,7 +292,7 @@ export default function LandingScreen() {
                   end={{ x: 1, y: 0 }}
                 >
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-                    <Text style={styles.ctaBtnText}>GET STARTED</Text>
+                    <Text style={styles.ctaBtnText}>{t('landing.ctaBtn', 'GET STARTED')}</Text>
                     <Image
                       source={require('../assets/images/arrow.png')}
                       style={{ width: 18, height: 13 }}

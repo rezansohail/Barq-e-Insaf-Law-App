@@ -18,6 +18,7 @@ app.use('/api/admin',    require('./routes/admin'));
 app.use('/api/ngo',      require('./routes/ngo'));
 app.use('/api/ngos',     require('./routes/ngo'));
 app.use('/api/media',    require('./routes/media'));
+app.use('/api/translate', require('./routes/translate'));
 
 // Swagger Interactive Testing Platform
 const swaggerUi = require('swagger-ui-express');

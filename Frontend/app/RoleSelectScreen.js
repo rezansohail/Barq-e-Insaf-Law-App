@@ -23,13 +23,10 @@ import {
   PlusJakartaSans_700Bold,
   PlusJakartaSans_800ExtraBold,
 } from '@expo-google-fonts/plus-jakarta-sans';
+import { useAppTranslation } from '../utils/translationHelper';
 
-const roles = [
-  {
-    id: 'citizen',
-    label: 'CITIZEN',
-    tag: 'INDIVIDUAL PORTAL',
-    subtitle: 'Build legal cases, get 24/7 AI guidance & connect with verified lawyers',
+const ROLE_ASSETS = {
+  citizen: {
     accentColor: '#FF9500',
     accentBorder: 'rgba(255, 149, 0, 0.40)',
     accentGlow: 'rgba(255, 149, 0, 0.32)',
@@ -38,11 +35,7 @@ const roles = [
     iconPath:
       'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z',
   },
-  {
-    id: 'lawyer',
-    label: 'LAWYER',
-    tag: 'LEGAL COUNSEL',
-    subtitle: 'Find cases and connect with clients',
+  lawyer: {
     accentColor: '#FFB300',
     accentBorder: 'rgba(255, 179, 0, 0.38)',
     accentGlow: 'rgba(255, 179, 0, 0.28)',
@@ -51,11 +44,7 @@ const roles = [
     iconPath:
       'M20 6h-4V4c0-1.11-.89-2-2-2h-4c-1.11 0-2 .89-2 2v2H4c-1.11 0-1.99.89-1.99 2L2 19c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V8c0-1.11-.89-2-2-2zm-6 0h-4V4h4v2z',
   },
-  {
-    id: 'ngo',
-    label: 'NGO - NCHD',
-    tag: 'National Commission for Human Development (NCHD)',
-    subtitle: 'National Commission for Human Development (NCHD)',
+  ngo: {
     accentColor: '#FF7A29',
     accentBorder: 'rgba(255, 122, 41, 0.38)',
     accentGlow: 'rgba(255, 122, 41, 0.30)',
@@ -64,11 +53,7 @@ const roles = [
     iconPath:
       'M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zM9 17H7v-7h2v7zm4 0h-2V7h2v10zm4 0h-2v-4h2v4z',
   },
-  {
-    id: 'media',
-    label: 'MEDIA - KTN NEWS',
-    tag: 'KTN News Broadcast & Journalism',
-    subtitle: 'KTN News Broadcast & Journalism',
+  media: {
     accentColor: '#F59E0B',
     accentBorder: 'rgba(245, 158, 11, 0.40)',
     accentGlow: 'rgba(245, 158, 11, 0.30)',
@@ -77,10 +62,7 @@ const roles = [
     iconPath:
       'M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 1.99-.9 1.99-2L23 5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zm-5-6l-7 4V7z',
   },
-  {
-    id: 'admin',
-    label: 'ADMIN',
-    tag: 'GOVERNANCE',
+  admin: {
     accentColor: '#EF4444',
     accentBorder: 'rgba(239, 68, 68, 0.44)',
     accentGlow: 'rgba(239, 68, 68, 0.35)',
@@ -89,11 +71,50 @@ const roles = [
     iconPath:
       'M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z',
   },
-];
+};
 
 export default function RoleSelectScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
+  const { t, appName } = useAppTranslation();
+
+  const roles = [
+    {
+      id: 'citizen',
+      label: t('roleSelect.citizenTitle', 'CITIZEN'),
+      tag: t('roleSelect.citizenTag', 'INDIVIDUAL PORTAL'),
+      subtitle: t('roleSelect.citizenSub', 'Build legal cases, get 24/7 AI guidance & connect with verified lawyers'),
+      ...ROLE_ASSETS.citizen,
+    },
+    {
+      id: 'lawyer',
+      label: t('roleSelect.lawyerTitle', 'LAWYER'),
+      tag: t('roleSelect.lawyerTag', 'LEGAL COUNSEL'),
+      subtitle: t('roleSelect.lawyerSub', 'Find cases and connect with clients'),
+      ...ROLE_ASSETS.lawyer,
+    },
+    {
+      id: 'ngo',
+      label: t('roleSelect.ngoTitle', 'NGO - NCHD'),
+      tag: t('roleSelect.ngoTag', 'National Commission for Human Development (NCHD)'),
+      subtitle: t('roleSelect.ngoSub', 'Institutional Legal Aid & Vulnerability Portal'),
+      ...ROLE_ASSETS.ngo,
+    },
+    {
+      id: 'media',
+      label: t('roleSelect.mediaTitle', 'MEDIA - KTN NEWS'),
+      tag: t('roleSelect.mediaTag', 'KTN News Broadcast & Journalism'),
+      subtitle: t('roleSelect.mediaSub', 'Court Reporting & Broadcast Journalism'),
+      ...ROLE_ASSETS.media,
+    },
+    {
+      id: 'admin',
+      label: t('roleSelect.adminTitle', 'ADMIN'),
+      tag: t('roleSelect.adminTag', 'GOVERNANCE'),
+      subtitle: t('roleSelect.adminSub', 'Sindh Bar Council Governance'),
+      ...ROLE_ASSETS.admin,
+    },
+  ];
 
   // Load Plus Jakarta Sans
   const [fontsLoaded] = useFonts({
@@ -176,12 +197,12 @@ export default function RoleSelectScreen() {
 
             <View style={styles.headerPill}>
               <Text style={[styles.headerPillText, fontSemiBold ? { fontFamily: fontSemiBold } : {}]}>
-                PORTAL ACCESS
+                {t('roleSelect.portalAccess', 'PORTAL ACCESS')}
               </Text>
             </View>
           </View>
           <Text style={[styles.headerTitle, fontExtraBold ? { fontFamily: fontExtraBold } : {}]}>
-            Choose your role
+            {t('roleSelect.chooseRole', 'Choose your role')}
           </Text>
         </View>
 
@@ -376,7 +397,7 @@ export default function RoleSelectScreen() {
               fontMedium ? { fontFamily: fontMedium } : {},
             ]}
           >
-            Legal assistance for Sindh · English · Urdu · Sindhi
+            {t('roleSelect.footerText', 'Legal assistance for Sindh · English · Urdu · Sindhi')}
           </Text>
         </View>
       </SafeAreaView>

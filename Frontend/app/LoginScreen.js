@@ -24,6 +24,7 @@ import api from '../constants/api';
 import { saveSession } from '../constants/authStore';
 import { setLawyerProfileFromUser } from './(lawyer)/MockStore';
 import { setCitizenProfileFromUser } from './(citizen)/MockStore';
+import { useAppTranslation } from '../utils/translationHelper';
 
 const roleConfig = {
   citizen: {
@@ -138,7 +139,7 @@ const formatCNIC = (val) => {
 
 // ── REUSABLE SUB-COMPONENTS ────────────────────────────────────────────────
 
-const PasswordInput = ({ label, value, onChangeText, color }) => {
+const PasswordInput = ({ label, placeholder, value, onChangeText, color }) => {
   const [show, setShow] = useState(false);
   return (
     <>
@@ -146,7 +147,7 @@ const PasswordInput = ({ label, value, onChangeText, color }) => {
       <View style={styles.passwordRow}>
         <TextInput
           style={[styles.input, { flex: 1, borderBottomWidth: 0 }]}
-          placeholder="Enter password"
+          placeholder={placeholder || "Enter password"}
           placeholderTextColor="rgba(255, 238, 220, 0.65)"
           value={value}
           onChangeText={onChangeText}
@@ -166,8 +167,9 @@ const PasswordInput = ({ label, value, onChangeText, color }) => {
   );
 };
 
-const DistrictPicker = ({ value, onSelect, color }) => {
+const DistrictPicker = ({ value, onSelect, color, placeholder, translateDistrict }) => {
   const [open, setOpen] = useState(false);
+  const displayVal = value ? (translateDistrict ? translateDistrict(value) : value) : '';
   return (
     <>
       <TouchableOpacity
@@ -181,7 +183,7 @@ const DistrictPicker = ({ value, onSelect, color }) => {
             !value && { color: 'rgba(255, 238, 220, 0.65)' },
           ]}
         >
-          {value || 'Select Sindh District'}
+          {displayVal || placeholder || 'Select Sindh District'}
         </Text>
         <Text style={styles.dropdownArrow}>{open ? '▲' : '▼'}</Text>
       </TouchableOpacity>
@@ -211,7 +213,7 @@ const DistrictPicker = ({ value, onSelect, color }) => {
                     value === d && { color: '#FFB800', fontWeight: '700' },
                   ]}
                 >
-                  {d}
+                  {translateDistrict ? translateDistrict(d) : d}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -228,9 +230,15 @@ export default function LoginScreen() {
   const { role } = useLocalSearchParams();
   const router = useRouter();
   const { width, height } = useWindowDimensions();
+  const { t, appName, translateDistrict } = useAppTranslation();
 
   const [selectedRole, setSelectedRole] = useState(role || 'citizen');
-  const config = roleConfig[selectedRole] || roleConfig.citizen;
+  const baseConfig = roleConfig[selectedRole] || roleConfig.citizen;
+  const config = {
+    ...baseConfig,
+    label: t(`auth.portals.${selectedRole}.label`, baseConfig.label),
+    subLabel: t(`auth.portals.${selectedRole}.subLabel`, baseConfig.subLabel),
+  };
 
   const [activeTab,   setActiveTab]   = useState('login');
   const [email,       setEmail]       = useState('');
@@ -598,14 +606,14 @@ export default function LoginScreen() {
               </BlurView>
             </View>
 
-            <Text style={styles.appName}>BARQ-E-INSAF</Text>
+            <Text style={styles.appName}>{appName.toUpperCase()}</Text>
             <View style={styles.portalBadge}>
               <Text style={[styles.portalName, { color: config.color }]}>
-                {config.label.toUpperCase()}
+                {t(config.label).toUpperCase()}
               </Text>
             </View>
             {config.subLabel ? (
-              <Text style={styles.portalSubText}>{config.subLabel}</Text>
+              <Text style={styles.portalSubText}>{t(config.subLabel)}</Text>
             ) : null}
           </View>
 
@@ -650,7 +658,7 @@ export default function LoginScreen() {
                             activeTab === 'login' && styles.tabTextActive,
                           ]}
                         >
-                          LOGIN
+                          {t('auth.loginTab', 'LOGIN')}
                         </Text>
                         {activeTab === 'login' && (
                           <View style={[styles.activeTabIndicator, { backgroundColor: config.color }]} />
@@ -671,7 +679,7 @@ export default function LoginScreen() {
                             activeTab === 'signup' && styles.tabTextActive,
                           ]}
                         >
-                          SIGN UP
+                          {t('auth.signupTab', 'SIGN UP')}
                         </Text>
                         {activeTab === 'signup' && (
                           <View style={[styles.activeTabIndicator, { backgroundColor: config.color }]} />
@@ -681,10 +689,10 @@ export default function LoginScreen() {
                   ) : (
                     <View style={styles.loginOnlyHeader}>
                       <Text style={[styles.loginOnlyTitle, { color: config.color }]}>
-                        SECURE PORTAL LOGIN
+                        {t('auth.securePortalLogin', 'SECURE PORTAL LOGIN')}
                       </Text>
                       <Text style={styles.loginOnlySubtitle}>
-                        Authorized credentials required
+                        {t('auth.credentialsRequired', 'Authorized credentials required')}
                       </Text>
                     </View>
                   )}
@@ -693,10 +701,10 @@ export default function LoginScreen() {
                   {activeTab === 'signup' && selectedRole !== 'admin' && (
                     <>
                       {/* NAME */}
-                      <Text style={styles.inputLabel}>Full Name</Text>
+                      <Text style={styles.inputLabel}>{t('auth.fullName', 'Full Name')}</Text>
                       <TextInput
                         style={styles.input}
-                        placeholder="e.g. Ali Khan"
+                        placeholder={t('auth.fullNamePlaceholder', 'e.g. Ali Khan')}
                         placeholderTextColor="rgba(255, 238, 220, 0.65)"
                         value={name}
                         onChangeText={(v) => {
@@ -706,10 +714,10 @@ export default function LoginScreen() {
                       {errors.name && <Text style={styles.errorText}>{errors.name}</Text>}
 
                       {/* PHONE */}
-                      <Text style={styles.inputLabel}>Phone Number</Text>
+                      <Text style={styles.inputLabel}>{t('auth.phone', 'Phone Number')}</Text>
                       <TextInput
                         style={styles.input}
-                        placeholder="03001234567"
+                        placeholder={t('auth.phonePlaceholder', '03001234567')}
                         placeholderTextColor="rgba(255, 238, 220, 0.65)"
                         value={phone}
                         onChangeText={(v) => {
@@ -723,7 +731,7 @@ export default function LoginScreen() {
                       {/* CNIC - For Lawyer & NGO only */}
                       {selectedRole !== 'citizen' && (
                         <>
-                          <Text style={styles.inputLabel}>CNIC (Sindh Only)</Text>
+                          <Text style={styles.inputLabel}>{t('auth.cnic', 'CNIC (Sindh Only)')}</Text>
                           <TextInput
                             style={styles.input}
                             placeholder="42101-1234567-1"
@@ -741,18 +749,20 @@ export default function LoginScreen() {
                       )}
 
                       {/* DISTRICT */}
-                      <Text style={styles.inputLabel}>District</Text>
+                      <Text style={styles.inputLabel}>{t('auth.district', 'District')}</Text>
                       <DistrictPicker
                         value={district}
                         onSelect={setDistrict}
                         color={config.color}
+                        placeholder={t('auth.selectDistrict', 'Select Sindh District')}
+                        translateDistrict={translateDistrict}
                       />
                       {errors.district && <Text style={styles.errorText}>{errors.district}</Text>}
 
                       {/* LAWYER FIELDS */}
                       {selectedRole === 'lawyer' && (
                         <>
-                          <Text style={styles.inputLabel}>SBC Bar License Number</Text>
+                          <Text style={styles.inputLabel}>{t('auth.sbcLicense', 'SBC Bar License Number')}</Text>
                           <TextInput
                             style={styles.input}
                             placeholder="SBC-4421"
@@ -764,10 +774,10 @@ export default function LoginScreen() {
                             <Text style={styles.errorText}>{errors.sbcNumber}</Text>
                           )}
 
-                          <Text style={styles.inputLabel}>Legal Specialty</Text>
+                          <Text style={styles.inputLabel}>{t('auth.specialty', 'Legal Specialty')}</Text>
                           <TextInput
                             style={styles.input}
-                            placeholder="Criminal / Property / Family"
+                            placeholder={t('auth.specialtyPlaceholder', 'Criminal / Property / Family')}
                             placeholderTextColor="rgba(255, 238, 220, 0.65)"
                             value={specialty}
                             onChangeText={setSpecialty}
@@ -804,7 +814,7 @@ export default function LoginScreen() {
                     >
                       <View>
                         <Text style={{ color: '#F59E0B', fontSize: 11.5, fontWeight: '800' }}>
-                          ⚡ Quick-Fill KTN News Credentials
+                          {t('auth.quickFillKtn', '⚡ Quick-Fill KTN News Credentials')}
                         </Text>
                         <Text style={{ color: 'rgba(255, 238, 220, 0.7)', fontSize: 10 }}>
                           contact@ktnnews.tv · Ktn@12345
@@ -837,7 +847,7 @@ export default function LoginScreen() {
                     >
                       <View>
                         <Text style={{ color: '#10B981', fontSize: 11.5, fontWeight: '800' }}>
-                          ⚡ Quick-Fill NCHD Credentials
+                          {t('auth.quickFillNchd', '⚡ Quick-Fill NCHD Credentials')}
                         </Text>
                         <Text style={{ color: 'rgba(255, 238, 220, 0.7)', fontSize: 10 }}>
                           contact@nchd.org.pk · Nchd@12345
@@ -848,10 +858,10 @@ export default function LoginScreen() {
                   )}
 
                   {/* ── COMMON FIELDS ── */}
-                  <Text style={styles.inputLabel}>Email Address</Text>
+                  <Text style={styles.inputLabel}>{t('auth.emailLabel', 'Email Address')}</Text>
                   <TextInput
                     style={styles.input}
-                    placeholder="user@barqeinsaf.pk"
+                    placeholder={t('auth.emailPlaceholder', 'user@barqeinsaf.pk')}
                     placeholderTextColor="rgba(255, 238, 220, 0.65)"
                     value={email}
                     onChangeText={setEmail}
@@ -862,7 +872,8 @@ export default function LoginScreen() {
 
                   {/* PASSWORD */}
                   <PasswordInput
-                    label="Password"
+                    label={t('auth.passwordLabel', 'Password')}
+                    placeholder={t('auth.enterPassword', 'Enter password')}
                     value={password}
                     onChangeText={setPassword}
                     color={config.color}
@@ -891,12 +902,12 @@ export default function LoginScreen() {
                   {/* PASSWORD REQUIREMENTS */}
                   {activeTab === 'signup' && selectedRole !== 'admin' && (
                     <View style={styles.requirementsBox}>
-                      <Text style={styles.requirementsTitle}>Password criteria:</Text>
+                      <Text style={styles.requirementsTitle}>{t('auth.passwordCriteria', 'Password criteria:')}</Text>
                       {[
-                        { label: 'At least 8 characters',        pass: password.length >= 8 },
-                        { label: 'One lowercase letter (a-z)',    pass: /[a-z]/.test(password) },
-                        { label: 'One number (0-9)',              pass: /[0-9]/.test(password) },
-                        { label: 'One special symbol (!@#...)',   pass: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
+                        { label: t('auth.charRequirement', 'At least 8 characters'),        pass: password.length >= 8 },
+                        { label: t('auth.lowercaseRequirement', 'One lowercase letter (a-z)'),    pass: /[a-z]/.test(password) },
+                        { label: t('auth.numberRequirement', 'One number (0-9)'),              pass: /[0-9]/.test(password) },
+                        { label: t('auth.symbolRequirement', 'One special symbol (!@#...)'),   pass: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password) },
                       ].map((req, i) => (
                         <Text
                           key={i}
@@ -917,7 +928,8 @@ export default function LoginScreen() {
                   {activeTab === 'signup' && selectedRole !== 'admin' && (
                     <>
                       <PasswordInput
-                        label="Confirm Password"
+                        label={t('auth.confirmPassword', 'Confirm Password')}
+                        placeholder={t('auth.enterPassword', 'Enter password')}
                         value={retypePass}
                         onChangeText={setRetypePass}
                         color={config.color}
@@ -931,7 +943,7 @@ export default function LoginScreen() {
                             color: password === retypePass ? '#22c55e' : '#ef4444',
                           }}
                         >
-                          {password === retypePass ? '✓ Passwords match' : '✗ Passwords do not match'}
+                          {password === retypePass ? t('auth.passwordsMatch', '✓ Passwords match') : t('auth.passwordsDoNotMatch', '✗ Passwords do not match')}
                         </Text>
                       )}
                       {errors.retypePass && (
@@ -963,7 +975,7 @@ export default function LoginScreen() {
                             <Text style={[styles.checkIcon, { color: config.color }]}>✓</Text>
                           )}
                         </View>
-                        <Text style={styles.rememberLabel}>Remember Me</Text>
+                        <Text style={styles.rememberLabel}>{t('auth.rememberMe', 'Remember Me')}</Text>
                       </TouchableOpacity>
 
                       <TouchableOpacity 
@@ -974,7 +986,7 @@ export default function LoginScreen() {
                         }}
                       >
                         <Text style={[styles.forgotText, { color: config.color }]}>
-                          Forgot password?
+                          {t('auth.forgotPassword', 'Forgot password?')}
                         </Text>
                       </TouchableOpacity>
                     </View>
@@ -1019,8 +1031,8 @@ export default function LoginScreen() {
                           ) : (
                             <Text style={styles.submitBtnText}>
                               {activeTab === 'login'
-                                ? 'LOGIN'
-                                : 'REGISTER'}
+                                ? t('auth.loginBtn', 'LOGIN')
+                                : t('auth.registerBtn', 'REGISTER')}
                             </Text>
                           )}
                         </LinearGradient>
@@ -1044,7 +1056,7 @@ export default function LoginScreen() {
           <View style={styles.forgotModalOverlay}>
             <View style={styles.forgotModalCard}>
               <View style={styles.forgotModalHeader}>
-                <Text style={styles.forgotModalTitle}>Reset Password</Text>
+                <Text style={styles.forgotModalTitle}>{t('auth.resetPassword', 'Reset Password')}</Text>
                 <TouchableOpacity onPress={closeForgotModal} style={styles.forgotCloseBtn}>
                   <Text style={styles.forgotCloseText}>✕</Text>
                 </TouchableOpacity>
@@ -1053,17 +1065,17 @@ export default function LoginScreen() {
               {!forgotSubmitted ? (
                 <>
                   <Text style={styles.forgotModalSubtitle}>
-                    Enter your registered email address to receive password recovery instructions:
+                    {t('auth.resetDesc', 'Enter your registered email address to receive password reset instructions.')}
                   </Text>
                   
-                  <Text style={[styles.inputLabel, { marginTop: 16 }]}>REGISTERED EMAIL ADDRESS</Text>
+                  <Text style={[styles.inputLabel, { marginTop: 16 }]}>{t('auth.emailLabel', 'Email Address').toUpperCase()}</Text>
                   <TextInput
                     style={[styles.input, { color: '#FFFFFF', borderBottomColor: '#FF9500' }]}
-                    placeholder="user@barqeinsaf.pk"
+                    placeholder={t('auth.emailPlaceholder', 'user@barqeinsaf.pk')}
                     placeholderTextColor="rgba(255, 238, 220, 0.65)"
                     value={forgotEmail}
-                    onChangeText={(t) => {
-                      setForgotEmail(t);
+                    onChangeText={(tVal) => {
+                      setForgotEmail(tVal);
                       if (forgotError) setForgotError('');
                     }}
                     keyboardType="email-address"
@@ -1079,13 +1091,13 @@ export default function LoginScreen() {
                       style={styles.forgotCancelBtn}
                       onPress={closeForgotModal}
                     >
-                      <Text style={styles.forgotCancelText}>Cancel</Text>
+                      <Text style={styles.forgotCancelText}>{t('common.cancel', 'Cancel')}</Text>
                     </TouchableOpacity>
                     <TouchableOpacity 
                       style={[styles.forgotSubmitBtn, { backgroundColor: config.color || '#FF9500' }]}
                       onPress={handleSendResetLink}
                     >
-                      <Text style={styles.forgotSubmitText}>Send Reset Link</Text>
+                      <Text style={styles.forgotSubmitText}>{t('auth.sendResetLink', 'Send Reset Link')}</Text>
                     </TouchableOpacity>
                   </View>
                 </>

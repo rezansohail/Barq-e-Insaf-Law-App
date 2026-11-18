@@ -10,6 +10,7 @@ import LanguagePeekingTab from '../../components/LanguagePeekingTab';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import { useAppTranslation } from '../../utils/translationHelper';
 
 const { width } = Dimensions.get('window');
 
@@ -32,6 +33,7 @@ const SYSTEM_ACTIVITIES = [
 export default function AdminHome() {
   const router = useRouter();
   const { isDark, theme } = useAppTheme();
+  const { t, currentLang, appName } = useAppTranslation();
 
   // Enforce double-back to exit on Home, never fall back to login screen
   useAppNavigation({ isHome: true, homeRoute: '/(Admin)' });
@@ -109,13 +111,13 @@ export default function AdminHome() {
             resizeMode="contain"
           />
           <View>
-            <Text style={dynamicStyles.secTitle}>Admin Control Panel</Text>
-            <Text style={[s.headerSub, dynamicStyles.headerSub]}>Sindh Bar Council Governance</Text>
+            <Text style={dynamicStyles.secTitle}>{t('admin.controlPanel', 'Admin Control Panel')}</Text>
+            <Text style={[s.headerSub, dynamicStyles.headerSub]}>{t('admin.governance', 'Sindh Bar Council Governance')}</Text>
           </View>
         </View>
         <View style={s.headerRight}>
           <Text style={{ fontSize: 12, fontWeight: '700', color: isDark ? '#FFF2DF' : '#1A0F07' }}>
-            hi, Admin
+            {t('common.greetingHi', 'hi,')} Admin
           </Text>
           <View style={s.liveDot} />
           <TopHeaderMenu role="admin" avatarText="AD" />
@@ -125,21 +127,21 @@ export default function AdminHome() {
       <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
 
         {/* ── STATS GRID ── */}
-        <Text style={[s.secTitle, dynamicStyles.secTitle]}>App Ecosystem Overview</Text>
+        <Text style={[s.secTitle, dynamicStyles.secTitle]}>{t('admin.overview', 'App Ecosystem Overview')}</Text>
         <View style={s.statsGrid}>
           {STATS.map((st, i) => (
             <View key={i} style={[s.statCard, dynamicStyles.statCard]}>
               <View style={[s.statAccent, { backgroundColor: st.color }]} />
               <Text style={s.statIcon}>{st.tag}</Text>
               <Text style={[s.statValue, dynamicStyles.statValue]}>{st.value}</Text>
-              <Text style={[s.statLabel, dynamicStyles.statLabel]}>{st.label}</Text>
-              <Text style={s.statDelta}>{st.delta}</Text>
+              <Text style={[s.statLabel, dynamicStyles.statLabel]}>{t(st.label)}</Text>
+              <Text style={s.statDelta}>{t(st.delta)}</Text>
             </View>
           ))}
         </View>
 
         {/* ── REAL APP AUTHORITY QUICK ACTIONS ── */}
-        <Text style={[s.secTitle, dynamicStyles.secTitle]}>Administrative Governance</Text>
+        <Text style={[s.secTitle, dynamicStyles.secTitle]}>{t('admin.adminGovernance', 'Administrative Governance')}</Text>
         <View style={s.quickGrid}>
           {[
             { tag: 'LAW', label: 'Lawyer Management', sub: 'Verify SBC licenses', screen: 'LawyerManagement', color: '#FF9500' },
@@ -161,8 +163,8 @@ export default function AdminHome() {
               <View style={[s.quickIconBox, { backgroundColor: item.color + '22' }]}>
                 <Text style={[s.quickTagText, { color: item.color }]}>{item.tag}</Text>
               </View>
-              <Text style={[s.quickLabel, dynamicStyles.quickLabel]}>{item.label}</Text>
-              <Text style={[s.quickSub, dynamicStyles.quickSub]}>{item.sub}</Text>
+              <Text style={[s.quickLabel, dynamicStyles.quickLabel]}>{t(item.label)}</Text>
+              <Text style={[s.quickSub, dynamicStyles.quickSub]}>{t(item.sub)}</Text>
               <Image
                 source={require('../../assets/images/arrow.png')}
                 style={s.quickArrowImg}
@@ -174,13 +176,13 @@ export default function AdminHome() {
 
         {/* ── REAL APP SYSTEM AUDIT ── */}
         <View style={[s.section, dynamicStyles.section, { marginBottom: 100 }]}>
-          <Text style={[s.sectionTitle, dynamicStyles.sectionTitle]}>System & Security Audit Log</Text>
+          <Text style={[s.sectionTitle, dynamicStyles.sectionTitle]}>{t('admin.auditLog', 'System & Security Audit Log')}</Text>
           {SYSTEM_ACTIVITIES.map((item, i) => (
             <View key={i} style={s.activityItem}>
               <View style={[s.activityDot, { backgroundColor: item.color }]} />
               <View style={{ flex: 1 }}>
-                <Text style={[s.activityTitle, dynamicStyles.activityTitle]}>{item.title}</Text>
-                <Text style={[s.activitySub, dynamicStyles.activitySub]}>{item.sub}</Text>
+                <Text style={[s.activityTitle, dynamicStyles.activityTitle]}>{t(item.title)}</Text>
+                <Text style={[s.activitySub, dynamicStyles.activitySub]}>{t(item.sub)}</Text>
               </View>
             </View>
           ))}

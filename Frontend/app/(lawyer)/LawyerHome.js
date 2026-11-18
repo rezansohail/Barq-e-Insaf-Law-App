@@ -16,6 +16,7 @@ import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import { useAppTranslation } from '../../utils/translationHelper';
 
 const quickActions = [
   { title: 'Case Requests', route: '/(lawyer)/CaseRequests' },
@@ -29,6 +30,7 @@ export default function LawyerHome() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { theme, isDarkMode } = useAppTheme();
+  const { t, currentLang, translateCategory, translateDynamic } = useAppTranslation();
   const currentLawyerId = params.lawyerId || params.id || getCurrentLawyerId();
 
   // Root screen: back button confirms exit, does not back to login screen
@@ -43,7 +45,7 @@ export default function LawyerHome() {
   const getDisplayName = () => {
     const raw = (lawyerProfile.name || '').trim();
     if (!raw || raw.toLowerCase() === 'advocate') {
-      return lawyerProfile.sbc ? `Advocate (${lawyerProfile.sbc})` : 'Advocate';
+      return lawyerProfile.sbc ? `Advocate (${lawyerProfile.sbc})` : (currentLang === 'ur' ? 'ایڈووکیٹ' : currentLang === 'sd' ? 'ايڊووڪيٽ' : 'Advocate');
     }
     if (/^adv(\.|ocate)?\s+/i.test(raw)) {
       return raw;
@@ -74,13 +76,13 @@ export default function LawyerHome() {
         <View style={[styles.nameRow, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
           <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 10, fontWeight: '800', color: '#FF9500', letterSpacing: 1, marginBottom: 2 }}>
-              SINDH BAR COUNCIL ADVOCATE
+              {t('lawyer.sbcAdvocate', 'SINDH BAR COUNCIL ADVOCATE')}
             </Text>
             <Text style={[styles.lawyerName, !isDarkMode && { color: theme.textPrimary }]}>
               {getDisplayName()}
             </Text>
             <Text style={[styles.licenseNo, !isDarkMode && { color: theme.textSecondary }]}>
-              Licence: {lawyerProfile.sbc || (lawyerProfile.loading ? 'Loading...' : 'SBC Verified')}
+              {t('lawyer.licence', 'Licence:')} {lawyerProfile.sbc || (lawyerProfile.loading ? t('common.loading', 'Loading...') : t('lawyer.sbcVerified', 'SBC Verified'))}
             </Text>
           </View>
 
@@ -89,7 +91,7 @@ export default function LawyerHome() {
             !lawyerProfile.isVerified && { backgroundColor: 'rgba(245, 158, 11, 0.18)', borderColor: 'rgba(245, 158, 11, 0.4)' }
           ]}>
             <Text style={[styles.verifiedText, !lawyerProfile.isVerified && { color: '#f59e0b' }]}>
-              {lawyerProfile.isVerified ? '✓ SBC Verified' : 'Pending Verification'}
+              {lawyerProfile.isVerified ? t('lawyer.sbcVerified', '✓ SBC Verified') : t('lawyer.pendingVerification', 'Pending Verification')}
             </Text>
           </View>
         </View>
@@ -98,24 +100,24 @@ export default function LawyerHome() {
         <View style={styles.statsRow}>
           <View style={[styles.statChip, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
             <Text style={[styles.statNum, !isDarkMode && { color: theme.textPrimary }]}>{lawyerProfile.activeCasesCount || lawyerProfile.successfulCasesCount || 0}</Text>
-            <Text style={styles.statLabel}>Active Cases</Text>
+            <Text style={styles.statLabel}>{t('lawyer.activeCases', 'Active Cases')}</Text>
           </View>
           <View style={[styles.statChip, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
             <Text style={[styles.statNum, !isDarkMode && { color: theme.textPrimary }]}>{pendingRequests.length}</Text>
-            <Text style={styles.statLabel}>New Requests</Text>
+            <Text style={styles.statLabel}>{t('lawyer.newRequests', 'New Requests')}</Text>
           </View>
           <View style={[styles.statChip, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
             <Text style={[styles.statNum, !isDarkMode && { color: theme.textPrimary }]}>{lawyerProfile.completedCasesCount || 14}</Text>
-            <Text style={styles.statLabel}>Completed</Text>
+            <Text style={styles.statLabel}>{t('lawyer.completed', 'Completed')}</Text>
           </View>
         </View>
 
         {/* NEW CLIENT REQUESTS */}
         <View style={styles.sectionHeaderRow}>
-          <Text style={styles.sectionLabel}>New Client Requests ({pendingRequests.length})</Text>
+          <Text style={styles.sectionLabel}>{t('lawyer.newClientRequests', 'New Client Requests')} ({pendingRequests.length})</Text>
           <TouchableOpacity onPress={() => router.push('/(lawyer)/CaseRequests')}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
-              <Text style={styles.seeAllText}>View All</Text>
+              <Text style={styles.seeAllText}>{t('common.viewAll', 'View All')}</Text>
               <Image
                 source={require('../../assets/images/arrow.png')}
                 style={styles.inlineArrowImg}
@@ -127,7 +129,7 @@ export default function LawyerHome() {
 
         {pendingRequests.length === 0 ? (
           <View style={[styles.reqCard, { paddingVertical: 20, alignItems: 'center' }]}>
-            <Text style={[styles.reqDesc, { textAlign: 'center' }]}>No pending case requests at this time.</Text>
+            <Text style={[styles.reqDesc, { textAlign: 'center' }]}>{t('lawyer.noPendingRequests', 'No pending case requests at this time.')}</Text>
           </View>
         ) : (
           pendingRequests.slice(0, 3).map((r, i) => (
@@ -138,18 +140,18 @@ export default function LawyerHome() {
               onPress={() => router.push('/(lawyer)/CaseRequests')}
             >
               <View style={styles.reqTop}>
-                <Text style={styles.reqName}>{r.name} - {r.spec}</Text>
-                <Text style={styles.badgeNew}>New</Text>
+                <Text style={styles.reqName}>{r.name} - {translateCategory(r.spec) || r.spec}</Text>
+                <Text style={styles.badgeNew}>{t('common.new', 'New')}</Text>
               </View>
               <Text style={styles.reqDesc} numberOfLines={2}>
-                {r.desc || r.problemStatement || 'Consultation requested'}
+                {translateDynamic(r.desc || r.problemStatement || 'Consultation requested')}
               </Text>
             </TouchableOpacity>
           ))
         )}
 
         {/* QUICK ACTIONS */}
-        <Text style={[styles.sectionLabel, { marginTop: 14 }]}>Chamber Quick Actions</Text>
+        <Text style={[styles.sectionLabel, { marginTop: 14 }]}>{t('lawyer.chamberQuickActions', 'Chamber Quick Actions')}</Text>
         <View style={styles.quickGrid}>
           {quickActions.map((q, i) => (
             <TouchableOpacity
@@ -158,14 +160,14 @@ export default function LawyerHome() {
               activeOpacity={0.82}
               onPress={() => router.push(q.route)}
             >
-              <Text style={styles.quickTitle}>{q.title}</Text>
+              <Text style={styles.quickTitle}>{t(q.title)}</Text>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* INSTITUTIONAL PARTNERS: NGO & MEDIA */}
         <Text style={[styles.sectionLabel, { marginTop: 20 }]}>
-          Institutional Partners: Legal Aid & Media
+          {t('lawyer.institutionalPartners', 'Institutional Partners: Legal Aid & Media')}
         </Text>
         <View style={styles.partnerCardsContainer}>
           {/* NCHD Card */}
@@ -184,18 +186,18 @@ export default function LawyerHome() {
               </View>
               <View style={{ flex: 1 }}>
                 <View style={styles.partnerPill}>
-                  <Text style={styles.partnerPillText}>COMMUNITY LEGAL AID & EDUCATION</Text>
+                  <Text style={styles.partnerPillText}>{t('COMMUNITY LEGAL AID & EDUCATION')}</Text>
                 </View>
                 <Text style={styles.partnerTitle}>
-                  National Commission for Human Development (NCHD)
+                  {t('National Commission for Human Development (NCHD)')}
                 </Text>
                 <Text style={styles.partnerSub}>
-                  Pro-bono advocate coordination, grassroots litigation & literacy
+                  {t('Pro-bono advocate coordination, grassroots litigation & literacy')}
                 </Text>
               </View>
             </View>
             <View style={styles.partnerBottomRow}>
-              <Text style={styles.partnerActionText}>View Info, Mission & Contact Email</Text>
+              <Text style={styles.partnerActionText}>{t('lawyer.viewInfo', 'View Info, Mission & Contact Email')}</Text>
               <Image
                 source={require('../../assets/images/arrow.png')}
                 style={styles.inlineArrowImg}
@@ -220,18 +222,18 @@ export default function LawyerHome() {
               </View>
               <View style={{ flex: 1 }}>
                 <View style={[styles.partnerPill, { backgroundColor: 'rgba(245, 158, 11, 0.18)', borderColor: 'rgba(245, 158, 11, 0.35)' }]}>
-                  <Text style={[styles.partnerPillText, { color: '#F59E0B' }]}>COURT & LEGAL BROADCAST DESK</Text>
+                  <Text style={[styles.partnerPillText, { color: '#F59E0B' }]}>{t('COURT & LEGAL BROADCAST DESK')}</Text>
                 </View>
                 <Text style={styles.partnerTitle}>
-                  KTN News (Kawish Television Network)
+                  {t('KTN News (Kawish Television Network)')}
                 </Text>
                 <Text style={styles.partnerSub}>
-                  Sindh court reporting, investigative media & legal grievance desk
+                  {t('Sindh court reporting, investigative media & legal grievance desk')}
                 </Text>
               </View>
             </View>
             <View style={styles.partnerBottomRow}>
-              <Text style={styles.partnerActionText}>View Info, Mission & Contact Email</Text>
+              <Text style={styles.partnerActionText}>{t('lawyer.viewInfo', 'View Info, Mission & Contact Email')}</Text>
               <Image
                 source={require('../../assets/images/arrow.png')}
                 style={styles.inlineArrowImg}

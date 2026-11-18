@@ -18,11 +18,13 @@ import TopHeaderMenu from '../../components/TopHeaderMenu';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import { useAppTranslation } from '../../utils/translationHelper';
 import api from '../../constants/api';
 
 export default function NGOHome() {
   const router = useRouter();
   const { isDarkMode } = useAppTheme();
+  const { t, currentLang, appName, translateDistrict, translateCourt, translateDynamic } = useAppTranslation();
   useAppNavigation({ isHome: true, homeRoute: '/(ngo)/NGOHome' });
 
   const [loading, setLoading] = useState(true);
@@ -206,9 +208,9 @@ export default function NGOHome() {
       <View style={[styles.header, { backgroundColor: isDarkMode ? '#140803' : '#FFFFFF' }]}>
         <View style={styles.headerRow}>
           <View style={styles.brand}>
-            <Text style={[styles.brandName, { color: '#FF9500' }]}>Barq-e-Insaf</Text>
+            <Text style={[styles.brandName, { color: '#FF9500' }]}>{appName}</Text>
             <Text style={[styles.brandSub, { color: isDarkMode ? 'rgba(255, 149, 0, 0.85)' : '#664530' }]}>
-              National Commission for Human Development (NCHD)
+              {t('ngo.orgName', 'National Commission for Human Development (NCHD)')}
             </Text>
           </View>
           <View style={styles.headerRight}>
@@ -217,17 +219,17 @@ export default function NGOHome() {
               onPress={() => setShowPublishModal(true)}
               activeOpacity={0.8}
             >
-              <Text style={styles.publishHeaderBtnText}>+ Publish Story</Text>
+              <Text style={styles.publishHeaderBtnText}>{t('ngo.publishStoryBtn', '+ Publish Story')}</Text>
             </TouchableOpacity>
             <TopHeaderMenu role="ngo" avatarText="NCHD" />
           </View>
         </View>
 
         <Text style={[styles.orgName, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
-          Institutional Legal Aid & Vulnerability Portal
+          {t('ngo.portalSub', 'Institutional Legal Aid & Vulnerability Portal')}
         </Text>
         <Text style={[styles.orgSub, { color: isDarkMode ? 'rgba(255, 220, 180, 0.65)' : '#7C5238' }]}>
-          Verified Public Interest · Statutory Pro-Bono Counsel & Case Analytics
+          {t('ngo.portalSubDesc', 'Verified Public Interest · Statutory Pro-Bono Counsel & Case Analytics')}
         </Text>
 
         {/* TOP STATS CHIPS (CONNECTED TO GET /api/ngo/analytics/heatmap) */}
@@ -237,7 +239,7 @@ export default function NGOHome() {
               {activeCasesCount}
             </Text>
             <Text style={[styles.statLabel, { color: isDarkMode ? 'rgba(255, 220, 180, 0.7)' : '#664530' }]}>
-              Active Cases
+              {t('ngo.activeCases', 'Active Cases')}
             </Text>
           </View>
 
@@ -246,16 +248,16 @@ export default function NGOHome() {
               {districtsCoveredCount}
             </Text>
             <Text style={[styles.statLabel, { color: isDarkMode ? 'rgba(255, 220, 180, 0.7)' : '#664530' }]}>
-              Districts Covered
+              {t('ngo.districtsCovered', 'Districts Covered')}
             </Text>
           </View>
 
           <View style={[styles.statChip, styles.statChipHotspot]}>
             <Text style={[styles.statNum, { color: '#EF4444' }]}>
-              {hotspotDistrictText}
+              {translateDistrict(hotspotDistrictText)}
             </Text>
             <Text style={[styles.statLabel, { color: '#F87171' }]}>
-              Focal Hotspot
+              {t('ngo.focalHotspot', 'Focal Hotspot')}
             </Text>
           </View>
         </View>
@@ -269,8 +271,12 @@ export default function NGOHome() {
           activeOpacity={0.8}
         >
           <Text style={styles.navTileIcon}>🗺️</Text>
-          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Sindh Map</Text>
-          <Text style={[styles.navTileSub, { color: '#38BDF8' }]}>Geographic Radar →</Text>
+          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+            {t('nav.map', 'Sindh Map')}
+          </Text>
+          <Text style={[styles.navTileSub, { color: '#38BDF8' }]}>
+            {t('ngo.geographicRadar', 'Geographic Radar →')}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -279,8 +285,12 @@ export default function NGOHome() {
           activeOpacity={0.8}
         >
           <Text style={styles.navTileIcon}>📊</Text>
-          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Analytics</Text>
-          <Text style={[styles.navTileSub, { color: '#FFA726' }]}>Vulnerability Ratios →</Text>
+          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+            {t('nav.analytics', 'Analytics')}
+          </Text>
+          <Text style={[styles.navTileSub, { color: '#FFA726' }]}>
+            {t('ngo.vulnerabilityRatios', 'Vulnerability Ratios →')}
+          </Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -289,8 +299,12 @@ export default function NGOHome() {
           activeOpacity={0.8}
         >
           <Text style={styles.navTileIcon}>📄</Text>
-          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Reports</Text>
-          <Text style={[styles.navTileSub, { color: '#C084FC' }]}>Audit Dossier →</Text>
+          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+            {t('nav.reports', 'Reports')}
+          </Text>
+          <Text style={[styles.navTileSub, { color: '#C084FC' }]}>
+            {t('ngo.auditDossier', 'Audit Dossier →')}
+          </Text>
         </TouchableOpacity>
       </View>
 
@@ -304,13 +318,13 @@ export default function NGOHome() {
         <View style={styles.sectionHeaderRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={[styles.sectionLabel, { color: isDarkMode ? '#FFA726' : '#C2410C' }]}>
-              🏛️ Citizen Legal Aid Requests (Urgent)
+              🏛️ {t('ngo.citizenAidRequests', 'Citizen Legal Aid Requests (Urgent)')}
             </Text>
             <View style={styles.sectionBadge}>
-              <Text style={styles.sectionBadgeText}>Urgent</Text>
+              <Text style={styles.sectionBadgeText}>{t('common.urgent', 'Urgent')}</Text>
             </View>
           </View>
-          <Text style={styles.seeAllText}>({leads.length} Requests)</Text>
+          <Text style={styles.seeAllText}>({leads.length} {t('common.requests', 'Requests')})</Text>
         </View>
 
         {loading ? (
@@ -337,17 +351,17 @@ export default function NGOHome() {
                     <Text style={styles.leadRefText}>{leadIdStr}</Text>
                   </View>
                   <View style={styles.relayBadge}>
-                    <Text style={styles.relayBadgeText}>Encrypted Relay Active</Text>
+                    <Text style={styles.relayBadgeText}>{t('ngo.encryptedRelay', 'Encrypted Relay Active')}</Text>
                   </View>
                 </View>
 
                 <Text style={[styles.leadDistrictText, { color: isDarkMode ? '#E5E7EB' : '#1A0C04' }]}>
-                  {lead.district} · {lead.court || 'Sindh Judicial District'}
+                  {translateDistrict(lead.district)} · {translateCourt(lead.court || 'Sindh Judicial District')}
                 </Text>
 
                 <View style={styles.leadSummaryBox}>
                   <Text style={[styles.leadSummaryText, { color: isDarkMode ? '#F3F4F6' : '#2C1810' }]} numberOfLines={2}>
-                    {lead.title || lead.summary || lead.description}
+                    {translateDynamic(lead.title || lead.summary || lead.description)}
                   </Text>
                 </View>
 
@@ -358,7 +372,7 @@ export default function NGOHome() {
                     activeOpacity={0.8}
                   >
                     <Text style={styles.investigateBtnText}>
-                      Inspect Details 🔍
+                      {t('ngo.inspectDetails', 'Inspect Details 🔍')}
                     </Text>
                   </TouchableOpacity>
 
@@ -368,7 +382,7 @@ export default function NGOHome() {
                     activeOpacity={0.8}
                   >
                     <Text style={[styles.investigateBtnText, hasAssisted && styles.investigateBtnTextActive]}>
-                      {hasAssisted ? '✓ Aid Granted' : 'Offer Legal Aid'}
+                      {hasAssisted ? t('ngo.aidGranted', '✓ Aid Granted') : t('ngo.offerLegalAid', 'Offer Legal Aid')}
                     </Text>
                   </TouchableOpacity>
                 </View>
@@ -382,30 +396,30 @@ export default function NGOHome() {
           <>
             <View style={[styles.sectionHeaderRow, { marginTop: 8 }]}>
               <Text style={[styles.sectionLabel, { color: isDarkMode ? '#FFA726' : '#C2410C' }]}>
-                📰 Field Stories & Impact Reports
+                📰 {t('ngo.fieldStoriesHeader', 'Field Stories & Impact Reports')}
               </Text>
-              <Text style={styles.seeAllText}>({publishedStories.length} Published)</Text>
+              <Text style={styles.seeAllText}>({publishedStories.length} {t('common.published', 'Published')})</Text>
             </View>
 
             {publishedStories.slice(0, 3).map((story) => (
               <View key={story.id} style={styles.leadCard}>
                 <View style={styles.leadTopRow}>
                   <View style={[styles.leadRefBadge, { borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                    <Text style={[styles.leadRefText, { color: '#10B981' }]}>IMPACT VERIFIED</Text>
+                    <Text style={[styles.leadRefText, { color: '#10B981' }]}>{t('ngo.impactVerified', 'IMPACT VERIFIED')}</Text>
                   </View>
                   {story.is_featured && (
                     <View style={[styles.sectionBadge, { marginLeft: 0, borderColor: '#FF9500', backgroundColor: 'rgba(255, 149, 0, 0.15)' }]}>
-                      <Text style={[styles.sectionBadgeText, { color: '#FF9500' }]}>Featured</Text>
+                      <Text style={[styles.sectionBadgeText, { color: '#FF9500' }]}>{t('common.featured', 'Featured')}</Text>
                     </View>
                   )}
                 </View>
 
                 <Text style={[styles.leadDistrictText, { fontSize: 12.5, fontWeight: '800', color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]} numberOfLines={2}>
-                  {story.title}
+                  {translateDynamic(story.title)}
                 </Text>
 
                 <Text style={{ fontSize: 10, color: isDarkMode ? 'rgba(255, 220, 180, 0.7)' : '#664530' }}>
-                  {story.district} · {story.program_name || 'NCHD Legal Aid Program'}
+                  {translateDistrict(story.district)} · {translateDynamic(story.program_name || 'NCHD Legal Aid Program')}
                 </Text>
 
                 <TouchableOpacity

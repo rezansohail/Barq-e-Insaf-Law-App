@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   Text,
@@ -12,19 +12,20 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import Svg, { Path } from 'react-native-svg';
+import { changeAppLanguage, getCurrentLanguage, SUPPORTED_LANGUAGES } from '../constants/i18n';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
 // Available translation languages
-export const LANGUAGES = [
-  { code: 'en', label: 'English', native: 'English' },
-  { code: 'ur', label: 'Urdu', native: 'اردو' },
-  { code: 'sd', label: 'Sindhi', native: 'سنڌي' },
-];
+export const LANGUAGES = SUPPORTED_LANGUAGES;
 
 export default function LanguagePeekingTab() {
-  const [selectedLang, setSelectedLang] = useState('en');
+  const [selectedLang, setSelectedLang] = useState(getCurrentLanguage());
   const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    setSelectedLang(getCurrentLanguage());
+  }, []);
 
   // Position limits: lower half of the screen
   const MIN_Y = SCREEN_HEIGHT * 0.42;
@@ -83,9 +84,17 @@ export default function LanguagePeekingTab() {
     }).start();
   };
 
-  const handleSelect = (code) => {
+  const handleSelect = async (code) => {
     setSelectedLang(code);
-    // User can add functionality later
+    await changeAppLanguage(code);
+    // Smoothly collapse panel after selection
+    setIsExpanded(false);
+    Animated.spring(expandAnim, {
+      toValue: 0,
+      useNativeDriver: false,
+      friction: 8,
+      tension: 60,
+    }).start();
   };
 
   // Card slide-in offset from the right

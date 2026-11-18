@@ -13,19 +13,28 @@ import { useRouter } from 'expo-router';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import Svg, { Path } from 'react-native-svg';
+import { useTranslation } from 'react-i18next';
 import { useAppTheme } from '../context/ThemeContext';
+import { useLanguageModal } from '../context/LanguageModalContext';
+import { useAppTranslation } from '../utils/translationHelper';
 
 export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
   const router = useRouter();
   const { theme, isDarkMode, toggleTheme } = useAppTheme();
+  const { i18n } = useTranslation();
+  const { t } = useAppTranslation();
+  const { openLanguageModal } = useLanguageModal();
   const [menuVisible, setMenuVisible] = useState(false);
-  const [currentLang, setCurrentLang] = useState('English');
 
-  const langOptions = ['English', 'اردو (Urdu)', 'سنڌي (Sindhi)'];
+  const currentCode = i18n?.language || 'en';
+  const currentLangLabel = currentCode === 'ur' ? 'اردو (Urdu)' : currentCode === 'sd' ? 'سنڌي (Sindhi)' : 'English';
+  const currentLangBadge = currentCode === 'ur' ? 'UR' : currentCode === 'sd' ? 'SD' : 'EN';
 
-  const handleCycleLang = () => {
-    const nextIdx = (langOptions.indexOf(currentLang) + 1) % langOptions.length;
-    setCurrentLang(langOptions[nextIdx]);
+  const handleOpenLanguageModal = () => {
+    setMenuVisible(false);
+    if (openLanguageModal) {
+      openLanguageModal();
+    }
   };
 
   const handleProfile = () => {
@@ -135,9 +144,9 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
                           ]}
                           numberOfLines={1}
                         >
-                          {role.toUpperCase()} PORTAL
+                          {t(`${role.toUpperCase()} PORTAL`)}
                         </Text>
-                        <Text style={styles.menuRoleSub}>Barq-e-Insaf Active</Text>
+                        <Text style={styles.menuRoleSub}>{t('Barq-e-Insaf Active')}</Text>
                       </View>
                     </View>
 
@@ -166,7 +175,7 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
                           { color: isDarkMode ? '#FFFFFF' : '#1A0C04' },
                         ]}
                       >
-                        Profile
+                        {t('Profile')}
                       </Text>
                     </TouchableOpacity>
 
@@ -207,7 +216,7 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
                             { color: isDarkMode ? '#FFFFFF' : '#1A0C04' },
                           ]}
                         >
-                          {isDarkMode ? 'Light Mode' : 'Dark Mode'}
+                          {t(isDarkMode ? 'Light Mode' : 'Dark Mode')}
                         </Text>
                         <Text style={styles.modeSubText}>
                           Current: {isDarkMode ? 'Dark' : 'Light'}
@@ -232,7 +241,7 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
                     {/* Language Translation Option */}
                     <TouchableOpacity
                       style={styles.menuItem}
-                      onPress={handleCycleLang}
+                      onPress={handleOpenLanguageModal}
                       activeOpacity={0.75}
                     >
                       <View style={styles.itemIconCircle}>
@@ -253,10 +262,10 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
                             { color: isDarkMode ? '#FFFFFF' : '#1A0C04' },
                           ]}
                         >
-                          Language / Translation
+                          {t('Language / Translation')}
                         </Text>
                         <Text style={styles.modeSubText}>
-                          Current: {currentLang}
+                          Current: {currentLangLabel}
                         </Text>
                       </View>
                       <View
@@ -270,7 +279,7 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
                         ]}
                       >
                         <Text style={[styles.modePillText, { fontSize: 10, fontWeight: '800' }]}>
-                          {currentLang.startsWith('English') ? 'EN' : currentLang.startsWith('اردو') ? 'UR' : 'SD'}
+                          {currentLangBadge}
                         </Text>
                       </View>
                     </TouchableOpacity>
@@ -302,7 +311,7 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
                           />
                         </Svg>
                       </View>
-                      <Text style={styles.signOutText}>Sign Out</Text>
+                      <Text style={styles.signOutText}>{t('Sign Out')}</Text>
                     </TouchableOpacity>
                   </LinearGradient>
                 </BlurView>

@@ -24,6 +24,7 @@ import {
   useFonts as usePlayfair,
   PlayfairDisplay_400Regular,
 } from '@expo-google-fonts/playfair-display';
+import { useAppTranslation } from '../utils/translationHelper';
 
 // 45 delicate, tiny pinpoint stars scattered like an authentic starry night sky
 const STARRY_NIGHT_STARS = [
@@ -154,6 +155,7 @@ function TwinklingStar({ star }) {
 export default function StartScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
+  const { t, appName, currentLang } = useAppTranslation();
 
   // Load fonts – Cinzel for the title, Playfair for the tagline
   const [cinzelLoaded] = useCinzel({ Cinzel_700Bold });
@@ -227,12 +229,12 @@ export default function StartScreen() {
           />
 
           {/* Title */}
-          <Text style={[styles.title, cinzelLoaded ? { fontFamily: 'Cinzel_700Bold' } : {}]}>
-            BARQ‑E‑INSAF
+          <Text style={[styles.title, (cinzelLoaded && currentLang === 'en') ? { fontFamily: 'Cinzel_700Bold' } : {}]}>
+            {appName.toUpperCase()}
           </Text>
           {/* Tagline */}
-          <Text style={[styles.tagline, playfairLoaded ? { fontFamily: 'PlayfairDisplay_400Regular' } : {}]}>
-            Your legal companion for swift justice
+          <Text style={[styles.tagline, (playfairLoaded && currentLang === 'en') ? { fontFamily: 'PlayfairDisplay_400Regular' } : {}]}>
+            {t('start.tagline', 'Your legal companion for swift justice')}
           </Text>
 
           {/* Buttons – Liquid Glass with amber glow */}
@@ -259,7 +261,7 @@ export default function StartScreen() {
                   style={styles.liquidGlassGradient}
                 >
                   <View style={styles.liquidGlassSheen} pointerEvents="none" />
-                  <Text style={styles.buttonText}>GET STARTED</Text>
+                  <Text style={styles.buttonText}>{t('start.getStarted', 'GET STARTED')}</Text>
                 </LinearGradient>
               </BlurView>
             </TouchableOpacity>
@@ -286,7 +288,7 @@ export default function StartScreen() {
                   style={styles.liquidGlassGradient}
                 >
                   <View style={styles.liquidGlassSheen} pointerEvents="none" />
-                  <Text style={styles.buttonText}>EXPLORE PROJECT</Text>
+                  <Text style={styles.buttonText}>{t('start.exploreProject', 'EXPLORE PROJECT')}</Text>
                 </LinearGradient>
               </BlurView>
             </TouchableOpacity>

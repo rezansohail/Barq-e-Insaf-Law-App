@@ -1,6 +1,7 @@
 import React, { useEffect, useRef } from 'react';
 import {
   View,
+  Text,
   StyleSheet,
   Image,
   Animated,
@@ -10,11 +11,13 @@ import {
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import { useAppTranslation } from '../utils/translationHelper';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('screen');
 
 export default function SplashScreen() {
   const router = useRouter();
+  const { appName, t, currentLang } = useAppTranslation();
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.92)).current;
   const hoverAnim = useRef(new Animated.Value(0)).current;
@@ -103,6 +106,12 @@ export default function SplashScreen() {
           style={styles.logo}
           resizeMode="contain"
         />
+        {currentLang !== 'en' && (
+          <View style={{ alignItems: 'center', marginTop: -20 }}>
+            <Text style={styles.translatedTitle}>{appName}</Text>
+            <Text style={styles.translatedSubtitle}>{t('splash.tagline', 'Smart Decisions for Legal Matters')}</Text>
+          </View>
+        )}
       </Animated.View>
     </View>
   );
@@ -135,5 +144,22 @@ const styles = StyleSheet.create({
   logo: {
     width: 250,
     height: 250,
+  },
+  translatedTitle: {
+    fontSize: 24,
+    fontWeight: '900',
+    color: '#FFB74D',
+    letterSpacing: 0.5,
+    textAlign: 'center',
+    textShadowColor: 'rgba(255, 149, 0, 0.45)',
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 8,
+  },
+  translatedSubtitle: {
+    fontSize: 13,
+    color: 'rgba(255, 235, 215, 0.85)',
+    fontWeight: '600',
+    marginTop: 4,
+    textAlign: 'center',
   },
 });

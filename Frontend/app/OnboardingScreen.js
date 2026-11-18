@@ -15,38 +15,46 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
-
-const slides = [
-  {
-    id: '1',
-    badge: 'LEGAL EMPOWERMENT',
-    title: 'Your Justice.\nYour Control.',
-    subtitle:
-      'Bridging the legal access gap across Pakistan with instant AI assistance and certified advocate connection.',
-    image: require('../assets/images/onb1.jpg'),
-  },
-  {
-    id: '2',
-    badge: 'MULTILINGUAL AI CHATBOT',
-    title: 'Instant Legal Guidance\nin English, Urdu & Sindhi.',
-    subtitle:
-      'Ask legal questions regarding Pakistan Penal Code, Family Laws, and Property rights 24/7.',
-    image: require('../assets/images/onb2.png'),
-  },
-  {
-    id: '3',
-    badge: 'SBC VERIFIED ADVOCATES',
-    title: 'Verified Lawyers &\nBiometric Security.',
-    subtitle:
-      'Connect directly with Sindh Bar Council advocates and sign representation agreements digitally.',
-    image: require('../assets/images/onb3.png'),
-  },
-];
+import { useAppTranslation } from '../utils/translationHelper';
 
 export default function OnboardingScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
+  const { t, appName } = useAppTranslation();
   const [currentIndex, setCurrentIndex] = useState(0);
+
+  const slides = [
+    {
+      id: '1',
+      badge: t('onboarding.slide1Badge', 'LEGAL EMPOWERMENT'),
+      title: t('onboarding.slide1Title', 'Your Justice.\nYour Control.'),
+      subtitle: t(
+        'onboarding.slide1Subtitle',
+        'Bridging the legal access gap across Pakistan with instant AI assistance and certified advocate connection.'
+      ),
+      image: require('../assets/images/onb1.jpg'),
+    },
+    {
+      id: '2',
+      badge: t('onboarding.slide2Badge', 'MULTILINGUAL AI CHATBOT'),
+      title: t('onboarding.slide2Title', 'Instant Legal Guidance\nin English, Urdu & Sindhi.'),
+      subtitle: t(
+        'onboarding.slide2Subtitle',
+        'Ask legal questions regarding Pakistan Penal Code, Family Laws, and Property rights 24/7.'
+      ),
+      image: require('../assets/images/onb2.png'),
+    },
+    {
+      id: '3',
+      badge: t('onboarding.slide3Badge', 'SBC VERIFIED ADVOCATES'),
+      title: t('onboarding.slide3Title', 'Verified Lawyers &\nBiometric Security.'),
+      subtitle: t(
+        'onboarding.slide3Subtitle',
+        'Connect directly with Sindh Bar Council advocates and sign representation agreements digitally.'
+      ),
+      image: require('../assets/images/onb3.png'),
+    },
+  ];
   const scrollX = useRef(new Animated.Value(0)).current;
   const slidesRef = useRef(null);
 
@@ -143,14 +151,14 @@ export default function OnboardingScreen() {
             <View style={{ width: 34 }} />
           )}
 
-          <Text style={styles.brandTitle}>BARQ-E-INSAF</Text>
+          <Text style={styles.brandTitle}>{appName.toUpperCase()}</Text>
 
           {currentIndex < slides.length - 1 ? (
             <TouchableOpacity
               onPress={() => router.push('/RoleSelectScreen')}
               hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
             >
-              <Text style={styles.skipText}>SKIP</Text>
+              <Text style={styles.skipText}>{t('onboarding.skip', 'SKIP')}</Text>
             </TouchableOpacity>
           ) : (
             <View style={{ width: 34 }} />
@@ -274,7 +282,7 @@ export default function OnboardingScreen() {
                   <View style={styles.actionSheen} />
                   <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                     <Text style={styles.actionBtnText}>
-                      {currentIndex === slides.length - 1 ? 'GET STARTED' : 'CONTINUE'}
+                      {currentIndex === slides.length - 1 ? t('onboarding.getStarted', 'GET STARTED') : t('onboarding.continue', 'CONTINUE')}
                     </Text>
                     <Image
                       source={require('../assets/images/arrow.png')}

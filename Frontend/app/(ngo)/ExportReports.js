@@ -21,12 +21,14 @@ import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import { useTranslation } from 'react-i18next';
 import api, { BASE_URL } from '../../constants/api';
 
 export default function NGOExportReports() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const { isDarkMode } = useAppTheme();
+  const { t } = useTranslation();
 
   useAppNavigation({ isHome: false, homeRoute: '/(ngo)/NGOHome' });
 
@@ -37,7 +39,12 @@ export default function NGOExportReports() {
   const [downloadSuccess, setDownloadSuccess] = useState(null);
 
   const formats = [
-    { id: 'PDF', label: 'PDF Dossier', icon: 'PDF', desc: '1-Page statutory audit for High Court & institutional review' },
+    {
+      id: 'PDF',
+      label: t('ngo.pdfDossierTitle', 'PDF Dossier'),
+      icon: 'PDF',
+      desc: t('ngo.pdfDossierDesc', '1-Page statutory audit for High Court & institutional review'),
+    },
   ];
 
   const handleDirectDownload = async () => {
@@ -109,7 +116,7 @@ export default function NGOExportReports() {
 
       <SafeAreaView style={styles.safeArea}>
         <AppHeader
-          title="Export Institutional Audits"
+          title={t('ngo.reportsTitle', 'Export Institutional Audits')}
           showBack={true}
           homeRoute="/(ngo)/NGOHome"
           role="ngo"
@@ -143,7 +150,7 @@ export default function NGOExportReports() {
             </View>
           )}
 
-          <Text style={styles.sectionHeader}>SELECT EXPORT SPECIFICATION</Text>
+          <Text style={styles.sectionHeader}>{t('ngo.selectExportSpec', 'SELECT EXPORT SPECIFICATION')}</Text>
 
           <View style={styles.formatsColumn}>
             {formats.map((fmt) => (
@@ -167,7 +174,7 @@ export default function NGOExportReports() {
             ))}
           </View>
 
-          <Text style={styles.sectionHeader}>STATUTORY COMPLIANCE STAMPS</Text>
+          <Text style={styles.sectionHeader}>{t('ngo.complianceHeader', 'STATUTORY COMPLIANCE STAMPS')}</Text>
           <View style={styles.complianceBox}>
             <TouchableOpacity
               style={styles.toggleRow}
@@ -175,8 +182,8 @@ export default function NGOExportReports() {
               activeOpacity={0.8}
             >
               <View style={{ flex: 1 }}>
-                <Text style={styles.toggleTitle}>Strict Litigant Identity Concealment</Text>
-                <Text style={styles.toggleDesc}>Redacts CNIC, telephone, and addresses under judicial privacy</Text>
+                <Text style={styles.toggleTitle}>{t('ngo.strictIdentityLabel', 'Strict Litigant Identity Concealment')}</Text>
+                <Text style={styles.toggleDesc}>{t('ngo.strictIdentityDesc', 'Redacts CNIC, telephone, and addresses under judicial privacy')}</Text>
               </View>
               <View style={[styles.checkbox, includeBiometric && styles.checkboxActive]}>
                 {includeBiometric && <Text style={styles.checkMark}>✓</Text>}
@@ -189,8 +196,8 @@ export default function NGOExportReports() {
               activeOpacity={0.8}
             >
               <View style={{ flex: 1 }}>
-                <Text style={styles.toggleTitle}>NCHD Statutory Human Rights Seal</Text>
-                <Text style={styles.toggleDesc}>Affixes statutory authority under Federal Ordinance XXIX of 2002</Text>
+                <Text style={styles.toggleTitle}>{t('ngo.nchdSealLabel', 'NCHD Statutory Human Rights Seal')}</Text>
+                <Text style={styles.toggleDesc}>{t('ngo.nchdSealDesc', 'Affixes statutory authority under Federal Ordinance XXIX of 2002')}</Text>
               </View>
               <View style={[styles.checkbox, includeNCHD && styles.checkboxActive]}>
                 {includeNCHD && <Text style={styles.checkMark}>✓</Text>}
@@ -200,7 +207,7 @@ export default function NGOExportReports() {
 
           <View style={styles.actionBox}>
             <LiquidGlassButton
-              title={generating ? 'DOWNLOADING PDF DOSSIER...' : '⬇ DOWNLOAD OFFICIAL PDF DIRECTLY'}
+              title={generating ? t('ngo.downloadingPdf', 'DOWNLOADING PDF DOSSIER...') : t('ngo.downloadPdfDirectly', '⬇ DOWNLOAD OFFICIAL PDF DIRECTLY')}
               onPress={handleDirectDownload}
               disabled={generating}
             />
