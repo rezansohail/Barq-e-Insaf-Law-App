@@ -8,6 +8,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 
@@ -39,6 +40,7 @@ function Section({ title, children }) {
 
 export default function LawyerDetail() {
   const router = useRouter();
+  const { isDark } = useAppTheme();
   const params = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState('Personal');
 
@@ -53,10 +55,16 @@ export default function LawyerDetail() {
 
   const data = lawyer || {};
 
+  const bg = isDark ? '#060201' : '#FAF7F2';
+  const cardBg = isDark ? 'rgba(22, 10, 4, 0.78)' : '#FFFFFF';
+  const cardBorder = isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)';
+  const textPrimary = isDark ? '#FFF5E8' : '#1A0F07';
+  const textSecondary = isDark ? 'rgba(255, 220, 180, 0.65)' : '#6B5442';
+
   if (!data.fullName && !data.name) {
     return (
-      <SafeAreaView style={styles.safe}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+      <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
         <AppHeader
           title="Lawyer Profile"
           showBack={true}
@@ -64,7 +72,7 @@ export default function LawyerDetail() {
           role="admin"
         />
         <View style={styles.center}>
-          <Text style={styles.notFound}>Lawyer record not found.</Text>
+          <Text style={[styles.notFound, { color: textSecondary }]}>Lawyer record not found.</Text>
           <TouchableOpacity
             style={styles.backBtnPill}
             onPress={() => router.replace('/(Admin)/LawyerManagement')}
@@ -82,8 +90,8 @@ export default function LawyerDetail() {
   const sc = statusColors[data.status] || statusColors['Pending'];
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+    <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
 
       {/* Modern '< Lawyer Profile' Header */}
       <AppHeader
@@ -101,14 +109,14 @@ export default function LawyerDetail() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
 
         {/* HERO CARD */}
-        <View style={styles.profileCard}>
+        <View style={[styles.profileCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
           <View style={styles.profileAvatar}>
             <Text style={styles.profileAvatarText}>{initials}</Text>
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{displayName}</Text>
+            <Text style={[styles.profileName, { color: textPrimary }]}>{displayName}</Text>
             <Text style={styles.profileSub}>{data.licenseNumber || data.license || 'SBC Verified'} · {data.specialty || 'Advocate'}</Text>
-            <Text style={styles.profileSubMuted}>{data.city || 'Karachi, Sindh'} · {data.experience ?? '8'} yrs exp</Text>
+            <Text style={[styles.profileSubMuted, { color: textSecondary }]}>{data.city || 'Karachi, Sindh'} · {data.experience ?? '8'} yrs exp</Text>
           </View>
         </View>
 
@@ -207,13 +215,13 @@ export default function LawyerDetail() {
 
             <Section title="Administrative Actions">
               <TouchableOpacity style={styles.actionBtnPrimary} activeOpacity={0.8}>
-                <Text style={styles.actionBtnPrimaryTxt}>✓ VERIFY SBC CREDENTIALS</Text>
+                <Text style={styles.actionBtnPrimaryTxt}>VERIFY SBC CREDENTIALS</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionBtnWarn} activeOpacity={0.8}>
                 <Text style={styles.actionBtnWarnTxt}>Suspend License</Text>
               </TouchableOpacity>
               <TouchableOpacity style={styles.actionBtnDanger} activeOpacity={0.8}>
-                <Text style={styles.actionBtnDangerTxt}>✕ Revoke & Remove Record</Text>
+                <Text style={styles.actionBtnDangerTxt}>Revoke & Remove Record</Text>
               </TouchableOpacity>
             </Section>
           </>

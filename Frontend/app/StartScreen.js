@@ -11,6 +11,8 @@ import {
   Animated,
   Easing,
   useWindowDimensions,
+  BackHandler,
+  ToastAndroid,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -155,7 +157,29 @@ function TwinklingStar({ star }) {
 export default function StartScreen() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
+<<<<<<< HEAD
   const { t, appName, currentLang } = useAppTranslation();
+=======
+  const lastBackPressRef = useRef(0);
+
+  // Pre-login root screen: double-press back to exit app
+  useEffect(() => {
+    const onBackPress = () => {
+      const now = Date.now();
+      if (lastBackPressRef.current && now - lastBackPressRef.current < 2000) {
+        BackHandler.exitApp();
+        return true;
+      }
+      lastBackPressRef.current = now;
+      if (Platform.OS === 'android') {
+        ToastAndroid.show('Press back again to exit', ToastAndroid.SHORT);
+      }
+      return true;
+    };
+    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
+    return () => sub.remove();
+  }, []);
+>>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
 
   // Load fonts – Cinzel for the title, Playfair for the tagline
   const [cinzelLoaded] = useCinzel({ Cinzel_700Bold });
@@ -288,7 +312,11 @@ export default function StartScreen() {
                   style={styles.liquidGlassGradient}
                 >
                   <View style={styles.liquidGlassSheen} pointerEvents="none" />
+<<<<<<< HEAD
                   <Text style={styles.buttonText}>{t('start.exploreProject', 'EXPLORE PROJECT')}</Text>
+=======
+                  <Text style={styles.buttonText}>EXPLORE APP</Text>
+>>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
                 </LinearGradient>
               </BlurView>
             </TouchableOpacity>

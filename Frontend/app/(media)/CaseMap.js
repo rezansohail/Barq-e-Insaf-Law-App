@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, StatusBar, ActivityIndicator, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView, StatusBar, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import styles from './CaseMap.styles';
@@ -9,8 +9,11 @@ import { useAppNavigation } from '../../hooks/useAppNavigation';
 import SindhCasesMap from '../../components/SindhCasesMap';
 import { fetchRealSindhCases } from '../../constants/realCasesStore';
 import { useAppTheme } from '../../context/ThemeContext';
+<<<<<<< HEAD
 import { useAppTranslation } from '../../utils/translationHelper';
 import api from '../../constants/api';
+=======
+>>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
 
 export default function MediaCaseMap() {
   const router = useRouter();
@@ -20,55 +23,30 @@ export default function MediaCaseMap() {
 
   const [realCases, setRealCases] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState({ totalActiveCases: 0, districtsCovered: 0, topHotspotDistrict: 'Sindh' });
-  const [activeFilter, setActiveFilter] = useState('ALL');
 
   useEffect(() => {
     let isMounted = true;
-
-    async function loadMapData() {
-      try {
-        setLoading(true);
-        // Connect directly to live Media Heatmap API
-        const res = await api.get('/media/analytics/heatmap');
-        if (res.data?.livePointers && isMounted) {
-          setRealCases(res.data.livePointers);
-          if (res.data.summary) {
-            setSummary(res.data.summary);
-          }
-        } else {
-          const fallback = await fetchRealSindhCases();
-          if (isMounted) setRealCases(fallback);
-        }
-      } catch (err) {
-        console.warn('[CASE_MAP] Falling back to real cases store:', err.message);
-        const fallback = await fetchRealSindhCases();
-        if (isMounted) setRealCases(fallback);
-      } finally {
-        if (isMounted) setLoading(false);
+    fetchRealSindhCases().then((cases) => {
+      if (isMounted) {
+        setRealCases(cases);
+        setLoading(false);
       }
-    }
-
-    loadMapData();
+    });
     return () => { isMounted = false; };
   }, []);
 
   const safeBg = isDarkMode ? '#13131A' : '#FAF8F5';
-
-  const filteredCases = realCases.filter((c) => {
-    if (activeFilter === 'ALL') return true;
-    if (activeFilter === 'PROPERTY') return /property|land/i.test(c.type || '');
-    if (activeFilter === 'FAMILY') return /family|custody|khula/i.test(c.type || '');
-    if (activeFilter === 'LEADS') return !!c.mediaCoverageRequested;
-    return true;
-  });
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: safeBg }]}>
       <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={safeBg} />
 
       <AppHeader
+<<<<<<< HEAD
         title={t('nav.map', 'Sindh Case Geography')}
+=======
+        title="Media Case Geography"
+>>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
         showBack={true}
         homeRoute="/(media)/MediaHome"
         role="media"
@@ -77,6 +55,7 @@ export default function MediaCaseMap() {
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 }]} showsVerticalScrollIndicator={false}>
         {/* Intro Card */}
         <View style={[styles.introCard, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
+<<<<<<< HEAD
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
             <Text style={[styles.introTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04', marginBottom: 0 }]}>
               {t('map.judicialMap', 'Sindh Judicial Reporting Map')}
@@ -141,6 +120,14 @@ export default function MediaCaseMap() {
               </TouchableOpacity>
             ))}
           </View>
+=======
+          <Text style={[styles.introTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+            Sindh Judicial Reporting Map
+          </Text>
+          <Text style={[styles.introSub, { color: isDarkMode ? '#E5E7EB' : '#4A2A15' }]}>
+            Live geographic breakdown of active dispute dockets across Sindh. Pointer colors identify Family vs. Property litigation, shaded by filing recency, protecting citizen privacy with zero personal identifiers.
+          </Text>
+>>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
         </View>
 
         {loading ? (
@@ -151,7 +138,7 @@ export default function MediaCaseMap() {
             </Text>
           </View>
         ) : (
-          <SindhCasesMap cases={filteredCases} />
+          <SindhCasesMap cases={realCases} />
         )}
       </ScrollView>
 

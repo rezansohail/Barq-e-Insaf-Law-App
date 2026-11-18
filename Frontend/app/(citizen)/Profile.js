@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import styles from './Profile.styles';
 import { useMockStore, userData, updateProfile, fetchCitizenDashboard } from './MockStore';
-import { getCurrentCitizenId } from '../../constants/authStore';
+import { getCurrentCitizenId, clearSession } from '../../constants/authStore';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
@@ -29,6 +29,24 @@ export default function Profile() {
 
   // Hardware back returns to CitizenHome
   useAppNavigation({ isHome: false, homeRoute: '/(citizen)/CitizenHome' });
+
+  const handleSignOut = () => {
+    Alert.alert(
+      'Sign Out',
+      'Are you sure you want to sign out of Barq-e-Insaf?',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Sign Out',
+          style: 'destructive',
+          onPress: async () => {
+            await clearSession();
+            router.replace('/RoleSelectScreen');
+          },
+        },
+      ]
+    );
+  };
 
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -222,6 +240,24 @@ export default function Profile() {
               <Text style={styles.statLbl}>Vault Items</Text>
             </View>
           </View>
+
+          {/* TERMS AND CONDITIONS LINK */}
+          <TouchableOpacity
+            style={styles.termsBtn}
+            onPress={() => router.push('/TermsScreen')}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.termsBtnText}>View Terms & Conditions</Text>
+          </TouchableOpacity>
+
+          {/* SIGN OUT BUTTON BELOW PROFILE CONTENT */}
+          <TouchableOpacity
+            style={styles.signOutBtn}
+            onPress={handleSignOut}
+            activeOpacity={0.85}
+          >
+            <Text style={styles.signOutBtnText}>Sign Out of Citizen Account</Text>
+          </TouchableOpacity>
         </View>
       </ScrollView>
 

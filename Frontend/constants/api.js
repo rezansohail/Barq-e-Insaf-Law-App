@@ -21,7 +21,7 @@ const getDevHost = () => {
   }
 
   // Fallback to the developer's laptop Wi-Fi IP for Expo Go on physical devices
-  return '10.133.133.165';
+  return '192.168.100.246';
 };
 
 const host = getDevHost();

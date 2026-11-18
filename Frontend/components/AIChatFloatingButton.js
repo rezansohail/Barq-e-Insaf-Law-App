@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Constants from 'expo-constants';
 import {
   View,
@@ -20,6 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
+import { subscribeToChat, closeAIChat } from '../constants/chatBotStore';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -29,6 +30,7 @@ export default function AIChatFloatingButton() {
   const [modalVisible, setModalVisible] = useState(false);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
+  const scrollViewRef = useRef(null);
 
   const [messages, setMessages] = useState([
     {
@@ -60,16 +62,11 @@ export default function AIChatFloatingButton() {
     })
   ).current;
 
-  // Hide floating button on splash & startup screens
-  const hiddenRoutes = ['/', '/SplashScreen', '/StartScreen', '/OnboardingScreen'];
-  if (hiddenRoutes.includes(pathname)) {
-    return null;
-  }
+  const sendMessage = async (overrideText) => {
+    const textToSend = typeof overrideText === 'string' ? overrideText : inputText;
+    if (!textToSend || textToSend.trim() === '' || loading) return;
 
-  const sendMessage = async () => {
-    if (inputText.trim() === '' || loading) return;
-
-    const userQuery = inputText.trim();
+    const userQuery = textToSend.trim();
     const userMsg = { id: Date.now().toString(), sender: 'user', text: userQuery };
     
     setMessages((prev) => [...prev, userMsg]);
@@ -97,37 +94,75 @@ export default function AIChatFloatingButton() {
     }
   };
 
+  // Listen to openAIChat() triggers across any screen (e.g. LandingScreen "Ask AI")
+  useEffect(() => {
+    return subscribeToChat(({ isOpen, query }) => {
+      if (isOpen) {
+        setModalVisible(true);
+        if (query && query.trim()) {
+          sendMessage(query.trim());
+        }
+      } else {
+        setModalVisible(false);
+      }
+    });
+  }, []);
+
+  const handleClose = () => {
+    setModalVisible(false);
+    closeAIChat();
+  };
+
+  // Hide floating button on splash & startup screens
+  const hiddenRoutes = ['/', '/SplashScreen', '/StartScreen', '/OnboardingScreen'];
+  const isFabHidden = hiddenRoutes.includes(pathname);
+
+  if (isFabHidden && !modalVisible) {
+    return null;
+  }
+
   return (
     <>
-      {/* Draggable Floating Button */}
-      <Animated.View
-        style={[styles.draggableFab, { transform: [{ translateX: pan.x }, { translateY: pan.y }] }]}
-        {...panResponder.panHandlers}
-      >
-        <TouchableOpacity style={styles.fabBtn} activeOpacity={0.88} onPress={() => setModalVisible(true)}>
-          <LinearGradient
-            colors={['#3b82f6', '#1d4ed8', '#0F2744']}
-            style={styles.fabGradient}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 1 }}
-          >
-            {/* Inner Glow Circle & Lightning Symbol */}
-            <View style={styles.glowCircle}>
-              <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
-                <Path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" fill="#FFD700" />
-              </Svg>
-            </View>
+      {/* Draggable Floating Button (only shown on permitted routes) */}
+      {!isFabHidden && (
+        <Animated.View
+          style={[styles.draggableFab, { transform: [{ translateX: pan.x }, { translateY: pan.y }] }]}
+          {...panResponder.panHandlers}
+        >
+          <TouchableOpacity style={styles.fabBtn} activeOpacity={0.88} onPress={() => setModalVisible(true)}>
+            <LinearGradient
+              colors={['#161726', '#0F1018', '#1A0E06']}
+              style={styles.fabGradient}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            >
+              {/* Inner Electric Blue Rim Halo to match Chatbot interior */}
+              <View style={styles.blueRimHalo} pointerEvents="none" />
 
-            {/* AI Assistant Label Tag */}
-            <View style={styles.aiTagPill}>
-              <Text style={styles.aiTagText}>AI LEGAL</Text>
-            </View>
-          </LinearGradient>
-        </TouchableOpacity>
-      </Animated.View>
+              {/* Inner Glow Circle with Chatbot Blue & Orange Legal Lightning */}
+              <View style={styles.glowCircle}>
+                <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                  <Path
+                    d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
+                    fill="#FFA726"
+                    stroke="#FF9500"
+                    strokeWidth={1.2}
+                  />
+                </Svg>
+              </View>
+
+              {/* Bottom AI Legal Tag Pill in Black & Orange with Subtle Blue Border */}
+              <View style={styles.aiTagPill}>
+                <View style={styles.aiBlueDot} />
+                <Text style={styles.aiTagText}>AI LEGAL</Text>
+              </View>
+            </LinearGradient>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       {/* POPUP AI CHAT MODAL */}
-      <Modal visible={modalVisible} animationType="slide" transparent>
+      <Modal visible={modalVisible} animationType="slide" transparent onRequestClose={handleClose}>
         <KeyboardAvoidingView style={styles.modalOverlay} behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
           <SafeAreaView style={styles.modalCard}>
             
@@ -144,13 +179,19 @@ export default function AIChatFloatingButton() {
                   <Text style={styles.headerSub}>Pakistan Penal Code & Legal Guidance</Text>
                 </View>
               </View>
-              <TouchableOpacity style={styles.closeBtn} onPress={() => setModalVisible(false)}>
-                <Text style={styles.closeBtnText}>✕</Text>
+              <TouchableOpacity style={styles.closeBtn} onPress={handleClose}>
+                <Text style={styles.closeBtnText}>X</Text>
               </TouchableOpacity>
             </View>
 
             {/* Chat Messages */}
-            <ScrollView style={styles.chatScroll} contentContainerStyle={styles.chatContent} showsVerticalScrollIndicator={false}>
+            <ScrollView
+              ref={scrollViewRef}
+              onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+              style={styles.chatScroll}
+              contentContainerStyle={styles.chatContent}
+              showsVerticalScrollIndicator={false}
+            >
               {messages.map((msg) => (
                 <View key={msg.id} style={[styles.msgBubble, msg.sender === 'user' ? styles.userBubble : styles.aiBubble]}>
                   <Text style={[styles.msgText, msg.sender === 'user' ? styles.userMsgText : styles.aiMsgText]}>{msg.text}</Text>
@@ -184,9 +225,9 @@ export default function AIChatFloatingButton() {
                 placeholderTextColor="#94a3b8"
                 value={inputText}
                 onChangeText={setInputText}
-                onSubmitEditing={sendMessage}
+                onSubmitEditing={() => sendMessage()}
               />
-              <TouchableOpacity style={styles.sendBtn} onPress={sendMessage} disabled={loading}>
+              <TouchableOpacity style={styles.sendBtn} onPress={() => sendMessage()} disabled={loading}>
                 <Image
                   source={require('../assets/images/arrow.png')}
                   style={{ width: 18, height: 13 }}
@@ -205,42 +246,75 @@ export default function AIChatFloatingButton() {
 const styles = StyleSheet.create({
   draggableFab: { position: 'absolute', top: 0, left: 0, zIndex: 9999, elevation: 12 },
   fabBtn: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 66,
+    height: 66,
+    borderRadius: 33,
     elevation: 10,
-    shadowColor: '#3b82f6',
-    shadowOffset: { width: 0, height: 6 },
+    shadowColor: '#FF9500',
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.45,
     shadowRadius: 10,
   },
   fabGradient: {
     width: '100%',
     height: '100%',
-    borderRadius: 34,
-    justify: 'center',
+    borderRadius: 33,
+    justifyContent: 'center',
     alignItems: 'center',
     borderWidth: 2,
-    borderColor: '#fbbf24',
+    borderColor: '#FF9500',
     padding: 2,
+    overflow: 'hidden',
+  },
+  blueRimHalo: {
+    position: 'absolute',
+    top: 2,
+    left: 2,
+    right: 2,
+    bottom: 2,
+    borderRadius: 31,
+    borderWidth: 1.4,
+    borderColor: 'rgba(59, 130, 246, 0.65)',
   },
   glowCircle: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    justify: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: 21,
+    backgroundColor: '#121829',
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.40)',
+    justifyContent: 'center',
     alignItems: 'center',
+    shadowColor: '#3B82F6',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 6,
   },
   fabIcon: { fontSize: 24 },
   aiTagPill: {
-    backgroundColor: '#fbbf24',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#0F111A',
     paddingHorizontal: 6,
-    paddingVertical: 1,
-    borderRadius: 8,
+    paddingVertical: 1.5,
+    borderRadius: 7,
     marginTop: -4,
+    borderWidth: 1,
+    borderColor: '#3B82F6',
   },
-  aiTagText: { color: '#0F2744', fontSize: 8, fontWeight: '900', letterSpacing: 0.5 },
+  aiBlueDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#38BDF8',
+  },
+  aiTagText: {
+    color: '#FFA726',
+    fontSize: 7.5,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
   modalOverlay: { flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.75)', justifyContent: 'flex-end' },
   modalCard: { backgroundColor: '#0F172A', borderTopLeftRadius: 28, borderTopRightRadius: 28, height: SCREEN_HEIGHT * 0.84 },
   modalHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: 20, paddingVertical: 16, backgroundColor: '#020617', borderTopLeftRadius: 28, borderTopRightRadius: 28 },

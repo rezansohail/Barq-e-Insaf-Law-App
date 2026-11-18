@@ -273,13 +273,6 @@ export const fetchCitizenCases = async (targetId) => {
         hearingDate: c.hearingDate,
         lawyer: c.lawyer || null,
         evidence: caseEvidence,
-        mediaRequested: Boolean(c.mediaCoverageRequested || c.media_coverage_requested),
-        mediaStatus: c.mediaStatus || c.media_status || 'none',
-        ngoAidRequested: Boolean(c.ngoAidRequested || c.ngo_aid_requested),
-        ngoStatus: c.ngoStatus || c.ngo_status || 'none',
-        ngoAssistanceOffered: Boolean(c.ngoAssistanceOffered || c.ngo_assistance_offered),
-        ngoAssistanceMessage: c.ngoAssistanceMessage || c.ngo_assistance_message,
-        contactRelayToken: c.contactRelayToken || c.contact_relay_token,
       });
     });
     userData.activeCasesCount = activeCases.filter((c) => c.status === 'Active').length;

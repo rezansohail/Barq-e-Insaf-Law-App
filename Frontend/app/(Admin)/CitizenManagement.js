@@ -10,6 +10,7 @@ import Svg, { Path } from 'react-native-svg';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const { width } = Dimensions.get('window');
 const PER_PAGE = 5;
@@ -26,6 +27,7 @@ const SORT_OPTIONS = ['Name ↑', 'Name ↓', 'Date ↑', 'Date ↓'];
 
 export default function CitizenManagement() {
   const router = useRouter();
+  const { isDark, theme } = useAppTheme();
   const [data, setData]             = useState(CITIZENS);
   const [search, setSearch]         = useState('');
   const [status, setStatus]         = useState('All');
@@ -59,10 +61,18 @@ export default function CitizenManagement() {
     return 0;
   });
 
+  const bg = isDark ? '#060201' : '#FAF7F2';
+  const cardBg = isDark ? 'rgba(22, 10, 4, 0.78)' : '#FFFFFF';
+  const cardBorder = isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)';
+  const textPrimary = isDark ? '#FFF5E8' : '#1A0F07';
+  const textSecondary = isDark ? 'rgba(255, 220, 180, 0.65)' : '#6B5442';
+  const inputBg = isDark ? 'rgba(25, 12, 5, 0.75)' : '#FFFFFF';
+  const inputBorder = isDark ? 'rgba(255, 160, 40, 0.25)' : 'rgba(255, 149, 0, 0.25)';
+
   if (showDetail) {
     return (
-      <SafeAreaView style={s.safe}>
-        <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+      <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
+        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
         <AppHeader
           title={showDetail.fullName}
           showBack={true}
@@ -71,14 +81,14 @@ export default function CitizenManagement() {
           subtitle="Citizen Record"
         />
         <ScrollView style={s.scroll} contentContainerStyle={s.content}>
-          <View style={s.detailCard}>
-            <Text style={s.cardTitle}>Basic Profile</Text>
-            <View style={s.infoRow}><Text style={s.infoLabel}>Full Name</Text><Text style={s.infoVal}>{showDetail.fullName}</Text></View>
-            <View style={s.infoRow}><Text style={s.infoLabel}>Email</Text><Text style={s.infoVal}>{showDetail.email}</Text></View>
-            <View style={s.infoRow}><Text style={s.infoLabel}>Phone</Text><Text style={s.infoVal}>{showDetail.phone}</Text></View>
-            <View style={s.infoRow}><Text style={s.infoLabel}>District</Text><Text style={s.infoVal}>{showDetail.district || showDetail.city}</Text></View>
-            <View style={s.infoRow}><Text style={s.infoLabel}>Status</Text><Text style={[s.infoVal, { color: '#4ade80' }]}>{showDetail.status}</Text></View>
-            <View style={s.infoRow}><Text style={s.infoLabel}>Registered On</Text><Text style={s.infoVal}>{showDetail.registeredOn}</Text></View>
+          <View style={[s.detailCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            <Text style={[s.cardTitle, { color: textPrimary }]}>Basic Profile</Text>
+            <View style={[s.infoRow, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0,0,0,0.06)' }]}><Text style={[s.infoLabel, { color: textSecondary }]}>Full Name</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.fullName}</Text></View>
+            <View style={[s.infoRow, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0,0,0,0.06)' }]}><Text style={[s.infoLabel, { color: textSecondary }]}>Email</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.email}</Text></View>
+            <View style={[s.infoRow, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0,0,0,0.06)' }]}><Text style={[s.infoLabel, { color: textSecondary }]}>Phone</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.phone}</Text></View>
+            <View style={[s.infoRow, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0,0,0,0.06)' }]}><Text style={[s.infoLabel, { color: textSecondary }]}>District</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.district || showDetail.city}</Text></View>
+            <View style={[s.infoRow, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0,0,0,0.06)' }]}><Text style={[s.infoLabel, { color: textSecondary }]}>Status</Text><Text style={[s.infoVal, { color: '#4ade80' }]}>{showDetail.status}</Text></View>
+            <View style={[s.infoRow, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0,0,0,0.06)' }]}><Text style={[s.infoLabel, { color: textSecondary }]}>Registered On</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.registeredOn}</Text></View>
           </View>
 
           <TouchableOpacity style={s.backToListBtn} onPress={() => setShowDetail(null)}>
@@ -98,8 +108,8 @@ export default function CitizenManagement() {
   }
 
   return (
-    <SafeAreaView style={s.safe}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
+    <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
+      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
 
       {/* Modern '< Citizen Directory' Header */}
       <AppHeader
@@ -111,14 +121,14 @@ export default function CitizenManagement() {
 
       <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
         {/* Search */}
-        <View style={s.searchBox}>
+        <View style={[s.searchBox, { backgroundColor: inputBg, borderColor: inputBorder }]}>
           <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
             <Path d="M21 21l-4.35-4.35M19 11a8 8 0 11-16 0 8 8 0 0116 0z" stroke="#FF9500" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" />
           </Svg>
           <TextInput
-            style={s.searchInput}
+            style={[s.searchInput, { color: textPrimary }]}
             placeholder="Search by citizen name, phone, district..."
-            placeholderTextColor="rgba(255, 220, 180, 0.35)"
+            placeholderTextColor={isDark ? "rgba(255, 220, 180, 0.35)" : "#9C8E84"}
             value={search}
             onChangeText={setSearch}
           />
@@ -129,23 +139,37 @@ export default function CitizenManagement() {
           {STATUSES.map(st => (
             <TouchableOpacity
               key={st}
-              style={[s.chip, status === st && s.chipActive]}
+              style={[
+                s.chip,
+                {
+                  backgroundColor: status === st ? '#FF9500' : isDark ? 'rgba(25, 12, 5, 0.72)' : '#F0E8DD',
+                  borderColor: status === st ? '#FFA726' : isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)',
+                },
+              ]}
               onPress={() => setStatus(st)}
               activeOpacity={0.75}
             >
-              <Text style={[s.chipTxt, status === st && s.chipTxtActive]}>{st}</Text>
+              <Text
+                style={[
+                  s.chipTxt,
+                  { color: status === st ? '#0A0301' : isDark ? 'rgba(255, 220, 180, 0.65)' : '#6B5442' },
+                  status === st && s.chipTxtActive,
+                ]}
+              >
+                {st}
+              </Text>
             </TouchableOpacity>
           ))}
         </ScrollView>
 
         {/* Citizen Cards */}
         {filtered.length === 0 ? (
-          <Text style={s.emptyTxt}>No citizens found matching criteria.</Text>
+          <Text style={[s.emptyTxt, { color: textSecondary }]}>No citizens found matching criteria.</Text>
         ) : (
           filtered.map(c => (
             <TouchableOpacity
               key={c.id}
-              style={s.card}
+              style={[s.card, { backgroundColor: cardBg, borderColor: cardBorder }]}
               onPress={() => setShowDetail(c)}
               activeOpacity={0.78}
             >
@@ -154,9 +178,9 @@ export default function CitizenManagement() {
                   <Text style={s.avatarTxt}>{c.fullName.slice(0, 2).toUpperCase()}</Text>
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={s.cardName}>{c.fullName}</Text>
+                  <Text style={[s.cardName, { color: textPrimary }]}>{c.fullName}</Text>
                   <Text style={s.cardSub}>{c.phone} · {c.district || c.city}</Text>
-                  <Text style={s.cardEmail}>{c.email}</Text>
+                  <Text style={[s.cardEmail, { color: textSecondary }]}>{c.email}</Text>
                 </View>
                 <View style={s.statusBadge}>
                   <Text style={s.statusTxt}>{c.status}</Text>

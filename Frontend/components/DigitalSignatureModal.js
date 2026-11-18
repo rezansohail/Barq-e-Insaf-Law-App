@@ -140,7 +140,7 @@ export default function DigitalSignatureModal({
                   </Text>
                 </View>
                 <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
-                  <Text style={styles.closeText}>✕</Text>
+                  <Text style={styles.closeText}>X</Text>
                 </TouchableOpacity>
               </View>
 

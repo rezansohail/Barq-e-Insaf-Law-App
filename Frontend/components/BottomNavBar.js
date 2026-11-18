@@ -45,6 +45,7 @@ const ROLE_TABS = {
     { id: 'citizens', label: 'Citizens', route: '/(Admin)/CitizenManagement', icon: 'profile' },
     { id: 'lawyers', label: 'Lawyers', route: '/(Admin)/LawyerManagement', icon: 'lawyers' },
     { id: 'ngos', label: 'NGOs', route: '/(Admin)/NGOManagement', icon: 'cases' },
+    { id: 'media', label: 'Media', route: '/(Admin)/MediaManagement', icon: 'media' },
   ],
 };
 
@@ -161,6 +162,25 @@ function renderTabIcon(icon, active, isDarkMode) {
         <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
           <Path
             d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8zM14 2v6h6M16 13H8M16 17H8M10 9H8"
+            stroke={color}
+            strokeWidth={strokeW}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </Svg>
+      );
+    case 'media':
+      return (
+        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+          <Rect x={2} y={7} width={20} height={14} rx={3} stroke={color} strokeWidth={strokeW} />
+          <Path d="M17 2l-5 5-5-5" stroke={color} strokeWidth={strokeW} strokeLinecap="round" strokeLinejoin="round" />
+        </Svg>
+      );
+    case 'bell':
+      return (
+        <Svg width={20} height={20} viewBox="0 0 24 24" fill="none">
+          <Path
+            d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"
             stroke={color}
             strokeWidth={strokeW}
             strokeLinecap="round"

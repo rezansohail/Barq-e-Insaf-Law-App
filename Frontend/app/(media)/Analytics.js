@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -6,7 +6,6 @@ import {
   ScrollView,
   TouchableOpacity,
   StatusBar,
-  ActivityIndicator,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -17,8 +16,11 @@ import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+<<<<<<< HEAD
 import { useAppTranslation } from '../../utils/translationHelper';
 import api from '../../constants/api';
+=======
+>>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
 
 export default function MediaAnalytics() {
   const router = useRouter();
@@ -26,67 +28,25 @@ export default function MediaAnalytics() {
   const { t, currentLang, translateDistrict, translateCategory } = useAppTranslation();
   const { width, height } = useWindowDimensions();
   const [selectedRange, setSelectedRange] = useState('This Month');
-  const [loading, setLoading] = useState(true);
-
-  const [summary, setSummary] = useState({
-    totalActiveCases: 3,
-    districtsCovered: 2,
-    topHotspotDistrict: 'Karachi',
-    verifiedCourtDocketRate: '100%',
-  });
-
-  const [categoryBreakdown, setCategoryBreakdown] = useState([
-    { label: 'Property & Land Rights', percentage: 100, color: '#FF9500' },
-    { label: 'Family & Custody', percentage: 0, color: '#00E5FF' },
-    { label: 'Criminal PPC Defense', percentage: 0, color: '#FF7043' },
-    { label: 'Civil & Contract', percentage: 0, color: '#C084FC' },
-  ]);
-
-  const [districtMetrics, setDistrictMetrics] = useState([
-    { district: 'Karachi Metro', reported: 2, resolved: 2, rate: '100%', badge: 'HOTSPOT' },
-    { district: 'Karachi Central', reported: 1, resolved: 1, rate: '100%', badge: 'ACTIVE' },
-  ]);
 
   useAppNavigation({ isHome: false, homeRoute: '/(media)/MediaHome' });
 
   const ranges = ['This Week', 'This Month', 'Q4 2026', 'Full Year'];
 
-  // Fetch real analytics from backend when range changes
-  useEffect(() => {
-    let isMounted = true;
+  const districtMetrics = [
+    { district: 'Karachi Central', reported: 142, resolved: 118, rate: '83%' },
+    { district: 'Karachi East',    reported: 98,  resolved: 79,  rate: '80%' },
+    { district: 'Hyderabad',       reported: 76,  resolved: 58,  rate: '76%' },
+    { district: 'Sukkur',          reported: 52,  resolved: 39,  rate: '75%' },
+    { district: 'Larkana',         reported: 44,  resolved: 31,  rate: '70%' },
+  ];
 
-    async function loadAnalytics() {
-      try {
-        setLoading(true);
-        const res = await api.get(`/media/analytics/heatmap?range=${encodeURIComponent(selectedRange)}`);
-        if (res.data && isMounted) {
-          if (res.data.summary) {
-            setSummary(res.data.summary);
-          }
-          if (Array.isArray(res.data.categoriesBreakdown)) {
-            setCategoryBreakdown(res.data.categoriesBreakdown);
-          }
-          if (Array.isArray(res.data.districtHeatmap) && res.data.districtHeatmap.length > 0) {
-            const mapped = res.data.districtHeatmap.map((item) => ({
-              district: item.district,
-              reported: item.caseCount,
-              resolved: Math.max(1, Math.round(item.caseCount * (item.severity === 'high' ? 0.75 : 0.9))),
-              rate: `${item.percentage}%`,
-              badge: item.badge || (item.severity === 'high' ? 'HOTSPOT' : 'ACTIVE'),
-            }));
-            setDistrictMetrics(mapped);
-          }
-        }
-      } catch (err) {
-        console.warn('[ANALYTICS] API load error:', err.message);
-      } finally {
-        if (isMounted) setLoading(false);
-      }
-    }
-
-    loadAnalytics();
-    return () => { isMounted = false; };
-  }, [selectedRange]);
+  const categoryBreakdown = [
+    { label: 'Property & Land Rights', percentage: 42, color: '#FF9500' },
+    { label: 'Family & Custody',       percentage: 28, color: '#00E5FF' },
+    { label: 'Criminal PPC Defense',   percentage: 18, color: '#FF7043' },
+    { label: 'Labor & Civil Disputes', percentage: 12, color: '#C084FC' },
+  ];
 
   const safeBg = isDarkMode ? '#13131A' : '#FAF8F5';
 
@@ -133,6 +93,7 @@ export default function MediaAnalytics() {
           })}
         </View>
 
+<<<<<<< HEAD
         {/* Live Summary Strip */}
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
           <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
@@ -153,15 +114,49 @@ export default function MediaAnalytics() {
               {t('analytics.docketVerified', 'DOCKET VERIFIED')}
             </Text>
           </View>
+=======
+        {/* Category Breakdown Card */}
+        <View style={[styles.card, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
+          <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Sindh Case Beat Coverage</Text>
+          <Text style={[styles.cardSub, { color: isDarkMode ? '#9CA3AF' : '#664530' }]}>
+            Verified distribution by legal category
+          </Text>
+
+          {categoryBreakdown.map((cat) => (
+            <View key={cat.label} style={styles.breakdownRow}>
+              <View style={styles.breakdownMeta}>
+                <Text style={[styles.catLabel, { color: isDarkMode ? '#E5E7EB' : '#1A0C04' }]}>{cat.label}</Text>
+                <Text style={[styles.catPercent, { color: cat.color }]}>
+                  {cat.percentage}%
+                </Text>
+              </View>
+              <View style={styles.barTrack}>
+                <View
+                  style={[
+                    styles.barFill,
+                    { width: `${cat.percentage}%`, backgroundColor: cat.color },
+                  ]}
+                />
+              </View>
+            </View>
+          ))}
+>>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
         </View>
 
-        {loading ? (
-          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-            <ActivityIndicator color="#FF9500" size="large" />
-            <Text style={{ marginTop: 10, color: '#FFA726', fontSize: 12, fontWeight: '700' }}>
-              Calculating Judicial Trends ({selectedRange})...
-            </Text>
+        {/* District Metrics Table */}
+        <View style={[styles.card, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
+          <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>District Resolution Ratios</Text>
+          <Text style={[styles.cardSub, { color: isDarkMode ? '#9CA3AF' : '#664530' }]}>
+            Court case filings vs counsel resolution
+          </Text>
+
+          <View style={styles.tableHeader}>
+            <Text style={[styles.thText, { flex: 2 }]}>District</Text>
+            <Text style={[styles.thText, { flex: 1, textAlign: 'center' }]}>Reported</Text>
+            <Text style={[styles.thText, { flex: 1, textAlign: 'center' }]}>Resolved</Text>
+            <Text style={[styles.thText, { flex: 1, textAlign: 'right' }]}>Rate</Text>
           </View>
+<<<<<<< HEAD
         ) : (
           <>
             {/* Category Breakdown Card */}
@@ -235,6 +230,20 @@ export default function MediaAnalytics() {
             </View>
           </>
         )}
+=======
+
+          {districtMetrics.map((dm) => (
+            <View key={dm.district} style={styles.tableRow}>
+              <Text style={[styles.tableDistrict, { flex: 2, color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+                {dm.district}
+              </Text>
+              <Text style={[styles.tableNum, { flex: 1, textAlign: 'center', color: isDarkMode ? '#D1D5DB' : '#664530' }]}>{dm.reported}</Text>
+              <Text style={[styles.tableNum, { flex: 1, textAlign: 'center', color: isDarkMode ? '#D1D5DB' : '#664530' }]}>{dm.resolved}</Text>
+              <Text style={[styles.tableRate, { flex: 1, textAlign: 'right' }]}>{dm.rate}</Text>
+            </View>
+          ))}
+        </View>
+>>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
 
         {/* Export Action */}
         <View style={styles.actionBox}>
@@ -256,12 +265,12 @@ const styles = StyleSheet.create({
   scrollContent: { padding: 16, paddingBottom: 110 },
   rangeRow: {
     flexDirection: 'row',
-    backgroundColor: '#1E202C',
+    backgroundColor: 'rgba(25, 12, 5, 0.85)',
     borderRadius: 14,
     padding: 4,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: '#2A2C3D',
+    borderColor: 'rgba(255, 160, 40, 0.25)',
   },
   rangeTab: {
     flex: 1,
@@ -270,23 +279,16 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   rangeTabActive: {
-    backgroundColor: '#FF9500',
+    backgroundColor: '#FF7A00',
   },
   rangeText: {
     fontSize: 11,
     fontWeight: '700',
-    color: '#9CA3AF',
+    color: 'rgba(255, 235, 215, 0.65)',
   },
   rangeTextActive: {
-    color: '#000000',
+    color: '#FFFFFF',
     fontWeight: '800',
-  },
-  statBox: {
-    flex: 1,
-    borderRadius: 14,
-    padding: 12,
-    borderWidth: 1,
-    alignItems: 'center',
   },
   card: {
     borderRadius: 18,
@@ -345,7 +347,7 @@ const styles = StyleSheet.create({
   tableRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 10,
+    paddingVertical: 8,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.05)',
   },
@@ -355,8 +357,13 @@ const styles = StyleSheet.create({
   },
   tableNum: {
     fontSize: 12,
-    color: '#D1D5DB',
+    color: 'rgba(255, 220, 180, 0.8)',
     fontWeight: '600',
+  },
+  tableRate: {
+    fontSize: 12,
+    color: '#4ade80',
+    fontWeight: '800',
   },
   actionBox: {
     marginTop: 8,
