@@ -23,16 +23,68 @@ import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTranslation } from '../../utils/translationHelper';
 import { useAppTheme } from '../../context/ThemeContext';
 
-const sindhCities = {
-  Karachi: ['Karachi Central', 'Karachi East', 'Karachi South', 'Karachi West', 'Malir', 'Korangi', 'Keamari'],
-  Hyderabad: ['Hyderabad City', 'Latifabad', 'Qasimabad', 'Tando Jam'],
-  Sukkur: ['Sukkur City', 'Rohri', 'Pano Aqil', 'Salehpat'],
-  Larkana: ['Larkana City', 'Ratodero', 'Dokri', 'Bakrani'],
-  'Mirpur Khas': ['Mirpur Khas City', 'Digri', 'Kot Ghulam Muhammad', 'Jhuddo'],
-  'Shaheed Benazirabad': ['Nawabshah', 'Daur', 'Sakrand', 'Qazi Ahmed'],
-  'Thatta & Sujawal': ['Thatta', 'Makli', 'Mirpur Sakro', 'Sujawal', 'Jati'],
-  Badin: ['Badin City', 'Matli', 'Talhar', 'Tando Bago', 'Golarchi'],
+// Comprehensive Sindh Cities & Divisions Mapping
+const SINDH_CITIES_DATA = {
+  'Karachi': ['Karachi Central', 'Karachi East', 'Karachi South', 'Karachi West', 'Malir', 'Korangi', 'Keamari'],
+  'Hyderabad': ['Hyderabad', 'Hyderabad City', 'Latifabad', 'Qasimabad', 'Tando Jam'],
+  'Sukkur': ['Sukkur', 'Rohri', 'Pano Aqil', 'Salehpat'],
+  'Larkana': ['Larkana', 'Ratodero', 'Dokri', 'Bakrani'],
+  'Mirpur Khas': ['Mirpur Khas', 'Digri', 'Kot Ghulam Muhammad', 'Jhuddo'],
+  'Nawabshah': ['Nawabshah', 'Shaheed Benazirabad', 'Sakrand', 'Daur', 'Qazi Ahmed'],
+  'Shaheed Benazirabad': ['Shaheed Benazirabad', 'Nawabshah', 'Sakrand', 'Daur'],
+  'Khairpur': ['Khairpur', 'Gambat', 'Kot Diji', 'Sobhodero', 'Kingri', 'Thari Mirwah'],
+  'Ghotki': ['Ghotki', 'Mirpur Mathelo', 'Daharki', 'Ubauro', 'Khangarh'],
+  'Jacobabad': ['Jacobabad', 'Thul', 'Garhi Khairo'],
+  'Kashmore': ['Kashmore', 'Kandhkot', 'Tangwani'],
+  'Shikarpur': ['Shikarpur', 'Garhi Yasin', 'Lakhi Ghulam Shah', 'Khanpur'],
+  'Qambar Shahdadkot': ['Qambar Shahdadkot', 'Qambar', 'Shahdadkot', 'Mirokhan', 'Warah', 'Nasirabad'],
+  'Dadu': ['Dadu', 'Mehar', 'Khairpur Nathan Shah', 'Johi'],
+  'Jamshoro': ['Jamshoro', 'Kotri', 'Sehwan', 'Manjhand', 'Thano Bula Khan'],
+  'Matiari': ['Matiari', 'Hala', 'Saeedabad'],
+  'Tando Allahyar': ['Tando Allahyar', 'Chamber', 'Jhando Mari'],
+  'Tando Muhammad Khan': ['Tando Muhammad Khan', 'Bulri Shah Karim', 'Tando Ghulam Hyder'],
+  'Badin': ['Badin', 'Matli', 'Talhar', 'Tando Bago', 'Golarchi'],
+  'Thatta': ['Thatta', 'Makli', 'Mirpur Sakro', 'Ghorabari'],
+  'Sujawal': ['Sujawal', 'Jati', 'Shah Bandar', 'Mirpur Bathoro'],
+  'Sanghar': ['Sanghar', 'Shahdadpur', 'Tando Adam', 'Sinjhoro', 'Khipro'],
+  'Naushahro Feroze': ['Naushahro Feroze', 'Moro', 'Bhiria', 'Kandiaro', 'Mehrabpur'],
+  'Umerkot': ['Umerkot', 'Kunri', 'Pithoro', 'Samaro'],
+  'Tharparkar': ['Tharparkar', 'Mithi', 'Islamkot', 'Chachro', 'Nagarparkar', 'Diplo'],
 };
+
+// All 30 Official Districts of Sindh
+const ALL_SINDH_DISTRICTS = [
+  'Karachi Central',
+  'Karachi East',
+  'Karachi South',
+  'Karachi West',
+  'Malir',
+  'Korangi',
+  'Keamari',
+  'Hyderabad',
+  'Sukkur',
+  'Larkana',
+  'Mirpur Khas',
+  'Shaheed Benazirabad',
+  'Khairpur',
+  'Ghotki',
+  'Jacobabad',
+  'Kashmore',
+  'Shikarpur',
+  'Qambar Shahdadkot',
+  'Dadu',
+  'Jamshoro',
+  'Matiari',
+  'Tando Allahyar',
+  'Tando Muhammad Khan',
+  'Badin',
+  'Thatta',
+  'Sujawal',
+  'Sanghar',
+  'Naushahro Feroze',
+  'Umerkot',
+  'Tharparkar',
+];
 
 export default function CaseForm() {
   useMockStore();
@@ -366,78 +418,159 @@ export default function CaseForm() {
           />
         </View>
 
-        {/* Sindh City Dropdown */}
+        {/* SINDH CITY (SEARCHABLE & EDITABLE COMBOBOX) */}
         <View style={styles.formGroup}>
           <Text style={styles.formLabel}>
             {t('case.sindhCity', 'SINDH CITY *')}
           </Text>
-          <TouchableOpacity
-            style={styles.dropdownSelector}
-            onPress={() => {
-              setShowCityDropdown(!showCityDropdown);
-              setShowDistrictDropdown(false);
-            }}
-          >
-            <Text style={styles.dropdownValue}>
-              {translateDistrict(selectedCity) || selectedCity}
-            </Text>
-          </TouchableOpacity>
+          <View style={styles.comboboxContainer}>
+            <TextInput
+              style={styles.comboboxInput}
+              value={selectedCity}
+              placeholder={currentLang === 'ur' ? 'شہر کا نام درج کریں یا منتخب کریں' : currentLang === 'sd' ? 'شهر جو نالو لکو يا چونڊيو' : 'Type or select Sindh City...'}
+              placeholderTextColor="#888"
+              onChangeText={(text) => {
+                setSelectedCity(text);
+                setShowCityDropdown(true);
+                setShowDistrictDropdown(false);
+              }}
+              onFocus={() => {
+                setShowCityDropdown(true);
+                setShowDistrictDropdown(false);
+              }}
+            />
+            <TouchableOpacity
+              style={styles.comboboxToggle}
+              onPress={() => {
+                setShowCityDropdown(!showCityDropdown);
+                setShowDistrictDropdown(false);
+              }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+            >
+              <Text style={styles.comboboxToggleText}>{showCityDropdown ? '▲' : '▼'}</Text>
+            </TouchableOpacity>
+          </View>
 
           {showCityDropdown && (
             <View style={styles.dropdownList}>
-              {Object.keys(sindhCities).map((city) => (
-                <TouchableOpacity
-                  key={city}
-                  style={styles.dropdownItem}
-                  onPress={() => {
-                    setSelectedCity(city);
-                    setSelectedDistrict(sindhCities[city][0]);
-                    setShowCityDropdown(false);
-                  }}
-                >
-                  <Text style={styles.dropdownItemText}>{translateDistrict(city)}</Text>
-                </TouchableOpacity>
-              ))}
+              <ScrollView
+                style={styles.dropdownScroll}
+                nestedScrollEnabled={true}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={true}
+              >
+                {(() => {
+                  const allCities = Object.keys(SINDH_CITIES_DATA);
+                  const searchTrim = (selectedCity || '').trim().toLowerCase();
+                  const matches = allCities.filter((c) => {
+                    const trans = (translateDistrict(c) || '').toLowerCase();
+                    return c.toLowerCase().includes(searchTrim) || trans.includes(searchTrim);
+                  });
+                  const displayList = matches.length > 0 ? matches : allCities;
+
+                  return displayList.map((city) => (
+                    <TouchableOpacity
+                      key={city}
+                      style={[
+                        styles.dropdownItemRow,
+                        selectedCity.toLowerCase() === city.toLowerCase() && { backgroundColor: 'rgba(255, 149, 0, 0.18)' },
+                      ]}
+                      onPress={() => {
+                        setSelectedCity(city);
+                        if (SINDH_CITIES_DATA[city] && SINDH_CITIES_DATA[city][0]) {
+                          setSelectedDistrict(SINDH_CITIES_DATA[city][0]);
+                        }
+                        setShowCityDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>{city}</Text>
+                      {currentLang !== 'en' && (
+                        <Text style={styles.dropdownItemSub}>{translateDistrict(city)}</Text>
+                      )}
+                    </TouchableOpacity>
+                  ));
+                })()}
+              </ScrollView>
             </View>
           )}
         </View>
 
-        {/* District Dropdown */}
-        {selectedCity !== '' && (
-          <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>
-              {t('case.district', 'DISTRICT *')}
-            </Text>
+        {/* DISTRICT (SEARCHABLE & EDITABLE COMBOBOX - ALL 30 SINDH DISTRICTS) */}
+        <View style={styles.formGroup}>
+          <Text style={styles.formLabel}>
+            {t('case.district', 'DISTRICT *')}
+          </Text>
+          <View style={styles.comboboxContainer}>
+            <TextInput
+              style={styles.comboboxInput}
+              value={selectedDistrict}
+              placeholder={currentLang === 'ur' ? 'ضلع کا نام درج کریں یا منتخب کریں' : currentLang === 'sd' ? 'ضلعي جو نالو لکو يا چونڊيو' : 'Type or select District...'}
+              placeholderTextColor="#888"
+              onChangeText={(text) => {
+                setSelectedDistrict(text);
+                setShowDistrictDropdown(true);
+                setShowCityDropdown(false);
+              }}
+              onFocus={() => {
+                setShowDistrictDropdown(true);
+                setShowCityDropdown(false);
+              }}
+            />
             <TouchableOpacity
-              style={styles.dropdownSelector}
+              style={styles.comboboxToggle}
               onPress={() => {
                 setShowDistrictDropdown(!showDistrictDropdown);
                 setShowCityDropdown(false);
               }}
+              hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
             >
-              <Text style={styles.dropdownValue}>
-                {translateDistrict(selectedDistrict) || selectedDistrict}
-              </Text>
+              <Text style={styles.comboboxToggleText}>{showDistrictDropdown ? '▲' : '▼'}</Text>
             </TouchableOpacity>
-
-            {showDistrictDropdown && (
-              <View style={styles.dropdownList}>
-                {sindhCities[selectedCity].map((dist) => (
-                  <TouchableOpacity
-                    key={dist}
-                    style={styles.dropdownItem}
-                    onPress={() => {
-                      setSelectedDistrict(dist);
-                      setShowDistrictDropdown(false);
-                    }}
-                  >
-                    <Text style={styles.dropdownItemText}>{translateDistrict(dist)}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
           </View>
-        )}
+
+          {showDistrictDropdown && (
+            <View style={styles.dropdownList}>
+              <ScrollView
+                style={styles.dropdownScroll}
+                nestedScrollEnabled={true}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={true}
+              >
+                {(() => {
+                  const cityDistricts = SINDH_CITIES_DATA[selectedCity] || [];
+                  const remaining = ALL_SINDH_DISTRICTS.filter((d) => !cityDistricts.includes(d));
+                  const combinedPool = [...cityDistricts, ...remaining];
+
+                  const searchTrim = (selectedDistrict || '').trim().toLowerCase();
+                  const matches = combinedPool.filter((d) => {
+                    const trans = (translateDistrict(d) || '').toLowerCase();
+                    return d.toLowerCase().includes(searchTrim) || trans.includes(searchTrim);
+                  });
+                  const displayList = matches.length > 0 ? matches : combinedPool;
+
+                  return displayList.map((dist) => (
+                    <TouchableOpacity
+                      key={dist}
+                      style={[
+                        styles.dropdownItemRow,
+                        selectedDistrict.toLowerCase() === dist.toLowerCase() && { backgroundColor: 'rgba(255, 149, 0, 0.18)' },
+                      ]}
+                      onPress={() => {
+                        setSelectedDistrict(dist);
+                        setShowDistrictDropdown(false);
+                      }}
+                    >
+                      <Text style={styles.dropdownItemText}>{dist}</Text>
+                      {currentLang !== 'en' && (
+                        <Text style={styles.dropdownItemSub}>{translateDistrict(dist)}</Text>
+                      )}
+                    </TouchableOpacity>
+                  ));
+                })()}
+              </ScrollView>
+            </View>
+          )}
+        </View>
 
         {/* Uneditable Actual Date */}
         <View style={styles.formGroup}>
