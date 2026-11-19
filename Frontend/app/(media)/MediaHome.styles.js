@@ -149,12 +149,7 @@ export default StyleSheet.create({
   sectionLabel: {
     fontSize: 11.5,
     fontWeight: '800',
-<<<<<<< HEAD
     letterSpacing: 0.5,
-=======
-    letterSpacing: 0.6,
-    textTransform: 'uppercase',
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
   },
   sectionBadge: {
     backgroundColor: 'rgba(239, 68, 68, 0.18)',

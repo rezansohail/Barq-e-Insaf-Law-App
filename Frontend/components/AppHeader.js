@@ -9,17 +9,12 @@ import {
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
-<<<<<<< HEAD
 import { useTranslation } from 'react-i18next';
-import TopHeaderMenu from './TopHeaderMenu';
-import { useAppTheme } from '../context/ThemeContext';
-import { getTranslatedAppName } from '../utils/translationHelper';
-=======
 import Svg, { Path } from 'react-native-svg';
 import TopHeaderMenu from './TopHeaderMenu';
 import { useAppTheme } from '../context/ThemeContext';
+import { getTranslatedAppName } from '../utils/translationHelper';
 import { getAdminUnreadNotificationStatus, subscribeToStore } from '../constants/ngoMediaStore';
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
 
 /**
  * AppHeader
@@ -72,7 +67,6 @@ export default function AppHeader({
     }
   };
 
-<<<<<<< HEAD
   const { i18n, t } = useTranslation();
   const currentLang = i18n?.language || 'en';
 
@@ -83,10 +77,6 @@ export default function AppHeader({
   } else if (title) {
     displayTitle = t(title, title);
   }
-=======
-  const isAppName = title === 'Barq-e-Insaf' || title === 'BARQ-E-INSAF';
-  const displayTitle = (!showBack && isAppName) ? '' : title;
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
 
   return (
     <View style={[styles.headerContainer, { backgroundColor: theme.headerBg, borderBottomColor: theme.navBorder }]}>
@@ -152,11 +142,7 @@ export default function AppHeader({
         <View style={styles.rightSection}>
           {!showBack && userName ? (
             <Text style={[styles.hiGreetingText, { color: isDarkMode ? '#FFEED6' : '#1A0C04' }]}>
-<<<<<<< HEAD
               {t('common.greetingHi', 'hi,')} {userName}
-=======
-              {userName}
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
             </Text>
           ) : null}
           {role === 'admin' && (

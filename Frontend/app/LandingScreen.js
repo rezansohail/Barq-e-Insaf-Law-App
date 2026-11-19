@@ -18,11 +18,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useFonts, RacingSansOne_400Regular } from '@expo-google-fonts/racing-sans-one';
-<<<<<<< HEAD
 import { useAppTranslation } from '../utils/translationHelper';
-=======
 import { openAIChat } from '../constants/chatBotStore';
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
 
 const STATUSBAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 36) : 0;
 
@@ -81,7 +78,6 @@ export default function LandingScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* ── 1. HEADER NAV BAR ── */}
         <View style={styles.headerNav}>
-<<<<<<< HEAD
           <TouchableOpacity
             style={styles.headerBackBtn}
             onPress={() => router.replace('/StartScreen')}
@@ -108,24 +104,6 @@ export default function LandingScreen() {
               ]}
             >
               {appName}
-=======
-          <View style={styles.leftNavGroup}>
-            <TouchableOpacity
-              style={styles.headerBackBtn}
-              onPress={() => router.replace('/StartScreen')}
-              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-              accessibilityLabel="Back to Start Screen"
-            >
-              <Image
-                source={require('../assets/images/backarrow.png')}
-                style={{ width: 22, height: 15 }}
-                resizeMode="contain"
-              />
-            </TouchableOpacity>
-
-            <Text style={styles.navTitle}>
-              Explore App
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
             </Text>
           </View>
 
@@ -149,7 +127,6 @@ export default function LandingScreen() {
               start={{ x: 0.5, y: 0 }}
               end={{ x: 0.5, y: 1 }}
             >
-<<<<<<< HEAD
               <View style={styles.badgePill}>
                 <Text style={styles.badgePillText}>{t('landing.badge', 'SMART DECISIONS FOR LEGAL MATTERS')}</Text>
               </View>
@@ -164,18 +141,6 @@ export default function LandingScreen() {
               </Text>
               <Text style={styles.heroSubtitle}>
                 {t('landing.heroSubtitle', "Pakistan's Premier AI Legal Assistant & Verified Advocate Network")}
-=======
-              <View style={styles.logo}>
-                <Image
-                  source={require('../assets/images/logo.png')}
-                  style={[styles.logoImage, { width: 140, height: 140 }]}
-                  resizeMode="contain"
-                />              
-             </View>
-
-              <Text style={styles.heroSubtitle}>
-                Pakistan's Premier AI Legal Assistant &      Verified Advocate Network
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
               </Text>
               
               <Text style={styles.heroDesc}>
@@ -186,13 +151,8 @@ export default function LandingScreen() {
               <View style={styles.searchContainer}>
                 <TextInput
                   style={styles.searchInput}
-<<<<<<< HEAD
                   placeholder={t('landing.searchPlaceholder', 'Ask legal question (PPC Section 302, Divorce, Property)...')}
                   placeholderTextColor="rgba(255, 220, 185, 0.45)"
-=======
-                  placeholder="Ask legal question ..."
-                  placeholderTextColor="rgba(235, 228, 221, 0.45)"
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
                   value={searchQuery}
                   onChangeText={setSearchQuery}
                   onSubmitEditing={handleAskAI}
@@ -258,13 +218,8 @@ export default function LandingScreen() {
                   resizeMode="cover"
                 />
                 <LinearGradient colors={['transparent', 'rgba(10, 4, 2, 0.95)']} style={styles.imageGradient}>
-<<<<<<< HEAD
                   <Text style={styles.cardTag}>{t('landing.card3Tag', 'BIOMETRIC CONTRACTS')}</Text>
                   <Text style={styles.cardTitle}>{t('landing.card3Title', 'Digital Representation Agreements')}</Text>
-=======
-                  <Text style={styles.cardTag}>DIGITAL SIGNATURES</Text>
-                  <Text style={styles.cardTitle}>Digital Representation Agreements</Text>
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
                 </LinearGradient>
               </View>
             </ScrollView>
@@ -311,13 +266,8 @@ export default function LandingScreen() {
                 />
               </View>
               <View style={styles.featureTextGroup}>
-<<<<<<< HEAD
                 <Text style={styles.featureTitle}>{t('landing.feature3Title', 'Biometric Contract Signing')}</Text>
                 <Text style={styles.featureDesc}>{t('landing.feature3Desc', 'Sign Vakalatnama representation agreements securely with simulated biometric fingerprint verification.')}</Text>
-=======
-                <Text style={styles.featureTitle}>Digital Signature</Text>
-                <Text style={styles.featureDesc}>Sign consultation agreements securely with digital signatures</Text>
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
               </View>
             </View>
           </View>
@@ -330,13 +280,8 @@ export default function LandingScreen() {
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
-<<<<<<< HEAD
               <Text style={styles.ctaTitle}>{t('landing.ctaTitle', 'Ready to Get Started?')}</Text>
               <Text style={styles.ctaSubtitle}>{t('landing.ctaSubtitle', 'Select your portal to log in as a Citizen, Verified Lawyer, or NGO Administrator.')}</Text>
-=======
-              <Text style={styles.ctaTitle}>Ready to Get Started?</Text>
-              <Text style={styles.ctaSubtitle}>Select your portal to log in as a Citizen, Lawyer, NGO Administrator, or Media Administrator.</Text>
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
               
               <TouchableOpacity
                 style={styles.ctaBtn}

@@ -15,7 +15,6 @@ import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
-<<<<<<< HEAD
 import { useTranslation } from 'react-i18next';
 import api, { BASE_URL } from '../../constants/api';
 
@@ -23,12 +22,6 @@ export default function MediaExportReports() {
   const router = useRouter();
   const { isDarkMode } = useAppTheme();
   const { t } = useTranslation();
-=======
-
-export default function MediaExportReports() {
-  const router = useRouter();
-  const { isDarkMode, theme } = useAppTheme();
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
   useAppNavigation({ isHome: false, homeRoute: '/(media)/MediaHome' });
 
   const [selectedFormat, setSelectedFormat] = useState('PDF');
@@ -37,18 +30,12 @@ export default function MediaExportReports() {
   const [generating, setGenerating] = useState(false);
 
   const formats = [
-<<<<<<< HEAD
     {
       id: 'PDF',
       label: t('media.pressPacketTitle', 'PDF Press Packet'),
       icon: 'PDF',
       desc: t('media.pressPacketDesc', '1-Page official judicial press brief for newsroom dissemination'),
     },
-=======
-    { id: 'PDF', label: 'PDF Press Packet', icon: 'PDF', desc: 'Formatted for broadcast newsroom and editorial publication' },
-    { id: 'CSV', label: 'CSV Tabular Data', icon: 'CSV', desc: 'Raw tabular case data for investigative journalism' },
-    { id: 'JSON', label: 'JSON Feed', icon: 'JSON', desc: 'Structured data for KTN News journalism & research archives' },
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
   ];
 
   const handleGenerate = () => {
@@ -135,13 +122,8 @@ export default function MediaExportReports() {
 
         <View style={styles.actionBox}>
           <LiquidGlassButton
-<<<<<<< HEAD
             title={generating ? t('media.downloadingPdf', 'DOWNLOADING PRESS PACKET...') : t('media.downloadPdfDirectly', '⬇ DOWNLOAD OFFICIAL PDF DIRECTLY')}
             onPress={handleDirectDownload}
-=======
-            title={generating ? 'COMPILING PRESS PACKET...' : `GENERATE ${selectedFormat} PACKET`}
-            onPress={handleGenerate}
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
             disabled={generating}
           />
         </View>

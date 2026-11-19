@@ -9,11 +9,8 @@ import { useColorScheme } from '@/hooks/use-color-scheme';
 import AIChatFloatingButton from '../components/AIChatFloatingButton';
 import LanguageFloatingButton from '../components/LanguageFloatingButton';
 import { ThemeProvider as AppThemeProvider } from '../context/ThemeContext';
-<<<<<<< HEAD
-import { LanguageModalProvider } from '../context/LanguageModalContext';
-=======
 import { AlertProvider } from '../context/AlertContext';
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
+import { LanguageModalProvider } from '../context/LanguageModalContext';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -21,11 +18,8 @@ export default function RootLayout() {
   return (
     <SafeAreaProvider>
       <AppThemeProvider>
-<<<<<<< HEAD
-        <LanguageModalProvider>
-=======
         <AlertProvider>
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
+          <LanguageModalProvider>
           <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
             <Stack screenOptions={{ headerShown: false }}>
               {/* Core Startup Screens */}
@@ -36,10 +30,7 @@ export default function RootLayout() {
               <Stack.Screen name="LandingScreen" options={{ headerShown: false }} />
               <Stack.Screen name="RoleSelectScreen" options={{ headerShown: false }} />
               <Stack.Screen name="LoginScreen" options={{ headerShown: false }} />
-<<<<<<< HEAD
-=======
               <Stack.Screen name="TermsScreen" options={{ headerShown: false }} />
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
               
               {/* Route Group Folders */}
               <Stack.Screen name="(Admin)" options={{ headerShown: false }} />
@@ -55,16 +46,12 @@ export default function RootLayout() {
             
             {/* Moveable Draggable AI Chatbot Button on Screens */}
             <AIChatFloatingButton />
-<<<<<<< HEAD
 
             {/* Barq-e-Insaf Floating Language Switcher Pill (English / اردو / سنڌي) */}
             <LanguageFloatingButton />
-          </ThemeProvider>
-        </LanguageModalProvider>
-=======
-          </ThemeProvider>
+                      </ThemeProvider>
+          </LanguageModalProvider>
         </AlertProvider>
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
       </AppThemeProvider>
     </SafeAreaProvider>
   );

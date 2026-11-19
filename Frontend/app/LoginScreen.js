@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -14,7 +14,6 @@ import {
   Alert,
   Image,
   Modal,
-  BackHandler,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -25,11 +24,7 @@ import api from '../constants/api';
 import { saveSession } from '../constants/authStore';
 import { setLawyerProfileFromUser } from './(lawyer)/MockStore';
 import { setCitizenProfileFromUser } from './(citizen)/MockStore';
-<<<<<<< HEAD
 import { useAppTranslation } from '../utils/translationHelper';
-=======
-import { useThemedAlert } from '../context/AlertContext';
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
 
 const roleConfig = {
   citizen: {
@@ -99,27 +94,9 @@ const validateCNIC = (val) => {
   return null;
 };
 
-const formatPhone = (val) => {
-  if (!val) return '';
-  let digits = val.replace(/\D/g, '');
-  if (digits.length >= 1 && digits[0] !== '0') {
-    digits = '03' + digits;
-  } else if (digits.length >= 2 && digits.slice(0, 2) !== '03') {
-    digits = '03' + digits.slice(2);
-  }
-  if (digits.length > 11) digits = digits.slice(0, 11);
-  if (digits.length > 4) {
-    return `${digits.slice(0, 4)} ${digits.slice(4)}`;
-  }
-  return digits;
-};
-
 const validatePhone = (val) => {
   if (!val) return 'Phone number is required';
-  const digits = val.replace(/\D/g, '');
-  if (!/^03\d{9}$/.test(digits) || digits.length !== 11) {
-    return 'Invalid phone number format';
-  }
+  if (!/^\d{11}$/.test(val)) return 'Phone number must be 11 digits';
   return null;
 };
 
@@ -253,11 +230,7 @@ export default function LoginScreen() {
   const { role } = useLocalSearchParams();
   const router = useRouter();
   const { width, height } = useWindowDimensions();
-<<<<<<< HEAD
   const { t, appName, translateDistrict } = useAppTranslation();
-=======
-  const { showAlert } = useThemedAlert();
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
 
   const [selectedRole, setSelectedRole] = useState(role || 'citizen');
   const baseConfig = roleConfig[selectedRole] || roleConfig.citizen;
@@ -266,16 +239,6 @@ export default function LoginScreen() {
     label: t(`auth.portals.${selectedRole}.label`, baseConfig.label),
     subLabel: t(`auth.portals.${selectedRole}.subLabel`, baseConfig.subLabel),
   };
-
-  // Hardware back navigates normally back to RoleSelectScreen
-  useEffect(() => {
-    const onBackPress = () => {
-      router.replace('/RoleSelectScreen');
-      return true;
-    };
-    const sub = BackHandler.addEventListener('hardwareBackPress', onBackPress);
-    return () => sub.remove();
-  }, [router]);
 
   const [activeTab,   setActiveTab]   = useState('login');
   const [email,       setEmail]       = useState('');
@@ -327,15 +290,7 @@ export default function LoginScreen() {
     const currentRole = selectedRole || role || 'citizen';
     const newErrors = {};
 
-    const trimmedInput = email.trim();
-    const isPhoneNumber = /^03\d/.test(trimmedInput.replace(/\s|-/g, '')) || /^\d+$/.test(trimmedInput.replace(/\s|-/g, ''));
-
-    if (!trimmedInput) {
-      newErrors.email = 'Email address or phone number is required.';
-    } else if (isPhoneNumber) {
-      const phoneErr = validatePhone(trimmedInput);
-      if (phoneErr) newErrors.email = phoneErr;
-    }
+    if (!email.trim()) newErrors.email = 'Email address is required.';
     if (!password) newErrors.password = 'Password is required.';
 
     if (Object.keys(newErrors).length > 0) {
@@ -362,24 +317,23 @@ export default function LoginScreen() {
         endpoint = '/ngo/login';
         targetRoute = '/(ngo)/NGOHome';
       } else if (currentRole === 'media') {
-        endpoint = '/ngo/login';
+        endpoint = '/media/login';
         targetRoute = '/(media)/MediaHome';
       }
 
-      console.log(`[AUTH] Logging in to ${endpoint} with ${trimmedInput}`);
-      const rawDigits = trimmedInput.replace(/\D/g, '');
+      const cleanEmail = email.trim().toLowerCase();
+      const cleanPassword = password.trim();
+      console.log(`[AUTH] Logging in to ${endpoint} with ${cleanEmail}`);
       const response = await api.post(endpoint, {
-        email: isPhoneNumber ? (rawDigits + '@barqeinsaf.pk') : trimmedInput,
-        phone: isPhoneNumber ? rawDigits : undefined,
-        identifier: trimmedInput,
-        password: password,
+        email: cleanEmail,
+        password: cleanPassword,
       });
 
       console.log('[AUTH] Login response:', response.data);
 
       if (response.data && (response.data.token || response.data.success !== false)) {
         try {
-          const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.admin || response.data.user;
+          const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.media || response.data.admin || response.data.user;
           saveSession({
             token: response.data.token,
             role: currentRole,
@@ -390,17 +344,20 @@ export default function LoginScreen() {
           if (currentRole === 'citizen' && userObj) setCitizenProfileFromUser(userObj);
         } catch (_) {}
 
-        showAlert({
-          type: 'success',
-          title: 'Login Successful',
-          message: `Welcome back to ${config.label}!`,
-          buttons: [
-            {
-              text: 'Continue',
-              onPress: () => router.replace(targetRoute),
-            },
-          ],
-        });
+        if (Platform.OS === 'web') {
+          router.replace(targetRoute);
+        } else {
+          Alert.alert(
+            'Login Successful',
+            `Welcome back to ${config.label}!`,
+            [
+              {
+                text: 'Continue',
+                onPress: () => router.replace(targetRoute),
+              },
+            ]
+          );
+        }
       }
     } catch (err) {
       console.error('[AUTH] Login error:', err.response?.data || err.message);
@@ -410,15 +367,11 @@ export default function LoginScreen() {
         err.message ||
         'Unable to connect to server. Please check your credentials.';
 
-      showAlert({
-        type: 'error',
-        title: 'Login Failed',
-        message: serverMessage,
-        buttons: [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Retry', onPress: () => handleLogin() },
-        ],
-      });
+      Alert.alert(
+        'Login Failed',
+        serverMessage,
+        [{ text: 'OK' }]
+      );
       setErrors((prev) => ({ ...prev, general: serverMessage }));
     } finally {
       setLoading(false);
@@ -432,8 +385,7 @@ export default function LoginScreen() {
     const newErrors = {};
 
     if (!name.trim()) newErrors.name = 'Full Name is required.';
-    const phoneErr = validatePhone(phone);
-    if (phoneErr) newErrors.phone = phoneErr;
+    if (!phone.trim()) newErrors.phone = 'Phone number is required.';
     if (!district.trim()) newErrors.district = 'District is required.';
     if (!email.trim()) newErrors.email = 'Email address is required.';
     if (!password) newErrors.password = 'Password is required.';
@@ -496,7 +448,7 @@ export default function LoginScreen() {
           organizationType: 'NGO',
         };
       } else if (currentRole === 'media') {
-        endpoint = '/ngo/register';
+        endpoint = '/media/register';
         targetRoute = '/(media)/MediaHome';
         payload = {
           fullName: name.trim(),
@@ -506,7 +458,7 @@ export default function LoginScreen() {
           email: email.trim(),
           password: password,
           confirmPassword: retypePass,
-          organizationType: 'Media',
+          mediaType: 'Media',
         };
       }
 
@@ -516,7 +468,7 @@ export default function LoginScreen() {
 
       if (response.data && (response.data.token || response.data.success !== false)) {
         try {
-          const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.admin || response.data.user;
+          const userObj = response.data.lawyer || response.data.citizen || response.data.ngo || response.data.media || response.data.admin || response.data.user;
           saveSession({
             token: response.data.token,
             role: currentRole,
@@ -528,17 +480,16 @@ export default function LoginScreen() {
         } catch (_) {}
 
         const successMsg = response.data.message || 'Registration successful! Welcome to Barq-e-Insaf.';
-        showAlert({
-          type: 'success',
-          title: 'Registration Successful',
-          message: successMsg,
-          buttons: [
+        if (Platform.OS === 'web') {
+          router.replace(targetRoute);
+        } else {
+          Alert.alert('Registration Successful', successMsg, [
             {
               text: 'Proceed to Dashboard',
               onPress: () => router.replace(targetRoute),
             },
-          ],
-        });
+          ]);
+        }
       }
     } catch (err) {
       console.error('[AUTH] Registration error:', err.response?.data || err.message);
@@ -553,15 +504,11 @@ export default function LoginScreen() {
         serverMessage = err.message || 'Registration failed. Please try again.';
       }
 
-      showAlert({
-        type: 'error',
-        title: 'Registration Failed',
-        message: serverMessage,
-        buttons: [
-          { text: 'Cancel', style: 'cancel' },
-          { text: 'Retry', onPress: () => handleSignup() },
-        ],
-      });
+      Alert.alert(
+        'Registration Failed',
+        serverMessage,
+        [{ text: 'OK' }]
+      );
       setErrors((prev) => ({ ...prev, general: serverMessage }));
     } finally {
       setLoading(false);
@@ -659,17 +606,10 @@ export default function LoginScreen() {
               </BlurView>
             </View>
 
-<<<<<<< HEAD
             <Text style={styles.appName}>{appName.toUpperCase()}</Text>
             <View style={styles.portalBadge}>
               <Text style={[styles.portalName, { color: config.color }]}>
                 {t(config.label).toUpperCase()}
-=======
-            <Text style={styles.appName}>BARQ-E-INSAF</Text>
-            <View style={[styles.portalBadge, selectedRole === 'ngo' && { alignSelf: 'center', alignItems: 'center', justifyContent: 'center' }]}>
-              <Text style={[styles.portalName, { color: '#FFFFFF' }, selectedRole === 'ngo' && { textAlign: 'center' }]}>
-                {config.label.toUpperCase()}
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
               </Text>
             </View>
             {config.subLabel ? (
@@ -777,18 +717,14 @@ export default function LoginScreen() {
                       <Text style={styles.inputLabel}>{t('auth.phone', 'Phone Number')}</Text>
                       <TextInput
                         style={styles.input}
-<<<<<<< HEAD
                         placeholder={t('auth.phonePlaceholder', '03001234567')}
-=======
-                        placeholder="0300 1234567"
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
                         placeholderTextColor="rgba(255, 238, 220, 0.65)"
                         value={phone}
                         onChangeText={(v) => {
-                          setPhone(formatPhone(v));
+                          if (/^\d*$/.test(v) && v.length <= 11) setPhone(v);
                         }}
                         keyboardType="number-pad"
-                        maxLength={12}
+                        maxLength={11}
                       />
                       {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
 
@@ -854,7 +790,6 @@ export default function LoginScreen() {
                     </>
                   )}
 
-<<<<<<< HEAD
                   {/* ── QUICK FILL DEMO CREDENTIALS FOR INSTITUTIONAL ROLES ── */}
                   {selectedRole === 'media' && (
                     <TouchableOpacity
@@ -922,8 +857,6 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                   )}
 
-=======
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
                   {/* ── COMMON FIELDS ── */}
                   <Text style={styles.inputLabel}>{t('auth.emailLabel', 'Email Address')}</Text>
                   <TextInput
@@ -931,13 +864,7 @@ export default function LoginScreen() {
                     placeholder={t('auth.emailPlaceholder', 'user@barqeinsaf.pk')}
                     placeholderTextColor="rgba(255, 238, 220, 0.65)"
                     value={email}
-                    onChangeText={(val) => {
-                      if (/^03\d*/.test(val) || (/^\d+$/.test(val) && val.startsWith('0'))) {
-                        setEmail(formatPhone(val));
-                      } else {
-                        setEmail(val);
-                      }
-                    }}
+                    onChangeText={setEmail}
                     keyboardType="email-address"
                     autoCapitalize="none"
                   />
@@ -989,7 +916,7 @@ export default function LoginScreen() {
                             { color: req.pass ? '#22c55e' : 'rgba(255, 230, 205, 0.45)' },
                           ]}
                         >
-                          {req.pass ? '[v]' : '[ ]'} {req.label}
+                          {req.pass ? '✓' : '○'} {req.label}
                         </Text>
                       ))}
                     </View>
@@ -1016,11 +943,7 @@ export default function LoginScreen() {
                             color: password === retypePass ? '#22c55e' : '#ef4444',
                           }}
                         >
-<<<<<<< HEAD
                           {password === retypePass ? t('auth.passwordsMatch', '✓ Passwords match') : t('auth.passwordsDoNotMatch', '✗ Passwords do not match')}
-=======
-                          {password === retypePass ? 'Passwords match' : 'Passwords do not match'}
->>>>>>> 2f0fafeb8c8aae19704bfcb258be0756f36f51aa
                         </Text>
                       )}
                       {errors.retypePass && (
@@ -1049,7 +972,7 @@ export default function LoginScreen() {
                           ]}
                         >
                           {rememberMe && (
-                            <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: config.color }} />
+                            <Text style={[styles.checkIcon, { color: config.color }]}>✓</Text>
                           )}
                         </View>
                         <Text style={styles.rememberLabel}>{t('auth.rememberMe', 'Remember Me')}</Text>
@@ -1117,20 +1040,6 @@ export default function LoginScreen() {
                     </TouchableOpacity>
                   </View>
 
-                  {/* ── TERMS AND CONDITIONS LINK ── */}
-                  <TouchableOpacity
-                    style={{ alignItems: 'center', marginTop: 14, marginBottom: 10 }}
-                    onPress={() => router.push('/TermsScreen')}
-                    activeOpacity={0.7}
-                  >
-                    <Text style={{ fontSize: 11, color: 'rgba(255, 240, 225, 0.75)', textAlign: 'center' }}>
-                      By continuing, you agree to our{' '}
-                      <Text style={{ color: '#FFA726', fontWeight: '800', textDecorationLine: 'underline' }}>
-                        Terms & Conditions
-                      </Text>
-                    </Text>
-                  </TouchableOpacity>
-
                 </ScrollView>
               </LinearGradient>
             </BlurView>
@@ -1149,7 +1058,7 @@ export default function LoginScreen() {
               <View style={styles.forgotModalHeader}>
                 <Text style={styles.forgotModalTitle}>{t('auth.resetPassword', 'Reset Password')}</Text>
                 <TouchableOpacity onPress={closeForgotModal} style={styles.forgotCloseBtn}>
-                  <Text style={styles.forgotCloseText}>X</Text>
+                  <Text style={styles.forgotCloseText}>✕</Text>
                 </TouchableOpacity>
               </View>
 
@@ -1195,7 +1104,7 @@ export default function LoginScreen() {
               ) : (
                 <View style={{ alignItems: 'center', paddingVertical: 14 }}>
                   <View style={styles.forgotSuccessOrb}>
-                    <Text style={{ fontSize: 13, fontWeight: '900', color: '#4ade80' }}>OK</Text>
+                    <Text style={{ fontSize: 24, color: '#4ade80' }}>✓</Text>
                   </View>
                   <Text style={styles.forgotSuccessTitle}>Reset Link Sent</Text>
                   <Text style={styles.forgotSuccessSubtitle}>
