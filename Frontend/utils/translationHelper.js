@@ -335,7 +335,6 @@ export const GLOBAL_PHRASES = {
   'Verified Advocates in Shaheed Benazirabad': { ur: 'شہید بینظیر آباد میں مصدقہ وکلاء', sd: 'شهيد بينظير آباد ۾ تصديق ٿيل وڪيل' },
   'Verified Advocates in Sindh': { ur: 'سندھ میں مصدقہ وکلاء', sd: 'سنڌ ۾ تصديق ٿيل وڪيل' },
 };
-};
 
 // App Name by Language
 export function getTranslatedAppName(lang = 'en') {
@@ -402,7 +401,8 @@ export function translateLawyerName(name, lang = 'en') {
   return name;
 }
 
-// Universal text translator function
+/**
+ * Universal text translator function
  * Handles keys, exact phrases, patterns, and dynamic async AI fallback
  */
 export function translateAnyText(text, targetLang = 'en', i18nInstance = null) {
