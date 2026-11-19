@@ -20,10 +20,12 @@ class AdminAuthServiceImpl extends AdminAuthService {
       throw error;
     }
 
+    const cleanEmail = (dto.email || '').trim().toLowerCase();
+
     // 2. Duplicate Checks: Email
     const existingEmail = await db.query(
-      'SELECT id FROM admins WHERE email = $1',
-      [dto.email]
+      'SELECT id FROM admins WHERE LOWER(TRIM(email)) = $1',
+      [cleanEmail]
     );
     if (existingEmail.rows.length > 0) {
       const error = new Error('An administrator with this email address already exists.');
@@ -69,7 +71,7 @@ class AdminAuthServiceImpl extends AdminAuthService {
          VALUES ($1, $2, $3, 'admin', $4, $5)
          ON CONFLICT (email) DO UPDATE SET password = EXCLUDED.password, role = 'admin'
          RETURNING id`,
-        [dto.fullName, dto.email, hashedPassword, dto.phone, dto.district]
+        [dto.fullName, cleanEmail, hashedPassword, dto.phone, dto.district]
       );
       if (userResult.rows.length > 0) {
         userId = userResult.rows[0].id;
@@ -97,7 +99,7 @@ class AdminAuthServiceImpl extends AdminAuthService {
 
     const values = [
       dto.fullName,
-      dto.email,
+      cleanEmail,
       dto.phone,
       dto.district,
       dto.cnic,
@@ -147,15 +149,17 @@ class AdminAuthServiceImpl extends AdminAuthService {
       throw error;
     }
 
+    const cleanEmail = (dto.email || '').trim().toLowerCase();
+
     // 2. Query admin by email from admins table
     const result = await db.query(
-      'SELECT * FROM admins WHERE email = $1',
-      [dto.email]
+      'SELECT * FROM admins WHERE LOWER(TRIM(email)) = $1',
+      [cleanEmail]
     );
 
     if (result.rows.length === 0) {
       // Check if email belongs to another portal
-      const userCheck = await db.query('SELECT role FROM users WHERE email = $1', [dto.email]);
+      const userCheck = await db.query('SELECT role FROM users WHERE LOWER(TRIM(email)) = $1', [cleanEmail]);
       if (userCheck.rows.length > 0) {
         const actualRole = userCheck.rows[0].role;
         const roleNames = { lawyer: 'Lawyer', citizen: 'Citizen', admin: 'Admin', ngo: 'NGO / Media' };
@@ -180,7 +184,8 @@ class AdminAuthServiceImpl extends AdminAuthService {
     }
 
     // 4. Verify password with bcrypt
-    const isMatch = await bcrypt.compare(dto.password, adminRow.password);
+    const trimmedPassword = (dto.password || '').trim();
+    const isMatch = await bcrypt.compare(trimmedPassword, adminRow.password);
     if (!isMatch) {
       const error = new Error('Invalid email or password.');
       error.statusCode = 401;

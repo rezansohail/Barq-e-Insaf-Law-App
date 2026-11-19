@@ -8,7 +8,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 const { Pool } = require('pg');
 
 const rawConnectionString = process.env.DATABASE_URL || 'postgresql://neondb_owner:npg_lojIUbmT31yZ@ep-small-water-b5avgt8p-pooler.c-7.us-east-2.aws.neon.tech/neondb';
-// Strip ?sslmode=require to avoid driver parsing conflicts
+// Strip ?sslmode=require to avoid driver parsing conflicts with explicit ssl config
 const connectionString = rawConnectionString.replace('?sslmode=require', '');
 
 const pool = new Pool({
@@ -17,8 +17,7 @@ const pool = new Pool({
     rejectUnauthorized: false,
   },
   max: 10,
-  connectionTimeoutMillis: 25000,
-  idleTimeoutMillis: 10000,
+  keepAlive: true,
 });
 
 pool.on('connect', () => {
@@ -26,13 +25,12 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-  // Do not crash on idle client errors (like serverless socket resets)
   console.warn('PostgreSQL idle client disconnected:', err?.message || err);
 });
 
 /**
- * Resilient query wrapper: automatically retries transient connection resets (ECONNRESET,
- * serverless compute wakeups, and dropped idle sockets) so endpoints never fail with 500.
+ * Resilient query wrapper: automatically retries transient connection resets
+ * (ECONNRESET, dropped idle sockets) so endpoints never fail with 500.
  */
 const query = async (text, params, maxRetries = 2) => {
   let attempt = 0;
@@ -46,14 +44,13 @@ const query = async (text, params, maxRetries = 2) => {
           err.message?.includes('ECONNRESET') ||
           err.message?.includes('Connection terminated') ||
           err.message?.includes('closed') ||
-          err.message?.includes('timeout') ||
           err.code === 'ECONNRESET' ||
           err.code === '57P01'
         );
 
       if (isTransient && attempt <= maxRetries) {
-        console.warn(`[DB] Transient connection error (${err.message}), retrying query (attempt ${attempt}/${maxRetries})...`);
-        await new Promise((r) => setTimeout(r, 600));
+        console.warn(`[DB] Transient connection error (${err.message}), retrying query (${attempt}/${maxRetries})...`);
+        await new Promise((r) => setTimeout(r, 400));
         continue;
       }
       throw err;
