@@ -24,6 +24,13 @@ const STATS = [
   { label: 'Total NGOs & Media',        value: '6',  delta: 'Accredited Portals',  color: '#38BDF8', tag: 'ORG' },
 ];
 
+const SYSTEM_ACTIVITIES = [
+  { title: 'Sindh Bar Council Registry Audit', sub: 'Advocate license verification active and online', color: '#4ade80' },
+  { title: 'Neon PostgreSQL Cloud Database', sub: 'Connection pool healthy · Latency 42ms', color: '#60a5fa' },
+  { title: 'Evidence Vault Integrity Check', sub: 'AES-256 file encryption operational for citizen records', color: '#f59e0b' },
+  { title: 'NCHD & KTN News Desk Endpoints', sub: 'Public interest email desks verified & reachable', color: '#FF9500' },
+];
+
 export default function AdminHome() {
   const router = useRouter();
   const { isDark, theme } = useAppTheme();
