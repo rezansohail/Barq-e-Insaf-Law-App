@@ -220,7 +220,7 @@ class AdminAuthServiceImpl extends AdminAuthService {
    * @param {number} id
    */
   async getAdminById(id) {
-    const result = await db.query('SELECT * FROM admins WHERE id = $1', [id]);
+    const result = await db.query('SELECT * FROM admins WHERE id = $1 OR user_id = $1', [id]);
     if (result.rows.length === 0) {
       const error = new Error('Admin not found');
       error.statusCode = 404;

@@ -9,6 +9,18 @@ const protect = async (req, res, next) => {
       token = req.headers.authorization.split(' ')[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET || process.env.JWT_ACCESS_SECRET);
 
+      // 0. Check Admin role
+      if (decoded.role === 'admin') {
+        const adminRes = await db.query(
+          'SELECT id, full_name AS name, email, role, district, phone, user_id FROM admins WHERE id = $1 OR user_id = $1',
+          [decoded.id]
+        );
+        if (adminRes.rows.length > 0) {
+          req.user = { ...adminRes.rows[0], role: 'admin' };
+          return next();
+        }
+      }
+
       // 1. Check Media Partner role
       if (decoded.role === 'media') {
         const mediaRes = await db.query(

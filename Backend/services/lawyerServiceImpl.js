@@ -100,9 +100,10 @@ class LawyerServiceImpl extends LawyerService {
         password,
         user_id,
         is_verified,
-        verification_status
+        verification_status,
+        status
       )
-      VALUES ($1, $2, $3, $4, $4, $5, $5, $6, $6, $7, $8, $9, FALSE, 'pending')
+      VALUES ($1, $2, $3, $4, $4, $5, $5, $6, $6, $7, $8, $9, TRUE, 'approved', 'active')
       RETURNING *;
     `;
 
