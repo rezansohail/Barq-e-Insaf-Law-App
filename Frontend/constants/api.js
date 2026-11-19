@@ -1,4 +1,4 @@
-import axios from 'axios';
+﻿import axios from 'axios';
 import Constants from 'expo-constants';
 import { Platform } from 'react-native';
 
@@ -20,8 +20,8 @@ const getDevHost = () => {
     }
   }
 
-  // Fallback to the developer's laptop Wi-Fi IP for Expo Go on physical devices
-  return '192.168.100.246';
+  // Fallback to current laptop Wi-Fi IP for Expo Go on physical devices
+  return '10.128.98.239';
 };
 
 const host = getDevHost();
@@ -29,7 +29,7 @@ const BASE_URL = `http://${host}:5000/api`;
 
 const api = axios.create({
   baseURL: BASE_URL,
-  timeout: 15000,
+  timeout: 45000,
   headers: {
     'Content-Type': 'application/json',
   },

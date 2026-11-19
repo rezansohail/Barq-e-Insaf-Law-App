@@ -1,4 +1,4 @@
-const db = require('../config/db');
+﻿const db = require('../config/db');
 const RegisterAdminDTO = require('../dto/RegisterAdminDTO');
 const LoginAdminDTO = require('../dto/LoginAdminDTO');
 const adminAuthService = require('../services/adminAuthServiceImpl');
@@ -37,6 +37,7 @@ const loginAdmin = async (req, res) => {
       ...result,
     });
   } catch (error) {
+    console.error('Error in loginAdmin:', error.message);
     const statusCode = error.statusCode || 500;
     return res.status(statusCode).json({
       success: false,
