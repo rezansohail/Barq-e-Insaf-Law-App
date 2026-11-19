@@ -32,7 +32,7 @@ pool.on('error', (err) => {
  * Resilient query wrapper: automatically retries transient connection resets
  * (ECONNRESET, dropped idle sockets) so endpoints never fail with 500.
  */
-const query = async (text, params, maxRetries = 2) => {
+const query = async (text, params, maxRetries = 3) => {
   let attempt = 0;
   while (attempt <= maxRetries) {
     try {
@@ -50,7 +50,7 @@ const query = async (text, params, maxRetries = 2) => {
 
       if (isTransient && attempt <= maxRetries) {
         console.warn(`[DB] Transient connection error (${err.message}), retrying query (${attempt}/${maxRetries})...`);
-        await new Promise((r) => setTimeout(r, 400));
+        await new Promise((r) => setTimeout(r, 800));
         continue;
       }
       throw err;

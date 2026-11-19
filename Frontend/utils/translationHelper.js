@@ -282,6 +282,59 @@ export const GLOBAL_PHRASES = {
     ur: 'تحقیقات: اسکیم 33 میں اراضی قبضہ مافیا بے نقاب',
     sd: 'جاچ: اسڪيم 33 ۾ قبضا مافيا بي نقاب',
   },
+
+  // Case Form & Intake
+  'Build Your Case': { ur: 'اپنا کیس بنائیں', sd: 'پنهنجو ڪيس ٺاهيو' },
+  'BUILD YOUR CASE': { ur: 'اپنا کیس بنائیں', sd: 'پنهنجو ڪيس ٺاهيو' },
+  'CASE TITLE *': { ur: 'کیس کا عنوان *', sd: 'ڪيس جو عنوان *' },
+  'Case Title *': { ur: 'کیس کا عنوان *', sd: 'ڪيس جو عنوان *' },
+  'Enter case title': { ur: 'کیس کا عنوان درج کریں', sd: 'ڪيس جو عنوان لکو' },
+  'DESCRIPTION *': { ur: 'تفصیلات *', sd: 'تفصيل *' },
+  'Description *': { ur: 'تفصیلات *', sd: 'تفصيل *' },
+  'Describe your case in detail. Include all relevant information.': {
+    ur: 'اپنے کیس کی تفصیلات اور حقائق بیان کریں۔',
+    sd: 'پنهنجي ڪيس جا سمورا تفصيل ۽ حقيقتون لکو.',
+  },
+  'SINDH CITY *': { ur: 'سندھ کا شہر *', sd: 'سنڌ جو شهر *' },
+  'Sindh City *': { ur: 'سندھ کا شہر *', sd: 'سنڌ جو شهر *' },
+  'DISTRICT *': { ur: 'ضلع *', sd: 'ضلعو *' },
+  'District *': { ur: 'ضلع *', sd: 'ضلعو *' },
+  'FILING DATE': { ur: 'اندراج کی تاریخ', sd: 'داخلا جي تاريخ' },
+  'Filing Date': { ur: 'اندراج کی تاریخ', sd: 'داخلا جي تاريخ' },
+  'Secure Evidence Collection': { ur: 'محفوظ ثبوتوں کا مجموعہ', sd: 'محفوظ ثبوتن جو ذخيرو' },
+  'Attach documents or photos directly from your phone.': {
+    ur: 'اپنے فون سے براہِ راست دستاویزات یا تصاویر منسلک کریں۔',
+    sd: 'پنهنجي فون مان سڌو سنئون دستاويز يا تصويرون ڳنڍيو.',
+  },
+  'Phone File (PDF)': { ur: 'فون فائل (پی ڈی ایف)', sd: 'فون فائل (پي ڊي ايف)' },
+  'Gallery Photo': { ur: 'گیلری تصویر', sd: 'گيلري تصوير' },
+  'Snap Camera': { ur: 'کیمرہ تصویر', sd: 'ڪئميرا تصوير' },
+  'No evidence attached yet. Tap a button above to add files.': {
+    ur: 'ابھی کوئی ثبوت منسلک نہیں ہوا۔ فائل شامل کرنے کے لیے اوپر دیے گئے بٹن پر ٹیپ کریں۔',
+    sd: 'اڃا تائين ڪو به ثبوت ڳنڍيل ناهي. فائل شامل ڪرڻ لاءِ مٿي ڏنل بٽڻ تي ٽيپ ڪريو.',
+  },
+  'SUBMIT': { ur: 'جمع کرائیں', sd: 'جمع ڪرايو' },
+  'SUBMIT CASE FOR VERIFICATION': { ur: 'جمع کرائیں', sd: 'جمع ڪرايو' },
+  'Submit Case': { ur: 'کیس جمع کرائیں', sd: 'ڪيس جمع ڪرايو' },
+  'Remove': { ur: 'ہٹائیں', sd: 'هٽايو' },
+  'Remove Evidence': { ur: 'ثبوت ہٹائیں', sd: 'ثبوت هٽايو' },
+  'Are you sure you want to remove this evidence file?': {
+    ur: 'کیا آپ اس ثبوت فائل کو ہٹانا چاہتے ہیں؟',
+    sd: 'ڇا توهان هي ثبوت فائل هٽائڻ چاهيو ٿا؟',
+  },
+  'Yes, Remove': { ur: 'ہاں، ہٹائیں', sd: 'ها، هٽايو' },
+  'Find Advocate': { ur: 'وکلاء دیکھیں', sd: 'وڪيل ڏسو' },
+  'View My Cases': { ur: 'میرے مقدمات', sd: 'منهنجا ڪيس' },
+  'Accessing phone file system...': { ur: 'فون فائل سسٹم تک رسائی...', sd: 'فون فائل سسٽم تائين رسائي...' },
+  'Case Created Successfully': { ur: 'کیس کامیابی سے درج ہو گیا', sd: 'ڪيس ڪاميابي سان داخل ٿي ويو' },
+  'Verified Advocates in Karachi': { ur: 'کراچی میں مصدقہ وکلاء', sd: 'ڪراچي ۾ تصديق ٿيل وڪيل' },
+  'Verified Advocates in Hyderabad': { ur: 'حیدرآباد میں مصدقہ وکلاء', sd: 'حيدرآباد ۾ تصديق ٿيل وڪيل' },
+  'Verified Advocates in Sukkur': { ur: 'سکھر میں مصدقہ وکلاء', sd: 'سکر ۾ تصديق ٿيل وڪيل' },
+  'Verified Advocates in Larkana': { ur: 'لاڑکانہ میں مصدقہ وکلاء', sd: 'لاڙڪاڻو ۾ تصديق ٿيل وڪيل' },
+  'Verified Advocates in Mirpur Khas': { ur: 'میرپور خاص میں مصدقہ وکلاء', sd: 'ميرپور خاص ۾ تصديق ٿيل وڪيل' },
+  'Verified Advocates in Shaheed Benazirabad': { ur: 'شہید بینظیر آباد میں مصدقہ وکلاء', sd: 'شهيد بينظير آباد ۾ تصديق ٿيل وڪيل' },
+  'Verified Advocates in Sindh': { ur: 'سندھ میں مصدقہ وکلاء', sd: 'سنڌ ۾ تصديق ٿيل وڪيل' },
+};
 };
 
 // App Name by Language
@@ -314,16 +367,42 @@ export function translateCategory(category, lang = 'en') {
   return category;
 }
 
-// Translate Court Name
-export function translateCourt(court, lang = 'en') {
-  if (!court || lang === 'en') return court;
-  const match = COURTS_TRANSLATIONS[court];
-  if (match && match[lang]) return match[lang];
-  return court;
+// Common Lawyer Names Mapping (English -> Urdu & Sindhi)
+export const LAWYER_NAMES_TRANSLATIONS = {
+  'Advocate Tariq Hassan': { ur: 'ایڈووکیٹ طارق حسن', sd: 'ايڊووڪيٽ طارق حسن' },
+  'Advocate Tariq Aziz': { ur: 'ایڈووکیٹ طارق عزیز', sd: 'ايڊووڪيٽ طارق عزيز' },
+  'Advocate Sara Malik': { ur: 'ایڈووکیٹ سارہ ملک', sd: 'ايڊووڪيٽ سارا ملڪ' },
+  'Advocate Zainab Ali': { ur: 'ایڈووکیٹ زینب علی', sd: 'ايڊووڪيٽ زينب علي' },
+  'Advocate Bilal Ahmed': { ur: 'ایڈووکیٹ بلال احمد', sd: 'ايڊووڪيٽ بلال احمد' },
+  'Advocate Kamran Shah': { ur: 'ایڈووکیٹ کامران شاہ', sd: 'ايڊووڪيٽ ڪامران شاهه' },
+  'Advocate Farhan Soomro': { ur: 'ایڈووکیٹ فرحان سومرو', sd: 'ايڊووڪيٽ فرحان سومرو' },
+  'Advocate Nida Sheikh': { ur: 'ایڈووکیٹ ندا شیخ', sd: 'ايڊووڪيٽ ندا شيخ' },
+  'Advocate Imran Qureshi': { ur: 'ایڈووکیٹ عمران قریشی', sd: 'ايڊووڪيٽ عمران قريشي' },
+  'Advocate Mehak Abbasi': { ur: 'ایڈووکیٹ مہک عباسی', sd: 'ايڊووڪيٽ مهڪ عباسي' },
+};
+
+// Translate Lawyer Name
+export function translateLawyerName(name, lang = 'en') {
+  if (!name || lang === 'en') return name;
+  const clean = name.trim();
+  if (LAWYER_NAMES_TRANSLATIONS[clean]?.[lang]) {
+    return LAWYER_NAMES_TRANSLATIONS[clean][lang];
+  }
+  // If starts with "Advocate "
+  if (clean.startsWith('Advocate ')) {
+    const raw = clean.replace('Advocate ', '');
+    const prefix = lang === 'ur' ? 'ایڈووکیٹ' : 'ايڊووڪيٽ';
+    return `${prefix} ${raw}`;
+  }
+  if (clean.startsWith('Adv. ')) {
+    const raw = clean.replace('Adv. ', '');
+    const prefix = lang === 'ur' ? 'ایڈووکیٹ' : 'ايڊووڪيٽ';
+    return `${prefix} ${raw}`;
+  }
+  return name;
 }
 
-/**
- * Universal text translator function
+// Universal text translator function
  * Handles keys, exact phrases, patterns, and dynamic async AI fallback
  */
 export function translateAnyText(text, targetLang = 'en', i18nInstance = null) {
@@ -409,6 +488,7 @@ export function useAppTranslation() {
     translateDistrict: (d) => translateDistrict(d, currentLang),
     translateCategory: (c) => translateCategory(c, currentLang),
     translateCourt: (c) => translateCourt(c, currentLang),
+    translateLawyerName: (n) => translateLawyerName(n, currentLang),
     translateDynamic: (text) => translateAnyText(text, currentLang, { t: rawT }),
   };
 }

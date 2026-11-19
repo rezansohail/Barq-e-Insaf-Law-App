@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   TextInput, StatusBar, StyleSheet,
-  Dimensions, Alert, Image,
+  Dimensions, Alert, Image, ActivityIndicator, RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -11,55 +11,130 @@ import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import api from '../../constants/api';
+import { showConfirm, showMessage } from '../../constants/dialog';
 
 const { width } = Dimensions.get('window');
-const PER_PAGE = 5;
 
-const CITIZENS = [
-  { id: '1', fullName: 'Ahmed Khan', email: 'ahmed.khan@gmail.com', phone: '0300-1234567', city: 'Karachi', district: 'Karachi Central', status: 'Active', totalComplaints: 2, registeredOn: '10 Nov 2026' },
-  { id: '2', fullName: 'Rezan Sohail', email: 'rezan.sohail01@gmail.com', phone: '0300-2167965', city: 'Karachi', district: 'Korangi', status: 'Active', totalComplaints: 1, registeredOn: '12 Nov 2026' },
-  { id: '3', fullName: 'Bilal Mustafa', email: 'bilal.m@yahoo.com', phone: '0333-9876543', city: 'Hyderabad', district: 'Latifabad', status: 'Active', totalComplaints: 0, registeredOn: '04 Nov 2026' },
-];
-
-const STATUSES   = ['All', 'Active', 'Inactive', 'Suspended'];
-const CITIES     = ['All', 'Karachi', 'Hyderabad', 'Sukkur', 'Larkana'];
-const SORT_OPTIONS = ['Name ↑', 'Name ↓', 'Date ↑', 'Date ↓'];
+const STATUSES = ['All', 'Active', 'Suspended', 'Restricted'];
 
 export default function CitizenManagement() {
   const router = useRouter();
-  const { isDark, theme } = useAppTheme();
-  const [data, setData]             = useState(CITIZENS);
-  const [search, setSearch]         = useState('');
-  const [status, setStatus]         = useState('All');
-  const [city, setCity]             = useState('All');
-  const [sort, setSort]             = useState('Name ↑');
-  const [showSort, setShowSort]     = useState(false);
+  const { isDark } = useAppTheme();
+  
+  const [citizens, setCitizens] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [search, setSearch] = useState('');
+  const [status, setStatus] = useState('All');
   const [showDetail, setShowDetail] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   // Hardware back returns to Admin Overview
   useAppNavigation({ isHome: false, homeRoute: '/(Admin)' });
 
-  // Filter - CNIC completely removed for citizens
-  let filtered = data.filter(c => {
-    const q = search.toLowerCase();
-    const matchQ = (c.fullName || '').toLowerCase().includes(q) ||
-      (c.email || '').toLowerCase().includes(q) ||
-      (c.phone || '').includes(q) ||
-      (c.city || '').toLowerCase().includes(q) ||
-      (c.district || '').toLowerCase().includes(q);
-    return matchQ &&
-      (status === 'All' || c.status === status) &&
-      (city   === 'All' || c.city   === city);
-  });
+  // Load real citizens from backend
+  const fetchCitizens = useCallback(async () => {
+    try {
+      const statusParam = status === 'All' ? 'all' : status.toLowerCase();
+      const res = await api.get(`/admin/citizens?search=${encodeURIComponent(search)}&status=${statusParam}&limit=50`);
+      if (res.data?.citizens) {
+        setCitizens(res.data.citizens);
+      }
+    } catch (err) {
+      console.warn('Failed to fetch citizens:', err.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, [search, status]);
 
-  // Sort
-  filtered = [...filtered].sort((a, b) => {
-    if (sort === 'Name ↑') return (a.fullName || '').localeCompare(b.fullName || '');
-    if (sort === 'Name ↓') return (b.fullName || '').localeCompare(a.fullName || '');
-    if (sort === 'Date ↑') return new Date(a.registeredOn) - new Date(b.registeredOn);
-    if (sort === 'Date ↓') return new Date(b.registeredOn) - new Date(a.registeredOn);
-    return 0;
-  });
+  useEffect(() => {
+    fetchCitizens();
+  }, [fetchCitizens]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchCitizens();
+  }, [fetchCitizens]);
+
+  // Load single citizen detailed profile
+  const handleOpenDetail = async (citizen) => {
+    try {
+      const res = await api.get(`/admin/citizens/${citizen.id}`);
+      if (res.data?.citizen) {
+        setShowDetail(res.data.citizen);
+      } else {
+        setShowDetail(citizen);
+      }
+    } catch (err) {
+      setShowDetail(citizen);
+    }
+  };
+
+  // Change account status (Suspend, Restrict, Activate)
+  const handleUpdateStatus = (citizenId, newStatus) => {
+    const actionName = newStatus === 'suspended' ? 'Suspend' : newStatus === 'restricted' ? 'Restrict' : 'Activate';
+    Alert.alert(
+      `${actionName} Citizen Account`,
+      `Are you sure you want to change this citizen's account status to '${newStatus}'?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: `Confirm ${actionName}`,
+          style: newStatus === 'suspended' ? 'destructive' : 'default',
+          onPress: async () => {
+            try {
+              setActionLoading(true);
+              const res = await api.put(`/admin/citizens/${citizenId}/status`, {
+                status: newStatus,
+                reason: `Administrative action: ${actionName} citizen account`,
+              });
+              Alert.alert('Status Updated', res.data?.message || 'Status successfully saved to database.');
+              fetchCitizens();
+              if (showDetail && showDetail.id === citizenId) {
+                setShowDetail(prev => ({ ...prev, status: newStatus }));
+              }
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.message || err.message);
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  // Delete/Deactivate Citizen
+  const handleDeleteCitizen = (citizenId, citizenName) => {
+    Alert.alert(
+      'Remove Citizen Account',
+      `Are you sure you want to remove citizen account '${citizenName}' from the database?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setActionLoading(true);
+              const res = await api.delete(`/admin/citizens/${citizenId}`, {
+                data: { reason: 'Account removed by Sindh Bar Council administrator' },
+              });
+              Alert.alert('Account Removed', res.data?.message || 'Citizen account successfully removed.');
+              setShowDetail(null);
+              fetchCitizens();
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.message || err.message);
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const bg = isDark ? '#060201' : '#FAF7F2';
   const cardBg = isDark ? 'rgba(22, 10, 4, 0.78)' : '#FFFFFF';
@@ -70,11 +145,16 @@ export default function CitizenManagement() {
   const inputBorder = isDark ? 'rgba(255, 160, 40, 0.25)' : 'rgba(255, 149, 0, 0.25)';
 
   if (showDetail) {
+    const currentStatus = (showDetail.status || 'active').toLowerCase();
+    const isSuspended = currentStatus === 'suspended';
+    const isRestricted = currentStatus === 'restricted';
+    const statusColor = isSuspended ? '#ef4444' : isRestricted ? '#f59e0b' : '#4ade80';
+
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
         <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
         <AppHeader
-          title={showDetail.fullName}
+          title={showDetail.full_name || showDetail.fullName || 'Citizen Profile'}
           showBack={true}
           onBack={() => setShowDetail(null)}
           role="admin"
@@ -83,23 +163,72 @@ export default function CitizenManagement() {
         <ScrollView style={s.scroll} contentContainerStyle={s.content}>
           <View style={[s.detailCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             <Text style={[s.cardTitle, { color: textPrimary }]}>Basic Profile</Text>
-            <View style={[s.infoRow, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0,0,0,0.06)' }]}><Text style={[s.infoLabel, { color: textSecondary }]}>Full Name</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.fullName}</Text></View>
-            <View style={[s.infoRow, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0,0,0,0.06)' }]}><Text style={[s.infoLabel, { color: textSecondary }]}>Email</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.email}</Text></View>
-            <View style={[s.infoRow, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0,0,0,0.06)' }]}><Text style={[s.infoLabel, { color: textSecondary }]}>Phone</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.phone}</Text></View>
-            <View style={[s.infoRow, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0,0,0,0.06)' }]}><Text style={[s.infoLabel, { color: textSecondary }]}>District</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.district || showDetail.city}</Text></View>
-            <View style={[s.infoRow, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0,0,0,0.06)' }]}><Text style={[s.infoLabel, { color: textSecondary }]}>Status</Text><Text style={[s.infoVal, { color: '#4ade80' }]}>{showDetail.status}</Text></View>
-            <View style={[s.infoRow, { borderBottomColor: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0,0,0,0.06)' }]}><Text style={[s.infoLabel, { color: textSecondary }]}>Registered On</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.registeredOn}</Text></View>
+            <View style={s.infoRow}><Text style={[s.infoLabel, { color: textSecondary }]}>Full Name</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.full_name || showDetail.fullName}</Text></View>
+            <View style={s.infoRow}><Text style={[s.infoLabel, { color: textSecondary }]}>Email</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.email || '—'}</Text></View>
+            <View style={s.infoRow}><Text style={[s.infoLabel, { color: textSecondary }]}>Phone</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.phone || '—'}</Text></View>
+            <View style={s.infoRow}><Text style={[s.infoLabel, { color: textSecondary }]}>District</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.district || showDetail.city || 'Sindh'}</Text></View>
+            <View style={s.infoRow}><Text style={[s.infoLabel, { color: textSecondary }]}>Account Status</Text><Text style={[s.infoVal, { color: statusColor, fontWeight: '800', textTransform: 'uppercase' }]}>{showDetail.status || 'active'}</Text></View>
+            <View style={s.infoRow}><Text style={[s.infoLabel, { color: textSecondary }]}>Cases Filed</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.cases?.length ?? showDetail.cases_count ?? 0}</Text></View>
+            <View style={s.infoRow}><Text style={[s.infoLabel, { color: textSecondary }]}>Vault Documents</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.evidenceVault?.length ?? showDetail.vault_files_count ?? 0}</Text></View>
+            <View style={s.infoRow}><Text style={[s.infoLabel, { color: textSecondary }]}>Registered Date</Text><Text style={[s.infoVal, { color: textPrimary }]}>{showDetail.created_at ? new Date(showDetail.created_at).toLocaleDateString() : '—'}</Text></View>
+          </View>
+
+          {/* Account Management Actions */}
+          <View style={[s.detailCard, { backgroundColor: cardBg, borderColor: cardBorder, marginTop: 16 }]}>
+            <Text style={[s.cardTitle, { color: textPrimary }]}>Administrative Actions</Text>
+            <Text style={{ fontSize: 11, color: textSecondary, marginBottom: 14 }}>
+              Modify this citizen's account status or revoke access in case of platform violation. All actions are logged.
+            </Text>
+
+            <View style={{ gap: 10 }}>
+              {!isSuspended ? (
+                <TouchableOpacity
+                  style={[s.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.15)', borderColor: '#ef4444' }]}
+                  onPress={() => handleUpdateStatus(showDetail.id, 'suspended')}
+                  disabled={actionLoading}
+                >
+                  <Text style={[s.actionBtnTxt, { color: '#ef4444' }]}>SUSPEND CITIZEN ACCOUNT</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[s.actionBtn, { backgroundColor: 'rgba(74, 222, 128, 0.15)', borderColor: '#4ade80' }]}
+                  onPress={() => handleUpdateStatus(showDetail.id, 'active')}
+                  disabled={actionLoading}
+                >
+                  <Text style={[s.actionBtnTxt, { color: '#4ade80' }]}>RE-ACTIVATE CITIZEN ACCOUNT</Text>
+                </TouchableOpacity>
+              )}
+
+              {!isRestricted ? (
+                <TouchableOpacity
+                  style={[s.actionBtn, { backgroundColor: 'rgba(245, 158, 11, 0.15)', borderColor: '#f59e0b' }]}
+                  onPress={() => handleUpdateStatus(showDetail.id, 'restricted')}
+                  disabled={actionLoading}
+                >
+                  <Text style={[s.actionBtnTxt, { color: '#f59e0b' }]}>RESTRICT ACCOUNT PRIVILEGES</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  style={[s.actionBtn, { backgroundColor: 'rgba(74, 222, 128, 0.15)', borderColor: '#4ade80' }]}
+                  onPress={() => handleUpdateStatus(showDetail.id, 'active')}
+                  disabled={actionLoading}
+                >
+                  <Text style={[s.actionBtnTxt, { color: '#4ade80' }]}>REMOVE RESTRICTIONS</Text>
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                style={[s.actionBtn, { backgroundColor: 'rgba(239, 68, 68, 0.25)', borderColor: 'rgba(239, 68, 68, 0.5)' }]}
+                onPress={() => handleDeleteCitizen(showDetail.id, showDetail.full_name || showDetail.fullName)}
+                disabled={actionLoading}
+              >
+                <Text style={[s.actionBtnTxt, { color: '#ef4444' }]}>DELETE / REMOVE ACCOUNT</Text>
+              </TouchableOpacity>
+            </View>
           </View>
 
           <TouchableOpacity style={s.backToListBtn} onPress={() => setShowDetail(null)}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-              <Image
-                source={require('../../assets/images/backarrow.png')}
-                style={{ width: 16, height: 11 }}
-                resizeMode="contain"
-              />
-              <Text style={s.backToListBtnTxt}>RETURN TO DIRECTORY</Text>
-            </View>
+            <Text style={s.backToListBtnTxt}>← RETURN TO CITIZEN LIST</Text>
           </TouchableOpacity>
         </ScrollView>
         <BottomNavBar role="admin" activeTab="citizens" />
@@ -111,7 +240,6 @@ export default function CitizenManagement() {
     <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
 
-      {/* Modern '< Citizen Directory' Header */}
       <AppHeader
         title="Citizen Directory"
         showBack={true}
@@ -119,7 +247,14 @@ export default function CitizenManagement() {
         role="admin"
       />
 
-      <ScrollView style={s.scroll} contentContainerStyle={s.content} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={s.scroll} 
+        contentContainerStyle={s.content} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF9500" />
+        }
+      >
         {/* Search */}
         <View style={[s.searchBox, { backgroundColor: inputBg, borderColor: inputBorder }]}>
           <Svg width={16} height={16} viewBox="0 0 24 24" fill="none">
@@ -163,31 +298,45 @@ export default function CitizenManagement() {
         </ScrollView>
 
         {/* Citizen Cards */}
-        {filtered.length === 0 ? (
+        {loading ? (
+          <View style={{ paddingTop: 40, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#FF9500" />
+            <Text style={{ marginTop: 10, color: textSecondary, fontSize: 13 }}>Loading registered citizens...</Text>
+          </View>
+        ) : citizens.length === 0 ? (
           <Text style={[s.emptyTxt, { color: textSecondary }]}>No citizens found matching criteria.</Text>
         ) : (
-          filtered.map(c => (
-            <TouchableOpacity
-              key={c.id}
-              style={[s.card, { backgroundColor: cardBg, borderColor: cardBorder }]}
-              onPress={() => setShowDetail(c)}
-              activeOpacity={0.78}
-            >
-              <View style={s.cardTop}>
-                <View style={s.avatar}>
-                  <Text style={s.avatarTxt}>{c.fullName.slice(0, 2).toUpperCase()}</Text>
+          citizens.map(c => {
+            const isSuspended = (c.status || '').toLowerCase() === 'suspended';
+            const isRestricted = (c.status || '').toLowerCase() === 'restricted';
+            const badgeColor = isSuspended ? '#ef4444' : isRestricted ? '#f59e0b' : '#4ade80';
+
+            return (
+              <TouchableOpacity
+                key={c.id}
+                style={[s.card, { backgroundColor: cardBg, borderColor: cardBorder }]}
+                onPress={() => handleOpenDetail(c)}
+                activeOpacity={0.78}
+              >
+                <View style={s.cardTop}>
+                  <View style={s.avatar}>
+                    <Text style={s.avatarTxt}>{(c.full_name || 'Citizen').slice(0, 2).toUpperCase()}</Text>
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.cardName, { color: textPrimary }]}>{c.full_name}</Text>
+                    <Text style={s.cardSub}>{c.phone || 'No phone'} · {c.district || c.city || 'Sindh'}</Text>
+                    <Text style={[s.cardEmail, { color: textSecondary }]}>{c.email || '—'}</Text>
+                    <Text style={{ fontSize: 10, color: '#FF9500', marginTop: 3 }}>
+                      {c.cases_count ?? 0} Cases Filed · {c.vault_files_count ?? 0} Vault Documents
+                    </Text>
+                  </View>
+                  <View style={[s.statusBadge, { borderColor: badgeColor, backgroundColor: badgeColor + '22' }]}>
+                    <Text style={[s.statusTxt, { color: badgeColor }]}>{c.status || 'Active'}</Text>
+                  </View>
                 </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={[s.cardName, { color: textPrimary }]}>{c.fullName}</Text>
-                  <Text style={s.cardSub}>{c.phone} · {c.district || c.city}</Text>
-                  <Text style={[s.cardEmail, { color: textSecondary }]}>{c.email}</Text>
-                </View>
-                <View style={s.statusBadge}>
-                  <Text style={s.statusTxt}>{c.status}</Text>
-                </View>
-              </View>
-            </TouchableOpacity>
-          ))
+              </TouchableOpacity>
+            );
+          })
         )}
       </ScrollView>
 
@@ -198,106 +347,134 @@ export default function CitizenManagement() {
 }
 
 const s = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: '#060201' },
+  safe: { flex: 1 },
   scroll: { flex: 1 },
   content: { padding: 16, paddingBottom: 110 },
   searchBox: {
-    backgroundColor: 'rgba(25, 12, 5, 0.75)',
     borderRadius: 14,
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 14,
     marginBottom: 12,
     borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.25)',
   },
   searchInput: {
     flex: 1,
     fontSize: 13,
-    color: '#FFF5E8',
     paddingVertical: 12,
     marginLeft: 8,
   },
   filterRow: { marginBottom: 14 },
   chip: {
-    backgroundColor: 'rgba(25, 12, 5, 0.72)',
     borderRadius: 20,
     paddingHorizontal: 14,
     paddingVertical: 6,
     marginRight: 8,
     borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.22)',
   },
-  chipActive: {
-    backgroundColor: '#FF9500',
-    borderColor: '#FFA726',
-  },
-  chipTxt: { fontSize: 12, fontWeight: '600', color: 'rgba(255, 220, 180, 0.65)' },
-  chipTxtActive: { color: '#0A0301', fontWeight: '800' },
+  chipTxt: { fontSize: 11, fontWeight: '700' },
+  chipTxtActive: { fontWeight: '900' },
   card: {
-    backgroundColor: 'rgba(22, 10, 4, 0.78)',
-    borderRadius: 16,
+    borderRadius: 14,
     padding: 14,
     marginBottom: 10,
     borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.22)',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.35,
-    shadowRadius: 6,
-    elevation: 3,
   },
-  cardTop: { flexDirection: 'row', alignItems: 'center' },
+  cardTop: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
   avatar: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: 'rgba(255, 149, 0, 0.15)',
-    borderWidth: 1,
+    borderWidth: 1.5,
     borderColor: '#FF9500',
     justifyContent: 'center',
     alignItems: 'center',
-    marginRight: 12,
   },
-  avatarTxt: { fontSize: 15, fontWeight: '800', color: '#FFEED6' },
-  cardName: { fontSize: 15, fontWeight: '800', color: '#FFF5E8' },
-  cardSub: { fontSize: 12, color: '#FFB74D', marginTop: 2, fontWeight: '600' },
-  cardEmail: { fontSize: 11, color: 'rgba(255, 220, 180, 0.5)', marginTop: 2 },
+  avatarTxt: {
+    color: '#FF9500',
+    fontSize: 14,
+    fontWeight: '800',
+  },
+  cardName: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  cardSub: {
+    fontSize: 11,
+    color: '#FF9500',
+    marginBottom: 2,
+    fontWeight: '600',
+  },
+  cardEmail: {
+    fontSize: 11,
+  },
   statusBadge: {
-    backgroundColor: 'rgba(34, 197, 94, 0.15)',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(74, 222, 128, 0.3)',
+    borderRadius: 12,
     paddingHorizontal: 8,
-    paddingVertical: 3,
-  },
-  statusTxt: { fontSize: 10, fontWeight: '700', color: '#4ade80' },
-  emptyTxt: { color: 'rgba(255, 220, 180, 0.5)', textAlign: 'center', marginTop: 30 },
-  detailCard: {
-    backgroundColor: 'rgba(22, 10, 4, 0.85)',
-    borderRadius: 18,
-    padding: 18,
+    paddingVertical: 4,
     borderWidth: 1,
-    borderColor: 'rgba(255, 160, 40, 0.25)',
-    marginBottom: 16,
   },
-  cardTitle: { fontSize: 16, fontWeight: '800', color: '#FFF5E8', marginBottom: 14 },
+  statusTxt: {
+    fontSize: 10,
+    fontWeight: '800',
+    textTransform: 'uppercase',
+  },
+  emptyTxt: {
+    textAlign: 'center',
+    marginTop: 40,
+    fontSize: 13,
+  },
+  detailCard: {
+    borderRadius: 14,
+    padding: 16,
+    borderWidth: 1,
+  },
+  cardTitle: {
+    fontSize: 14,
+    fontWeight: '800',
+    marginBottom: 14,
+    letterSpacing: 0.3,
+  },
   infoRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    paddingVertical: 9,
+    paddingVertical: 8,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.06)',
+    borderBottomColor: 'rgba(255, 149, 0, 0.1)',
   },
-  infoLabel: { fontSize: 12, color: 'rgba(255, 220, 180, 0.6)' },
-  infoVal: { fontSize: 12, color: '#FFF5E8', fontWeight: '700' },
-  backToListBtn: {
-    backgroundColor: 'rgba(255, 149, 0, 0.15)',
-    borderWidth: 1,
-    borderColor: '#FF9500',
+  infoLabel: { fontSize: 12, fontWeight: '600' },
+  infoVal: { fontSize: 12, fontWeight: '700' },
+  actionBtn: {
     borderRadius: 12,
     paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
   },
-  backToListBtnTxt: { color: '#FFEED6', fontSize: 12, fontWeight: '800', letterSpacing: 0.5 },
+  actionBtnTxt: {
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+  },
+  backToListBtn: {
+    marginTop: 20,
+    paddingVertical: 14,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 12,
+    backgroundColor: 'rgba(255, 149, 0, 0.12)',
+    borderWidth: 1,
+    borderColor: '#FF9500',
+  },
+  backToListBtnTxt: {
+    color: '#FF9500',
+    fontSize: 12,
+    fontWeight: '800',
+  },
 });

@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
   StatusBar, StyleSheet, Dimensions, Alert, Image,
+  RefreshControl, ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -12,36 +13,62 @@ import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useAppTranslation } from '../../utils/translationHelper';
-import { clearSession } from '../../constants/authStore';
-import { getAdminUnreadNotificationStatus, subscribeToStore } from '../../constants/ngoMediaStore';
+import { clearSession, getSession } from '../../constants/authStore';
+import api from '../../constants/api';
 
 const { width } = Dimensions.get('window');
-
-const STATS = [
-  { label: 'Total Citizens Registered', value: '24', delta: 'Sindh Jurisdictions', color: '#FFA726', tag: 'CIT' },
-  { label: 'Total Lawyers Registered',  value: '12', delta: 'Sindh Bar Council',   color: '#FF9500', tag: 'LAW' },
-  { label: 'Total Cases Registered',    value: '24', delta: '8 Active · 16 Disposed', color: '#FF7043', tag: 'CAS' },
-  { label: 'Total NGOs & Media',        value: '6',  delta: 'Accredited Portals',  color: '#38BDF8', tag: 'ORG' },
-];
-
-const SYSTEM_ACTIVITIES = [
-  { title: 'Sindh Bar Council Registry Audit', sub: 'Advocate license verification active and online', color: '#4ade80' },
-  { title: 'Neon PostgreSQL Cloud Database', sub: 'Connection pool healthy · Latency 42ms', color: '#60a5fa' },
-  { title: 'Evidence Vault Integrity Check', sub: 'AES-256 file encryption operational for citizen records', color: '#f59e0b' },
-  { title: 'NCHD & KTN News Desk Endpoints', sub: 'Public interest email desks verified & reachable', color: '#FF9500' },
-];
 
 export default function AdminHome() {
   const router = useRouter();
   const { isDark, theme } = useAppTheme();
   const { t, currentLang, appName } = useAppTranslation();
-  const [hasUnread, setHasUnread] = useState(getAdminUnreadNotificationStatus());
+  
+  const [stats, setStats] = useState({
+    citizens: { total: 0, label: 'Total Citizens Registered', subtitle: 'Sindh Jurisdictions' },
+    lawyers: { total: 0, label: 'Total Lawyers Registered', subtitle: 'Sindh Bar Council' },
+    cases: { total: 0, active: 0, disposed: 0, label: 'Total Cases Registered', subtitle: 'Active vs Disposed' },
+    organizations: { total: 0, ngos: 0, media: 0, label: 'Total NGOs & Media', subtitle: 'Accredited Portals' },
+    unreadNotificationsCount: 0,
+    recentAuditLogs: [],
+  });
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [adminName, setAdminName] = useState('Admin');
+
+  // Load real admin stats from backend API
+  const fetchStats = useCallback(async () => {
+    try {
+      const res = await api.get('/admin/stats');
+      if (res.data) {
+        setStats({
+          citizens: res.data.citizens || { total: res.data.totalUsers || 0, label: 'Total Citizens Registered', subtitle: 'Sindh Jurisdictions' },
+          lawyers: res.data.lawyers || { total: res.data.totalLawyers || 0, label: 'Total Lawyers Registered', subtitle: 'Sindh Bar Council' },
+          cases: res.data.cases || { total: res.data.totalCases || 0, active: 0, disposed: 0, label: 'Total Cases Registered', subtitle: 'Active vs Disposed' },
+          organizations: res.data.organizations || { total: 0, ngos: 0, media: 0, label: 'Total NGOs & Media', subtitle: 'Accredited Portals' },
+          unreadNotificationsCount: res.data.unreadNotificationsCount || 0,
+          recentAuditLogs: res.data.recentAuditLogs || [],
+        });
+      }
+    } catch (err) {
+      console.warn('Could not fetch admin stats:', err.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
 
   useEffect(() => {
-    return subscribeToStore(() => {
-      setHasUnread(getAdminUnreadNotificationStatus());
-    });
-  }, []);
+    const session = getSession();
+    if (session?.user?.fullName || session?.user?.name) {
+      setAdminName(session.user.fullName || session.user.name);
+    }
+    fetchStats();
+  }, [fetchStats]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchStats();
+  }, [fetchStats]);
 
   // Enforce double-back to exit on Home, never fall back to login screen
   useAppNavigation({ isHome: true, homeRoute: '/(Admin)' });
@@ -63,14 +90,6 @@ export default function AdminHome() {
           },
         },
       ]
-    );
-  };
-
-  const handleSystemHealthCheck = () => {
-    Alert.alert(
-      'Cloud Infrastructure Health',
-      '• Neon PostgreSQL: Connected & Healthy\n• Node.js REST API Server: Port 5000 Active\n• Auth Middleware: JWT Stateless Token Active\n• Citizen & Lawyer Modules: Synchronized\n• SBC Bar Verification: Online',
-      [{ text: 'OK' }]
     );
   };
 
@@ -124,6 +143,13 @@ export default function AdminHome() {
     },
   };
 
+  const statCardsData = [
+    { label: stats.citizens.label, value: String(stats.citizens.total), delta: stats.citizens.subtitle, color: '#FFA726', tag: 'CIT' },
+    { label: stats.lawyers.label,  value: String(stats.lawyers.total), delta: stats.lawyers.subtitle, color: '#FF9500', tag: 'LAW' },
+    { label: stats.cases.label,    value: String(stats.cases.total), delta: stats.cases.subtitle, color: '#FF7043', tag: 'CAS' },
+    { label: stats.organizations.label, value: String(stats.organizations.total), delta: stats.organizations.subtitle, color: '#38BDF8', tag: 'ORG' },
+  ];
+
   return (
     <SafeAreaView style={dynamicStyles.safe}>
       <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
@@ -143,7 +169,7 @@ export default function AdminHome() {
         </View>
         <View style={s.headerRight}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#FFF2DF' : '#1A0F07' }}>
-            {t('common.greetingHi', 'hi,')} Admin
+            {t('common.greetingHi', 'hi,')} {adminName}
           </Text>
           <TouchableOpacity
             style={[
@@ -166,18 +192,25 @@ export default function AdminHome() {
                 strokeLinejoin="round"
               />
             </Svg>
-            {hasUnread && <View style={s.unreadGreenDot} />}
+            {stats.unreadNotificationsCount > 0 && <View style={s.unreadGreenDot} />}
           </TouchableOpacity>
           <TopHeaderMenu role="admin" avatarText="AD" />
         </View>
       </View>
 
-      <ScrollView style={s.scroll} contentContainerStyle={s.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView 
+        style={s.scroll} 
+        contentContainerStyle={s.scrollContent} 
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF9500" />
+        }
+      >
 
-        {/* ── STATS GRID ── */}
+        {/* ── STATS GRID (REAL DATABASE COUNTS) ── */}
         <Text style={[s.secTitle, dynamicStyles.secTitle]}>{t('admin.overview', 'App Ecosystem Overview')}</Text>
         <View style={s.statsGrid}>
-          {STATS.map((st, i) => (
+          {statCardsData.map((st, i) => (
             <View key={i} style={[s.statCard, dynamicStyles.statCard]}>
               <View style={[s.statAccent, { backgroundColor: st.color }]} />
               <Text style={s.statIcon}>{st.tag}</Text>
@@ -192,7 +225,7 @@ export default function AdminHome() {
         <Text style={[s.secTitle, dynamicStyles.secTitle]}>{t('admin.adminGovernance', 'Administrative Governance')}</Text>
         <View style={s.quickGrid}>
           {[
-            { tag: 'LAW', label: 'Lawyer Management', sub: 'Verify SBC licenses', screen: 'LawyerManagement', color: '#FF9500' },
+            { tag: 'LAW', label: 'Lawyer Management', sub: 'Verify SBC licenses & roster', screen: 'LawyerManagement', color: '#FF9500' },
             { tag: 'CIT', label: 'Citizen Management', sub: 'Manage vaults & cases', screen: 'CitizenManagement', color: '#FFA726' },
             { tag: 'NGO', label: 'NGO Management', sub: 'NCHD & Relief Organizations', screen: 'NGOManagement', color: '#FF7043' },
             { tag: 'MED', label: 'Media Management', sub: 'KTN News & Journalism Desk', screen: 'MediaManagement', color: '#38BDF8' },
@@ -200,13 +233,7 @@ export default function AdminHome() {
             <TouchableOpacity
               key={i} style={[s.quickCard, dynamicStyles.quickCard]}
               activeOpacity={0.82}
-              onPress={() => {
-                if (item.screen) {
-                  goTo(item.screen);
-                } else if (item.isAction) {
-                  handleSystemHealthCheck();
-                }
-              }}
+              onPress={() => goTo(item.screen)}
             >
               <View style={[s.quickIconBox, { backgroundColor: item.color + '22' }]}>
                 <Text style={[s.quickTagText, { color: item.color }]}>{item.tag}</Text>
@@ -222,18 +249,30 @@ export default function AdminHome() {
           ))}
         </View>
 
-        {/* ── REAL APP SYSTEM AUDIT ── */}
+        {/* ── REAL SYSTEM & SECURITY AUDIT LOGS FROM DATABASE ── */}
         <View style={[s.section, dynamicStyles.section, { marginBottom: 100 }]}>
           <Text style={[s.sectionTitle, dynamicStyles.sectionTitle]}>{t('admin.auditLog', 'System & Security Audit Log')}</Text>
-          {SYSTEM_ACTIVITIES.map((item, i) => (
-            <View key={i} style={s.activityItem}>
-              <View style={[s.activityDot, { backgroundColor: item.color }]} />
-              <View style={{ flex: 1 }}>
-                <Text style={[s.activityTitle, dynamicStyles.activityTitle]}>{t(item.title)}</Text>
-                <Text style={[s.activitySub, dynamicStyles.activitySub]}>{t(item.sub)}</Text>
-              </View>
-            </View>
-          ))}
+          {stats.recentAuditLogs.length === 0 ? (
+            <Text style={{ color: dynamicStyles.activitySub.color, paddingVertical: 10, fontSize: 13 }}>
+              No recent audit logs found. System healthy.
+            </Text>
+          ) : (
+            stats.recentAuditLogs.map((item, i) => {
+              const dotColor = item.severity === 'critical' ? '#ef4444' : item.severity === 'warning' ? '#f59e0b' : '#4ade80';
+              const timeFormatted = item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
+              return (
+                <View key={item.id || i} style={s.activityItem}>
+                  <View style={[s.activityDot, { backgroundColor: dotColor }]} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[s.activityTitle, dynamicStyles.activityTitle]}>
+                      {item.entity_name || item.action} {timeFormatted ? `· ${timeFormatted}` : ''}
+                    </Text>
+                    <Text style={[s.activitySub, dynamicStyles.activitySub]}>{item.description}</Text>
+                  </View>
+                </View>
+              );
+            })
+          )}
         </View>
 
         {/* ── TERMS & CONDITIONS LINK ── */}
@@ -249,110 +288,223 @@ export default function AdminHome() {
         <TouchableOpacity
           style={s.signOutBtn}
           onPress={handleSignOut}
-          activeOpacity={0.85}
+          activeOpacity={0.8}
         >
-          <Text style={s.signOutBtnText}>SIGN OUT OF ADMINISTRATIVE CONSOLE</Text>
+          <Text style={s.signOutBtnText}>Log Out of Admin Panel</Text>
         </TouchableOpacity>
-
-        <View style={{ height: 90 }} />
       </ScrollView>
 
-      {/* Consistent Bottom Nav */}
-      <BottomNavBar role="admin" activeTab="home" />
-      {/* Sliding Language Card */}
+      {/* Modern Floating Bottom Nav Bar */}
+      <BottomNavBar role="admin" activeTab="overview" />
+
+      {/* Floating Language Peeking Pill */}
       <LanguagePeekingTab />
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  safe:          { flex: 1, backgroundColor: '#090302' },
-  header:        { backgroundColor: '#140704', paddingHorizontal: 20, paddingTop: 14, paddingBottom: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', borderBottomWidth: 1, borderBottomColor: 'rgba(255, 149, 0, 0.15)' },
-  headerTitle:   { fontSize: 18, fontWeight: '800', color: '#FFEED6', letterSpacing: -0.3 },
-  headerSub:     { fontSize: 11, color: 'rgba(255, 180, 80, 0.65)', marginTop: 2, fontWeight: '500' },
-  headerRight:   { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  topBellBtn:    { width: 34, height: 34, borderRadius: 17, borderWidth: 1, alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  unreadGreenDot:{ position: 'absolute', top: 5, right: 6, width: 8, height: 8, borderRadius: 4, backgroundColor: '#22c55e', borderWidth: 1.5, borderColor: '#0A0402' },
-  liveDot:       { width: 7, height: 7, borderRadius: 4, backgroundColor: '#4ade80' },
-  liveText:      { fontSize: 11, color: '#4ade80', fontWeight: '700' },
-  avatar:        { width: 34, height: 34, borderRadius: 17, backgroundColor: 'rgba(255, 149, 0, 0.15)', borderWidth: 1.5, borderColor: 'rgba(255, 170, 60, 0.3)', justifyContent: 'center', alignItems: 'center', marginLeft: 4 },
-  avatarText:    { fontSize: 12, fontWeight: '800', color: '#FFB74D' },
-  scroll:        { flex: 1 },
-  scrollContent: { padding: 16 },
-  alertRow:      { flexDirection: 'row', gap: 8, marginBottom: 16 },
-  alertBadge:    { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8 },
-  alertText:     { fontSize: 12, fontWeight: '700' },
-  secTitle:      { fontSize: 13, fontWeight: '800', color: '#FFEED6', marginBottom: 12, marginTop: 4 },
-  statsGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  statCard:      { backgroundColor: '#170905', borderRadius: 16, padding: 14, width: (width - 42) / 2, borderWidth: 1, borderColor: 'rgba(255, 149, 0, 0.18)', overflow: 'hidden' },
-  statAccent:    { position: 'absolute', top: 0, left: 0, right: 0, height: 3, borderTopLeftRadius: 16, borderTopRightRadius: 16 },
-  statIcon:      { fontSize: 11, fontWeight: '800', color: '#FF9500', marginTop: 8, marginBottom: 4, letterSpacing: 0.5 },
-  statValue:     { fontSize: 22, fontWeight: '800', color: '#FFEED6', letterSpacing: -0.5 },
-  statLabel:     { fontSize: 10, color: 'rgba(255, 235, 215, 0.65)', marginTop: 4, fontWeight: '500' },
-  statDelta:     { fontSize: 10, color: '#FF9500', marginTop: 4, fontWeight: '700' },
-  quickGrid:     { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 20 },
-  quickCard:     { backgroundColor: '#170905', borderRadius: 16, padding: 14, width: (width - 42) / 2, borderWidth: 1, borderColor: 'rgba(255, 149, 0, 0.18)' },
-  quickIconBox:  { width: 40, height: 40, borderRadius: 12, justifyContent: 'center', alignItems: 'center', marginBottom: 10 },
-  quickTagText:  { fontSize: 12, fontWeight: '800' },
-  quickLabel:    { fontSize: 12, fontWeight: '800', color: '#FFEED6' },
-  quickSub:      { fontSize: 10, color: 'rgba(255, 235, 215, 0.55)', marginTop: 2 },
-  quickArrow:    { fontSize: 16, fontWeight: '800', marginTop: 8 },
-  quickArrowImg: { width: 18, height: 13, marginTop: 8 },
-  seeAllArrowImg: { width: 14, height: 10 },
-  section:       { backgroundColor: '#170905', borderRadius: 18, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: 'rgba(255, 149, 0, 0.18)' },
-  sectionTitle:  { fontSize: 13, fontWeight: '800', color: '#FFEED6', marginBottom: 12 },
-  secRow:        { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 },
-  seeAll:        { fontSize: 12, color: '#FF9500', fontWeight: '700' },
-  notifRow:      { flexDirection: 'row', alignItems: 'center', borderRadius: 12, padding: 10, marginBottom: 8, gap: 10 },
-  notifDot:      { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  notifText:     { fontSize: 12, fontWeight: '600' },
-  notifTime:     { fontSize: 10, fontWeight: '500' },
-  rowItem:       { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, borderTopWidth: 1, borderTopColor: 'rgba(255, 149, 0, 0.1)' },
-  rowLeft:       { flex: 1 },
-  rowId:         { fontSize: 10, color: 'rgba(255, 235, 215, 0.45)', fontWeight: '600', marginBottom: 2 },
-  rowMain:       { fontSize: 13, fontWeight: '700', color: '#FFEED6' },
-  rowSub:        { fontSize: 11, color: 'rgba(255, 235, 215, 0.55)', marginTop: 2 },
-  pill:          { borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4 },
-  pillTxt:       { fontSize: 10, fontWeight: '700' },
-  activityItem:  { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderTopWidth: 1, borderTopColor: 'rgba(255, 149, 0, 0.1)' },
-  activityDot:   { width: 8, height: 8, borderRadius: 4, flexShrink: 0 },
-  activityTitle: { fontSize: 13, fontWeight: '600', color: '#FFEED6' },
-  activitySub:   { fontSize: 11, color: 'rgba(255, 235, 215, 0.55)', marginTop: 2 },
-  emptyText:     { fontSize: 12, color: 'rgba(255, 235, 215, 0.5)', textAlign: 'center', paddingVertical: 12 },
-  bottomNav:     { position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#140704', borderTopWidth: 1, borderTopColor: 'rgba(255, 149, 0, 0.18)', flexDirection: 'row', height: 68, paddingBottom: 8 },
-  navItem:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 2 },
-  navIcon:       { fontSize: 20 },
-  navLabel:      { fontSize: 9, fontWeight: '600', color: 'rgba(255, 235, 215, 0.45)', letterSpacing: 0.2 },
-  navLabelActive:{ color: '#FF9500' },
-  navDot:        { width: 4, height: 4, borderRadius: 2, backgroundColor: '#FF9500', marginTop: 1 },
-  termsBtn: {
-    backgroundColor: 'rgba(255, 149, 0, 0.12)',
-    borderRadius: 14,
-    paddingVertical: 13,
+  header: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    borderWidth: 1.2,
-    borderColor: 'rgba(255, 175, 50, 0.35)',
+    borderBottomWidth: 1,
+  },
+  headerSub: {
+    fontSize: 10,
+    fontWeight: '700',
+    letterSpacing: 0.3,
+    marginTop: 1,
+  },
+  headerRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  topBellBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    position: 'relative',
+  },
+  unreadGreenDot: {
+    position: 'absolute',
+    top: 7,
+    right: 7,
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#22c55e',
+    borderWidth: 1.5,
+    borderColor: '#0A0402',
+  },
+  scroll: { flex: 1 },
+  scrollContent: { padding: 16, paddingBottom: 120 },
+  secTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+    marginBottom: 12,
+    marginTop: 8,
+  },
+  statsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 20,
+  },
+  statCard: {
+    width: (width - 42) / 2,
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  statAccent: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 3,
+  },
+  statIcon: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FF9500',
+    marginBottom: 4,
+    letterSpacing: 0.5,
+  },
+  statValue: {
+    fontSize: 24,
+    fontWeight: '900',
+    letterSpacing: -0.5,
+    marginBottom: 2,
+  },
+  statLabel: {
+    fontSize: 10,
+    fontWeight: '600',
+    lineHeight: 14,
+  },
+  statDelta: {
+    fontSize: 9,
+    color: '#FF9500',
+    marginTop: 4,
+    fontWeight: '700',
+  },
+  quickGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginBottom: 24,
+  },
+  quickCard: {
+    width: (width - 42) / 2,
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+    position: 'relative',
+  },
+  quickIconBox: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 10,
   },
-  termsBtnText: {
-    color: '#FFB74D',
-    fontSize: 12.5,
+  quickTagText: {
+    fontSize: 11,
+    fontWeight: '900',
+  },
+  quickLabel: {
+    fontSize: 12,
     fontWeight: '800',
+    marginBottom: 2,
+  },
+  quickSub: {
+    fontSize: 10,
+    lineHeight: 13,
+  },
+  quickArrowImg: {
+    position: 'absolute',
+    top: 14,
+    right: 14,
+    width: 14,
+    height: 14,
+    tintColor: '#FF9500',
+    transform: [{ rotate: '-90deg' }],
+  },
+  section: {
+    borderRadius: 14,
+    padding: 14,
+    borderWidth: 1,
+  },
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 14,
+    letterSpacing: 0.4,
+  },
+  activityItem: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    marginBottom: 12,
+  },
+  activityDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginTop: 4,
+  },
+  activityTitle: {
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  activitySub: {
+    fontSize: 10,
+    marginTop: 1,
+    lineHeight: 14,
+  },
+  termsBtn: {
+    marginHorizontal: 16,
+    marginBottom: 16,
+    paddingVertical: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 149, 0, 0.35)',
+    backgroundColor: 'rgba(255, 149, 0, 0.08)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  termsBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#FFA726',
     letterSpacing: 0.3,
   },
   signOutBtn: {
-    backgroundColor: 'rgba(239, 68, 68, 0.14)',
-    borderRadius: 14,
+    marginHorizontal: 16,
+    marginBottom: 36,
     paddingVertical: 14,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(239, 68, 68, 0.5)',
+    backgroundColor: 'rgba(239, 68, 68, 0.12)',
     alignItems: 'center',
-    borderWidth: 1.2,
-    borderColor: 'rgba(239, 68, 68, 0.45)',
-    marginBottom: 10,
+    justifyContent: 'center',
   },
   signOutBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
     color: '#EF4444',
-    fontSize: 12.5,
-    fontWeight: '900',
-    letterSpacing: 0.5,
+    letterSpacing: 0.4,
   },
 });

@@ -111,7 +111,7 @@ class AdminService {
    */
   async getCitizens({ search, status, district, page = 1, limit = 20 }) {
     const offset = (Math.max(1, parseInt(page, 10)) - 1) * parseInt(limit, 10);
-    const conditions = [];
+    const conditions = ["LOWER(COALESCE(c.status, 'active')) != 'deleted'"];
     const values = [];
 
     if (search && search.trim()) {
@@ -294,10 +294,10 @@ class AdminService {
     }
     const citizen = citizenRes.rows[0];
 
-    // Soft delete or mark as deactivated/suspended
-    await db.query("UPDATE citizens SET status = 'deleted' WHERE id = $1", [id]);
+    // Permanently remove from database
+    await db.query('DELETE FROM citizens WHERE id = $1', [id]);
     if (citizen.user_id) {
-      await db.query("UPDATE users SET status = 'deleted' WHERE id = $1", [citizen.user_id]);
+      await db.query('DELETE FROM users WHERE id = $1', [citizen.user_id]);
     }
 
     await this.logAudit({
@@ -508,9 +508,9 @@ class AdminService {
     }
     const lawyer = lawyerRes.rows[0];
 
-    await db.query("UPDATE lawyers SET status = 'deleted' WHERE id = $1", [id]);
+    await db.query('DELETE FROM lawyers WHERE id = $1', [id]);
     if (lawyer.user_id) {
-      await db.query("UPDATE users SET status = 'deleted' WHERE id = $1", [lawyer.user_id]);
+      await db.query('DELETE FROM users WHERE id = $1', [lawyer.user_id]);
     }
 
     await this.logAudit({
@@ -698,9 +698,9 @@ class AdminService {
     }
     const ngo = ngoRes.rows[0];
 
-    await db.query("UPDATE ngos SET status = 'Deleted' WHERE id = $1", [id]);
+    await db.query('DELETE FROM ngos WHERE id = $1', [id]);
     if (ngo.user_id) {
-      await db.query("UPDATE users SET status = 'deleted' WHERE id = $1", [ngo.user_id]);
+      await db.query('DELETE FROM users WHERE id = $1', [ngo.user_id]);
     }
 
     await this.logAudit({
@@ -890,9 +890,9 @@ class AdminService {
     }
     const media = mediaRes.rows[0];
 
-    await db.query("UPDATE media SET status = 'Deleted' WHERE id = $1", [id]);
+    await db.query('DELETE FROM media WHERE id = $1', [id]);
     if (media.user_id) {
-      await db.query("UPDATE users SET status = 'deleted' WHERE id = $1", [media.user_id]);
+      await db.query('DELETE FROM users WHERE id = $1', [media.user_id]);
     }
 
     await this.logAudit({

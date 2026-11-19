@@ -15,6 +15,7 @@ import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import { useAppTranslation } from '../../utils/translationHelper';
 
 const filters = ['All', 'Active', 'Pending', 'Closed'];
 
@@ -22,6 +23,7 @@ export default function MyCases() {
   useMockStore();
   const router = useRouter();
   const { theme, isDarkMode } = useAppTheme();
+  const { t, currentLang, translateCategory, translateDistrict } = useAppTranslation();
   const [activeFilter, setActiveFilter] = useState('All');
 
   // Back returns to CitizenHome
@@ -50,7 +52,7 @@ export default function MyCases() {
 
       {/* Top Header matching app standard with '<' Chevron */}
       <AppHeader
-        title="My Cases"
+        title={t('citizen.myActiveCases', 'My Cases')}
         showBack={true}
         homeRoute="/(citizen)/CitizenHome"
         role="citizen"
@@ -114,7 +116,7 @@ export default function MyCases() {
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
                   <Text style={{ fontSize: 11, fontWeight: '800', color: '#FF9500' }}>
-                    View Matter Details
+                    {t('citizen.caseDetails', 'View Matter Details')}
                   </Text>
                   <Image
                     source={require('../../assets/images/arrow.png')}

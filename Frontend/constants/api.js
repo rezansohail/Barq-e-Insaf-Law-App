@@ -1,6 +1,7 @@
 ﻿import axios from 'axios';
 import Constants from 'expo-constants';
 import { Platform, NativeModules } from 'react-native';
+import { getToken } from './authStore';
 
 const getDevHost = () => {
   // 1. In web browser, always use current browser location
@@ -45,11 +46,15 @@ const api = axios.create({
   },
 });
 
-// Dynamic interceptor to ensure requests always use current active host
+// Dynamic interceptor to ensure requests always use current active host and auth token
 api.interceptors.request.use((config) => {
   const currentHost = getDevHost();
   if (currentHost && config.baseURL && !config.baseURL.includes(currentHost)) {
     config.baseURL = `http://${currentHost}:5000/api`;
+  }
+  const token = getToken();
+  if (token && !config.headers.Authorization) {
+    config.headers.Authorization = `Bearer ${token}`;
   }
   return config;
 });

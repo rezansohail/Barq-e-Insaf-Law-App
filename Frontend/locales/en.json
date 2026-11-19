@@ -315,11 +315,60 @@
     "resetDesc": "Enter your registered email address to receive password reset instructions.",
     "sendResetLink": "SEND RESET LINK",
     "portals": {
-      "citizen": { "label": "CITIZEN PORTAL", "subLabel": "Legal Empowerment for Citizens" },
-      "lawyer": { "label": "LAWYER PORTAL", "subLabel": "Advocate Legal Practice" },
-      "ngo": { "label": "NGO - NCHD", "subLabel": "Institutional Human Development Portal" },
-      "media": { "label": "MEDIA - KTN NEWS", "subLabel": "Court Reporting & Broadcast Journalism" },
-      "admin": { "label": "ADMIN PANEL", "subLabel": "Sindh Bar Council Governance" }
+      "citizen": {
+        "label": "CITIZEN PORTAL",
+        "subLabel": "Legal Empowerment for Citizens"
+      },
+      "lawyer": {
+        "label": "LAWYER PORTAL",
+        "subLabel": "Advocate Legal Practice"
+      },
+      "ngo": {
+        "label": "NGO - NCHD",
+        "subLabel": "Institutional Human Development Portal"
+      },
+      "media": {
+        "label": "MEDIA - KTN NEWS",
+        "subLabel": "Court Reporting & Broadcast Journalism"
+      },
+      "admin": {
+        "label": "ADMIN PANEL",
+        "subLabel": "Sindh Bar Council Governance"
+      }
     }
+  },
+  "case": {
+    "buildCase": "Build Your Case",
+    "titleLabel": "CASE TITLE *",
+    "titlePlaceholder": "Enter case title",
+    "descLabel": "DESCRIPTION *",
+    "descPlaceholder": "Describe your case in detail. Include all relevant information.",
+    "sindhCity": "SINDH CITY *",
+    "district": "DISTRICT *",
+    "filingDate": "FILING DATE",
+    "secureEvidence": "Secure Evidence Collection",
+    "evidenceHint": "Attach documents or photos directly from your phone.",
+    "phonePdf": "Phone File (PDF)",
+    "galleryPhoto": "Gallery Photo",
+    "snapCamera": "Snap Camera",
+    "noEvidence": "No evidence attached yet. Tap a button above to add files.",
+    "accessingFiles": "Accessing phone file system...",
+    "remove": "Remove",
+    "removeEvidence": "Remove Evidence",
+    "confirmRemove": "Are you sure you want to remove this evidence file?",
+    "yesRemove": "Yes, Remove",
+    "submit": "SUBMIT",
+    "caseCreated": "Case Created Successfully",
+    "caseCreatedMsg": "Your case and evidence have been securely registered in your Vault. You can now view your cases or request consultation with a verified advocate.",
+    "findAdvocate": "Find Advocate",
+    "viewMyCases": "View My Cases",
+    "titleRequired": "Please enter a clear Case Title.",
+    "descRequired": "Please provide a detailed description of the incident / dispute.",
+    "locationRequired": "Please select both your Sindh City and District.",
+    "docAttached": "Successfully attached \"{{name}}\" to your case evidence.",
+    "photoAttached": "Successfully attached \"{{name}}\" to your case evidence.",
+    "cameraAttached": "Evidence photo captured and attached.",
+    "galleryPermission": "Please allow gallery access to upload evidence photos.",
+    "cameraPermission": "Camera permission is needed to photograph evidence."
   }
 }

@@ -33,7 +33,7 @@ export default function CitizenHome() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const { isDarkMode, theme } = useAppTheme();
-  const { t, currentLang, translateDistrict, translateCategory, translateDynamic } = useAppTranslation();
+  const { t, currentLang, translateDistrict, translateCategory, translateLawyerName, translateDynamic } = useAppTranslation();
   const currentCitizenId = params.citizenId || params.id || getCurrentCitizenId();
 
   // Root screen: back button confirms exit, does not back to login screen
@@ -145,9 +145,9 @@ export default function CitizenHome() {
                 </Svg>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={styles.buildCaseBtnText}>BUILD YOUR CASE</Text>
+                <Text style={styles.buildCaseBtnText}>{t('citizen.buildCase', 'BUILD YOUR CASE')}</Text>
                 <Text style={[styles.buildCaseBtnSub, !isDarkMode && { color: 'rgba(255, 255, 255, 0.95)' }]}>
-                  Start legal intake with facts, sections & evidence
+                  {t('citizen.buildCaseSub', 'Start legal intake with facts, sections & evidence')}
                 </Text>
               </View>
               <View style={[styles.glassArrowPill, !isDarkMode && { backgroundColor: 'rgba(255, 255, 255, 0.3)' }]}>
@@ -164,7 +164,11 @@ export default function CitizenHome() {
         {/* VERIFIED LAWYERS NEAR YOU */}
         <View style={styles.sectionHeaderRow}>
           <Text style={styles.sectionLabel}>
-            {t(`Verified Advocates in ${userData.district || 'Karachi'}`)}
+            {currentLang === 'ur'
+              ? `${districtDisplay} میں مصدقہ وکلاء`
+              : currentLang === 'sd'
+              ? `${districtDisplay} ۾ تصديق ٿيل وڪيل`
+              : `Verified Advocates in ${userData.district || 'Karachi'}`}
           </Text>
           <TouchableOpacity onPress={() => router.push('/(citizen)/FindLawyer')}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
@@ -200,7 +204,7 @@ export default function CitizenHome() {
                   </View>
                 </View>
 
-                <Text style={styles.lawyerName} numberOfLines={1}>{l.name}</Text>
+                <Text style={styles.lawyerName} numberOfLines={1}>{translateLawyerName(l.name)}</Text>
                 <Text style={styles.lawyerSpec} numberOfLines={1}>{translateCategory(l.spec) || t('citizen.legalCounsel', 'Legal Counsel')}</Text>
 
                 <View style={styles.lawyerCardFooter}>

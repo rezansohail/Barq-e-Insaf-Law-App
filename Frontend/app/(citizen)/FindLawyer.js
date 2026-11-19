@@ -17,6 +17,7 @@ import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import { useAppTranslation } from '../../utils/translationHelper';
 
 const TYPE_OPTIONS = ['All Types', 'Property Law', 'Family Law'];
 const DISTRICT_OPTIONS = ['All Districts', 'Karachi', 'Hyderabad', 'Sukkur', 'Larkana', 'Thatta', 'Mirpur Khas'];
@@ -25,6 +26,7 @@ export default function FindLawyer() {
   useMockStore();
   const router = useRouter();
   const { theme, isDarkMode } = useAppTheme();
+  const { t, currentLang, translateCategory, translateDistrict, translateCourt, translateLawyerName } = useAppTranslation();
   const [selectedType, setSelectedType] = useState('All Types');
   const [selectedDistrict, setSelectedDistrict] = useState('All Districts');
   const [search, setSearch] = useState('');
@@ -173,10 +175,10 @@ export default function FindLawyer() {
 
               <View style={styles.lawyerInfo}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={styles.lawyerName}>{l.name}</Text>
+                  <Text style={styles.lawyerName}>{translateLawyerName(l.name)}</Text>
                 </View>
 
-                <Text style={styles.lawyerSpec}>{l.spec} · {l.experience || 'Sindh Bar'}</Text>
+                <Text style={styles.lawyerSpec}>{translateCategory(l.spec) || l.spec} · {l.experience || 'Sindh Bar'}</Text>
 
                 <View style={styles.lawyerMeta}>
                   <Text style={styles.sbcBadge}>{l.sbc ? `SBC ${l.sbc}` : 'SBC VERIFIED'}</Text>
@@ -192,7 +194,7 @@ export default function FindLawyer() {
                     }}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.profileBtnText}>Profile</Text>
+                    <Text style={styles.profileBtnText}>{t('common.profile', 'Profile')}</Text>
                   </TouchableOpacity>
 
                   <TouchableOpacity
@@ -200,7 +202,7 @@ export default function FindLawyer() {
                     onPress={() => handleBookConsultation(l)}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.consultBtnText}>Request Consult</Text>
+                    <Text style={styles.consultBtnText}>{t('citizen.requestConsultation', 'Request Consult')}</Text>
                   </TouchableOpacity>
                 </View>
               </View>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,9 +7,9 @@ import {
   TextInput,
   StatusBar,
   StyleSheet,
-  Dimensions,
-  Image,
   Alert,
+  ActivityIndicator,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -18,100 +18,63 @@ import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import api from '../../constants/api';
+import { showConfirm, showMessage } from '../../constants/dialog';
 
-const { width } = Dimensions.get('window');
-
-const INITIAL_MEDIA = [
-  {
-    id: 'MED-001',
-    name: 'KTN News (Kawish Television Network)',
-    accreditationNo: 'PEMRA-SND-2007',
-    registeredOn: '12 Oct 2022',
-    type: 'Broadcast Television',
-    status: 'Active',
-    verificationStatus: 'Verified',
-    city: 'Karachi',
-    district: 'Karachi South',
-    email: 'newsdesk@ktnnews.tv',
-    phone: '+92 21 35643001',
-    officeAddress: 'Kawish Television Network, Technology Park, Shahrah-e-Faisal, Karachi',
-    bureauChief: 'Mustafa Jamali',
-    broadcastBureaus: '30 Sindh Districts',
-    coverageBeats: 'High Court, Public Injustice, Land Encroachments, Civil Rights',
-    activeReporters: 45,
-    investigationsPublished: 118,
-  },
-  {
-    id: 'MED-002',
-    name: 'Sindh TV News Desk',
-    accreditationNo: 'PEMRA-SND-2004',
-    registeredOn: '18 Nov 2022',
-    type: 'Broadcast Television',
-    status: 'Active',
-    verificationStatus: 'Verified',
-    city: 'Hyderabad',
-    district: 'Hyderabad City',
-    email: 'editorial@sindhtvnews.tv',
-    phone: '+92 22 2785501',
-    officeAddress: 'Sindh TV Media Complex, Saddar, Hyderabad',
-    bureauChief: 'Ghulam Rasool',
-    broadcastBureaus: '24 Sindh Districts',
-    coverageBeats: 'District Sessions Courts, Rural Agrarian Disputes, Human Rights',
-    activeReporters: 32,
-    investigationsPublished: 84,
-  },
-  {
-    id: 'MED-003',
-    name: 'Daily Kawish Investigative Cell',
-    accreditationNo: 'CPNE-SND-1990',
-    registeredOn: '05 Jan 2023',
-    type: 'Print & Digital Press',
-    status: 'Active',
-    verificationStatus: 'Verified',
-    city: 'Hyderabad',
-    district: 'Hyderabad City',
-    email: 'kawishinvestigates@gmail.com',
-    phone: '+92 22 2780100',
-    officeAddress: 'Kawish Building, Station Road, Hyderabad',
-    bureauChief: 'Ali Qazi',
-    broadcastBureaus: 'All Sindh Talukas',
-    coverageBeats: 'In-Depth Judicial Investigation, Revenue Department Records',
-    activeReporters: 28,
-    investigationsPublished: 62,
-  },
-  {
-    id: 'MED-004',
-    name: 'Awami Awaz Digital Bureau',
-    accreditationNo: 'PEMRA-DIG-2024',
-    registeredOn: '14 Feb 2024',
-    type: 'Digital Streaming',
-    status: 'Pending',
-    verificationStatus: 'Pending Review',
-    city: 'Sukkur',
-    district: 'Sukkur',
-    email: 'desk@awamiawaz.pk',
-    phone: '+92 71 5621100',
-    officeAddress: 'Press Club Road, Sukkur',
-    bureauChief: 'Naveed Soomro',
-    broadcastBureaus: 'Sukkur & Larkana Divisions',
-    coverageBeats: 'Tribal Jirga Mediation, Rural Land Grabbing',
-    activeReporters: 12,
-    investigationsPublished: 14,
-  },
-];
-
-const STATUSES = ['All', 'Active', 'Pending'];
+const STATUSES = ['All', 'Active', 'Suspended'];
 
 export default function MediaManagement() {
   const router = useRouter();
-  const { isDark, theme } = useAppTheme();
-  const [data, setData] = useState(INITIAL_MEDIA);
+  const { isDark } = useAppTheme();
+  const [data, setData] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState('All');
-  const [selectedOutlet, setSelectedOutlet] = useState(null);
 
   // Hardware back returns to Admin Overview
   useAppNavigation({ isHome: false, homeRoute: '/(Admin)' });
+
+  const fetchMedia = useCallback(async () => {
+    try {
+      const res = await api.get('/admin/media?limit=50');
+      const list = res.data?.media || [];
+      const mapped = list.map((m) => ({
+        id: m.id,
+        name: m.channel_name || m.full_name || 'Media House',
+        accreditationNo: m.registration_number || `PEMRA-SND-${m.id}`,
+        registeredOn: m.created_at ? new Date(m.created_at).toLocaleDateString() : 'Active',
+        type: m.media_type || 'Broadcast Television',
+        status: m.status || 'Active',
+        verificationStatus: m.is_verified ? 'Verified' : 'Pending Review',
+        city: m.district || 'Karachi',
+        district: m.district || 'Karachi South',
+        email: m.email || '—',
+        phone: m.phone || '—',
+        officeAddress: `${m.district || 'Sindh'}, Pakistan`,
+        bureauChief: m.resource_person || 'Bureau Chief',
+        broadcastBureaus: 'All Sindh Divisions',
+        coverageBeats: 'High Court, Public Injustice, Land Encroachments, Civil Rights',
+        activeReporters: 25,
+        investigationsPublished: m.stories_published_count || 12,
+      }));
+      setData(mapped);
+    } catch (err) {
+      console.warn('Failed to fetch media outlets:', err.message);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchMedia();
+  }, [fetchMedia]);
+
+  const onRefresh = useCallback(() => {
+    setRefreshing(true);
+    fetchMedia();
+  }, [fetchMedia]);
 
   const filtered = data.filter((m) => {
     const q = search.toLowerCase();
@@ -124,26 +87,56 @@ export default function MediaManagement() {
     return matchQ && matchStatus;
   });
 
-  const handleApprove = (id) => {
-    setData((prev) =>
-      prev.map((item) =>
-        item.id === id
-          ? { ...item, status: 'Active', verificationStatus: 'Verified' }
-          : item
-      )
+  const handleToggleStatus = (id, currentStatus) => {
+    const nextStatus = currentStatus === 'Active' ? 'Suspended' : 'Active';
+    Alert.alert(
+      `${nextStatus === 'Suspended' ? 'Suspend' : 'Activate'} Media Outlet`,
+      `Change media outlet status to ${nextStatus}?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Confirm',
+          style: nextStatus === 'Suspended' ? 'destructive' : 'default',
+          onPress: async () => {
+            try {
+              await api.put(`/admin/media/${id}/status`, {
+                status: nextStatus,
+                reason: `Admin updated status to ${nextStatus}`,
+              });
+              Alert.alert('Status Updated', `Media status set to ${nextStatus}.`);
+              fetchMedia();
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.message || err.message);
+            }
+          },
+        },
+      ]
     );
-    Alert.alert('Accreditation Approved', 'The media outlet has been verified for broadcast access.');
   };
 
-  const handleRemove = (id) => {
-    Alert.alert('Remove Media Outlet', 'Are you sure you want to remove this media accreditation?', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Remove',
-        style: 'destructive',
-        onPress: () => setData((prev) => prev.filter((item) => item.id !== id)),
-      },
-    ]);
+  const handleRemove = (id, name) => {
+    Alert.alert(
+      'Remove Media Outlet',
+      `Are you sure you want to remove '${name}' from accredited media?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              await api.delete(`/admin/media/${id}`, {
+                data: { reason: 'Accreditation revoked by Sindh Bar Council' },
+              });
+              Alert.alert('Media Removed', 'Media outlet was removed successfully.');
+              fetchMedia();
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.message || err.message);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const bg = isDark ? '#090302' : '#FAF7F2';
@@ -174,6 +167,14 @@ export default function MediaManagement() {
         style={s.scroll}
         contentContainerStyle={s.content}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#FF9500"
+            colors={['#FF9500']}
+          />
+        }
       >
         {/* Search Input */}
         <View style={[s.searchBox, { backgroundColor: inputBg, borderColor: inputBorder }]}>
@@ -195,7 +196,7 @@ export default function MediaManagement() {
         </View>
 
         {/* Status Chips */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={s.filterRow}>
+        <View style={s.filterRow}>
           {STATUSES.map((st) => (
             <TouchableOpacity
               key={st}
@@ -220,10 +221,29 @@ export default function MediaManagement() {
               </Text>
             </TouchableOpacity>
           ))}
-        </ScrollView>
+        </View>
+
+        {/* Loading Spinner */}
+        {loading && (
+          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+            <ActivityIndicator size="large" color="#FF9500" />
+            <Text style={{ marginTop: 12, color: textSecondary, fontSize: 13 }}>
+              Loading accredited media outlets...
+            </Text>
+          </View>
+        )}
+
+        {/* Empty State */}
+        {!loading && filtered.length === 0 && (
+          <View style={{ paddingVertical: 40, alignItems: 'center' }}>
+            <Text style={{ color: textSecondary, fontSize: 14 }}>
+              No media outlets found matching criteria.
+            </Text>
+          </View>
+        )}
 
         {/* Media Outlets List */}
-        {filtered.map((item) => (
+        {!loading && filtered.map((item) => (
           <View
             key={item.id}
             style={[s.card, { backgroundColor: cardBg, borderColor: cardBorder }]}
@@ -250,18 +270,18 @@ export default function MediaManagement() {
                     backgroundColor:
                       item.status === 'Active'
                         ? 'rgba(34, 197, 94, 0.15)'
-                        : 'rgba(245, 158, 11, 0.15)',
+                        : 'rgba(239, 68, 68, 0.15)',
                     borderColor:
                       item.status === 'Active'
                         ? 'rgba(74, 222, 128, 0.4)'
-                        : 'rgba(245, 158, 11, 0.4)',
+                        : 'rgba(239, 68, 68, 0.4)',
                   },
                 ]}
               >
                 <Text
                   style={[
                     s.statusText,
-                    { color: item.status === 'Active' ? '#4ade80' : '#f59e0b' },
+                    { color: item.status === 'Active' ? '#4ade80' : '#ef4444' },
                   ]}
                 >
                   {item.status}
@@ -287,18 +307,29 @@ export default function MediaManagement() {
 
             {/* Actions */}
             <View style={s.actionRow}>
-              {item.status !== 'Active' && (
-                <TouchableOpacity
-                  style={s.approveBtn}
-                  onPress={() => handleApprove(item.id)}
-                  activeOpacity={0.8}
+              <TouchableOpacity
+                style={[
+                  s.toggleBtn,
+                  {
+                    backgroundColor: item.status === 'Active' ? 'rgba(245, 158, 11, 0.15)' : 'rgba(34, 197, 94, 0.15)',
+                    borderColor: item.status === 'Active' ? 'rgba(245, 158, 11, 0.5)' : 'rgba(34, 197, 94, 0.5)',
+                  },
+                ]}
+                onPress={() => handleToggleStatus(item.id, item.status)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    s.toggleBtnText,
+                    { color: item.status === 'Active' ? '#f59e0b' : '#22c55e' },
+                  ]}
                 >
-                  <Text style={s.approveBtnText}>APPROVE ACCREDITATION</Text>
-                </TouchableOpacity>
-              )}
+                  {item.status === 'Active' ? 'Suspend Media' : 'Activate Media'}
+                </Text>
+              </TouchableOpacity>
               <TouchableOpacity
                 style={s.removeBtn}
-                onPress={() => handleRemove(item.id)}
+                onPress={() => handleRemove(item.id, item.name)}
                 activeOpacity={0.8}
               >
                 <Text style={s.removeBtnText}>Remove</Text>
@@ -333,7 +364,7 @@ const s = StyleSheet.create({
     paddingVertical: 12,
     marginLeft: 8,
   },
-  filterRow: { marginBottom: 14 },
+  filterRow: { flexDirection: 'row', marginBottom: 14 },
   chip: {
     borderRadius: 20,
     paddingHorizontal: 14,
@@ -383,18 +414,17 @@ const s = StyleSheet.create({
     gap: 8,
     marginTop: 12,
   },
-  approveBtn: {
+  toggleBtn: {
     flex: 1,
-    backgroundColor: '#FF9500',
     borderRadius: 10,
     paddingVertical: 10,
     alignItems: 'center',
+    borderWidth: 1,
   },
-  approveBtnText: {
-    color: '#0A0301',
+  toggleBtnText: {
     fontSize: 11.5,
     fontWeight: '800',
-    letterSpacing: 0.4,
+    letterSpacing: 0.3,
   },
   removeBtn: {
     flex: 1,

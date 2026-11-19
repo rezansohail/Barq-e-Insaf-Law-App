@@ -8,17 +8,20 @@ import {
   TextInput,
   Alert,
   ActivityIndicator,
+  Image,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import styles from './CaseForm.styles';
-import { useMockStore, addCase } from './MockStore';
+import { useMockStore, addCase, userData } from './MockStore';
 import LiquidGlassButton from '../../components/LiquidGlassButton';
 import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
+import { useAppTranslation } from '../../utils/translationHelper';
+import { useAppTheme } from '../../context/ThemeContext';
 
 const sindhCities = {
   Karachi: ['Karachi Central', 'Karachi East', 'Karachi South', 'Karachi West', 'Malir', 'Korangi', 'Keamari'],
@@ -35,14 +38,8 @@ export default function CaseForm() {
   useMockStore();
   const router = useRouter();
   const params = useLocalSearchParams();
-  const caseType = params.caseType || 'property';
-  
-  const navItems = [
-    { id: 'home',     label: 'Home'    },
-    { id: 'cases',    label: 'Cases'   },
-    { id: 'lawyers',  label: 'Lawyers' },
-    { id: 'profile',  label: 'Profile' },
-  ];
+  const { isDarkMode } = useAppTheme();
+  const { t, currentLang, translateDistrict } = useAppTranslation();
 
   const [formData, setFormData] = useState({
     title: '',
@@ -50,12 +47,13 @@ export default function CaseForm() {
   });
 
   const [selectedCity, setSelectedCity] = useState('Karachi');
-  const [selectedDistrict, setSelectedDistrict] = useState('Karachi Central');
+  const [selectedDistrict, setSelectedDistrict] = useState(userData.district || 'Karachi Central');
   const [showCityDropdown, setShowCityDropdown] = useState(false);
   const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
 
   const [evidenceList, setEvidenceList] = useState([]);
   const [pickingLoading, setPickingLoading] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   // Hardware back returns to CitizenHome
   useAppNavigation({ isHome: false, homeRoute: '/(citizen)/CitizenHome' });
@@ -70,27 +68,9 @@ export default function CaseForm() {
         uri: params.newFileUri || '',
         date: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
       };
-      setEvidenceList(prev => [...prev, newFile]);
+      setEvidenceList((prev) => [...prev, newFile]);
     }
   }, [params.newFileName, params.newFileType, params.newFileSize, params.newFileUri]);
-
-  const handleNav = (id) => {
-    if (id === 'home')    router.push('/(citizen)/CitizenHome');
-    if (id === 'cases')   router.push('/(citizen)/MyCases');
-    if (id === 'lawyers') router.push('/(citizen)/FindLawyer');
-    if (id === 'profile') router.push('/(citizen)/Profile');
-  };
-
-  const getCaseTypeName = () => {
-    switch (caseType) {
-      case 'property': return 'Property & Land Dispute';
-      case 'family': return 'Family & Custody Case';
-      case 'inheritance': return 'Inheritance & Succession';
-      case 'civil': return 'Civil & Contract Dispute';
-      case 'criminal': return 'Criminal / FIR Matter';
-      default: return 'Legal Case';
-    }
-  };
 
   // 1. Pick Document/PDF directly from Phone
   const handlePickDocument = async () => {
@@ -104,9 +84,9 @@ export default function CaseForm() {
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const file = result.assets[0];
         const formattedSize = file.size
-          ? (file.size > 1048576
-              ? (file.size / 1048576).toFixed(1) + ' MB'
-              : Math.round(file.size / 1024) + ' KB')
+          ? file.size > 1048576
+            ? (file.size / 1048576).toFixed(1) + ' MB'
+            : Math.round(file.size / 1024) + ' KB'
           : 'File';
         const isPdf = file.mimeType?.includes('pdf') || file.name?.toLowerCase().endsWith('.pdf');
 
@@ -119,11 +99,18 @@ export default function CaseForm() {
           date: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
         };
 
-        setEvidenceList(prev => [...prev, newDoc]);
-        Alert.alert('File Added', `Successfully attached "${newDoc.name}" to your case evidence.`);
+        setEvidenceList((prev) => [...prev, newDoc]);
+        Alert.alert(
+          t('common.success', 'Success'),
+          currentLang === 'ur'
+            ? `فائل "${newDoc.name}" ثبوت میں محفوظ ہو گئی ہے۔`
+            : currentLang === 'sd'
+            ? `فائل "${newDoc.name}" ثبوت ۾ شامل ڪئي وئي.`
+            : `Successfully attached "${newDoc.name}" to your case evidence.`
+        );
       }
     } catch (err) {
-      Alert.alert('Error', 'Unable to pick document: ' + (err.message || 'Please try again'));
+      Alert.alert(t('common.error', 'Error'), err.message || 'Unable to pick document');
     } finally {
       setPickingLoading(false);
     }
@@ -135,7 +122,10 @@ export default function CaseForm() {
       setPickingLoading(true);
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please allow gallery access to upload evidence photos.');
+        Alert.alert(
+          t('common.error', 'Permission Required'),
+          t('case.galleryPermission', 'Please allow gallery access to upload evidence photos.')
+        );
         return;
       }
 
@@ -149,9 +139,9 @@ export default function CaseForm() {
         const asset = result.assets[0];
         const rawName = asset.fileName || asset.uri.split('/').pop() || 'Evidence_Photo.jpg';
         const formattedSize = asset.fileSize
-          ? (asset.fileSize > 1048576
-              ? (asset.fileSize / 1048576).toFixed(1) + ' MB'
-              : Math.round(asset.fileSize / 1024) + ' KB')
+          ? asset.fileSize > 1048576
+            ? (asset.fileSize / 1048576).toFixed(1) + ' MB'
+            : Math.round(asset.fileSize / 1024) + ' KB'
           : 'Photo';
 
         const newPhoto = {
@@ -163,11 +153,18 @@ export default function CaseForm() {
           date: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
         };
 
-        setEvidenceList(prev => [...prev, newPhoto]);
-        Alert.alert('Photo Added', `Successfully attached "${newPhoto.name}" to your case evidence.`);
+        setEvidenceList((prev) => [...prev, newPhoto]);
+        Alert.alert(
+          t('common.success', 'Success'),
+          currentLang === 'ur'
+            ? `تصویر "${newPhoto.name}" ثبوت میں محفوظ ہو گئی ہے۔`
+            : currentLang === 'sd'
+            ? `فوٽو "${newPhoto.name}" ثبوت ۾ شامل ڪيو ويو.`
+            : `Successfully attached "${newPhoto.name}" to your case evidence.`
+        );
       }
     } catch (err) {
-      Alert.alert('Error', 'Unable to pick photo: ' + (err.message || 'Please try again'));
+      Alert.alert(t('common.error', 'Error'), err.message || 'Unable to pick photo');
     } finally {
       setPickingLoading(false);
     }
@@ -179,7 +176,10 @@ export default function CaseForm() {
       setPickingLoading(true);
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Camera permission is needed to photograph evidence.');
+        Alert.alert(
+          t('common.error', 'Permission Required'),
+          t('case.cameraPermission', 'Camera permission is needed to photograph evidence.')
+        );
         return;
       }
 
@@ -200,59 +200,115 @@ export default function CaseForm() {
           date: new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'short' }),
         };
 
-        setEvidenceList(prev => [...prev, newPhoto]);
-        Alert.alert('Photo Captured', 'Evidence photo captured and attached.');
+        setEvidenceList((prev) => [...prev, newPhoto]);
+        Alert.alert(
+          t('common.success', 'Success'),
+          currentLang === 'ur'
+            ? 'کیمرے سے تصویر محفوظ ہو گئی ہے۔'
+            : currentLang === 'sd'
+            ? 'ڪئميرا مان فوٽو محفوظ ٿي ويو.'
+            : 'Evidence photo captured and attached.'
+        );
       }
     } catch (err) {
-      Alert.alert('Error', 'Unable to open camera: ' + (err.message || 'Please try again'));
+      Alert.alert(t('common.error', 'Error'), err.message || 'Unable to open camera');
     } finally {
       setPickingLoading(false);
     }
   };
 
-  const todayDate = new Date().toLocaleDateString('en-US', { day: 'numeric', month: 'long', year: 'numeric' });
+  const todayDate = new Date().toLocaleDateString(
+    currentLang === 'ur' ? 'ur-PK' : currentLang === 'sd' ? 'sd-PK' : 'en-US',
+    { day: 'numeric', month: 'long', year: 'numeric' }
+  );
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!formData.title.trim()) {
-      Alert.alert('Required', 'Please enter a clear Case Title.');
+      Alert.alert(
+        t('common.error', 'Required'),
+        currentLang === 'ur'
+          ? 'براہ کرم کیس کا عنوان درج کریں۔'
+          : currentLang === 'sd'
+          ? 'مهرباني ڪري ڪيس جو عنوان لکو.'
+          : 'Please enter a clear Case Title.'
+      );
       return;
     }
     if (!formData.description.trim()) {
-      Alert.alert('Required', 'Please provide a detailed description of the incident / dispute.');
+      Alert.alert(
+        t('common.error', 'Required'),
+        currentLang === 'ur'
+          ? 'براہ کرم کیس کی مکمل تفصیلات فراہم کریں۔'
+          : currentLang === 'sd'
+          ? 'مهرباني ڪري ڪيس جا تفصيل لکو.'
+          : 'Please provide a detailed description of the incident / dispute.'
+      );
       return;
     }
     if (!selectedCity || !selectedDistrict) {
-      Alert.alert('Required', 'Please select both your Sindh City and District.');
+      Alert.alert(
+        t('common.error', 'Required'),
+        currentLang === 'ur'
+          ? 'براہ کرم سندھ کا شہر اور ضلع منتخب کریں۔'
+          : currentLang === 'sd'
+          ? 'مهرباني ڪري سنڌ جو شهر ۽ ضلعو چونڊيو.'
+          : 'Please select both your Sindh City and District.'
+      );
       return;
     }
-    
-    addCase({
-      title: formData.title.trim(),
-      type: getCaseTypeName(),
-      description: formData.description.trim(),
-      district: `${selectedCity} - ${selectedDistrict}`,
-      evidence: evidenceList,
-    });
 
-    Alert.alert(
-      'Case Created Successfully',
-      'Your case has been securely registered in your Vault. Verified Sindh advocates can now review your files.',
-      [
-        {
-          text: 'View My Cases',
-          onPress: () => router.push('/(citizen)/MyCases'),
-        },
-      ]
-    );
+    try {
+      setSubmitting(true);
+      await addCase({
+        title: formData.title.trim(),
+        type: 'Legal Case',
+        description: formData.description.trim(),
+        district: `${selectedCity} - ${selectedDistrict}`,
+        evidence: evidenceList,
+      });
+
+      Alert.alert(
+        t('common.success', 'Case Created Successfully'),
+        currentLang === 'ur'
+          ? 'آپ کا کیس اور تمام ثبوت والٹ میں محفوظ ہو گئے ہیں۔ کیا آپ کسی مصدقہ وکیل سے قانونی مشاورت چاہتے ہیں؟'
+          : currentLang === 'sd'
+          ? 'توهان جو ڪيس ۽ سمورا ثبوت والٽ ۾ محفوظ ٿي ويا آهن. ڇا توهان ڪنهن وڪيل کان صلاح وٺڻ چاهيو ٿا؟'
+          : 'Your case and evidence have been securely registered in your Vault. You can now view your cases or request consultation with a verified advocate.',
+        [
+          {
+            text: currentLang === 'ur' ? 'وکلاء دیکھیں' : currentLang === 'sd' ? 'وڪيل ڏسو' : 'Find Advocate',
+            onPress: () => router.push('/(citizen)/FindLawyer'),
+          },
+          {
+            text: currentLang === 'ur' ? 'میرے مقدمات' : currentLang === 'sd' ? 'منهنجا ڪيس' : 'View My Cases',
+            onPress: () => router.push('/(citizen)/MyCases'),
+          },
+        ]
+      );
+    } catch (e) {
+      Alert.alert(t('common.error', 'Error'), e.message || 'Failed to submit case.');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleDeleteEvidence = (id) => {
     Alert.alert(
-      'Remove Evidence',
-      'Are you sure you want to remove this evidence file?',
+      t('case.removeEvidence', 'Remove Evidence'),
+      currentLang === 'ur'
+        ? 'کیا آپ اس ثبوت فائل کو ہٹانا چاہتے ہیں؟'
+        : currentLang === 'sd'
+        ? 'ڇا توهان هي ثبوت فائل هٽائڻ چاهيو ٿا؟'
+        : 'Are you sure you want to remove this evidence file?',
       [
-        { text: 'Yes, Remove', onPress: () => setEvidenceList(evidenceList.filter(item => item.id !== id)) },
-        { text: 'Cancel', style: 'cancel' },
+        {
+          text: t('common.cancel', 'Cancel'),
+          style: 'cancel',
+        },
+        {
+          text: currentLang === 'ur' ? 'ہاں، ہٹائیں' : currentLang === 'sd' ? 'ها، هٽايو' : 'Yes, Remove',
+          onPress: () => setEvidenceList(evidenceList.filter((item) => item.id !== id)),
+        },
       ]
     );
   };
@@ -260,53 +316,62 @@ export default function CaseForm() {
   return (
     <SafeAreaView style={styles.safe}>
       <StatusBar barStyle="light-content" translucent backgroundColor="#0A0402" />
-      
-      {/* Modern '< Build Your Case' Header */}
+
+      {/* Header */}
       <AppHeader
-        title="Build Your Case"
+        title={t('citizen.buildCase', 'Build Your Case')}
         showBack={true}
         homeRoute="/(citizen)/CitizenHome"
         role="citizen"
       />
 
-      <ScrollView 
+      <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
+        {/* Banner with clean 'Build Your Case' title only */}
         <View style={styles.caseTypeBanner}>
-          <Text style={styles.caseTypeName}>{getCaseTypeName()}</Text>
+          <Text style={styles.caseTypeName}>
+            {t('citizen.buildCase', 'Build Your Case')}
+          </Text>
         </View>
 
         {/* Form Fields */}
         <View style={styles.formGroup}>
-          <Text style={styles.formLabel}>Case Title *</Text>
+          <Text style={styles.formLabel}>
+            {t('case.titleLabel', 'CASE TITLE *')}
+          </Text>
           <TextInput
             style={styles.formInput}
-            placeholder="Enter case title"
+            placeholder={t('case.titlePlaceholder', 'Enter case title')}
             placeholderTextColor="#999"
             value={formData.title}
-            onChangeText={(text) => setFormData({...formData, title: text})}
+            onChangeText={(text) => setFormData({ ...formData, title: text })}
           />
         </View>
 
         <View style={styles.formGroup}>
-          <Text style={styles.formLabel}>Description *</Text>
+          <Text style={styles.formLabel}>
+            {t('case.descLabel', 'DESCRIPTION *')}
+          </Text>
           <TextInput
             style={[styles.formInput, styles.formTextArea]}
-            placeholder="Describe your case in detail. Include all relevant information."
+            placeholder={t('case.descPlaceholder', 'Describe your case in detail. Include all relevant information.')}
             placeholderTextColor="#999"
             multiline
             numberOfLines={5}
             value={formData.description}
-            onChangeText={(text) => setFormData({...formData, description: text})}
+            onChangeText={(text) => setFormData({ ...formData, description: text })}
           />
         </View>
 
         {/* Sindh City Dropdown */}
         <View style={styles.formGroup}>
-          <Text style={styles.formLabel}>Sindh City *</Text>
-          <TouchableOpacity 
+          <Text style={styles.formLabel}>
+            {t('case.sindhCity', 'SINDH CITY *')}
+          </Text>
+          <TouchableOpacity
             style={styles.dropdownSelector}
             onPress={() => {
               setShowCityDropdown(!showCityDropdown);
@@ -314,23 +379,23 @@ export default function CaseForm() {
             }}
           >
             <Text style={styles.dropdownValue}>
-              {selectedCity || 'Select Sindh City'}
+              {translateDistrict(selectedCity) || selectedCity}
             </Text>
           </TouchableOpacity>
-          
+
           {showCityDropdown && (
             <View style={styles.dropdownList}>
-              {Object.keys(sindhCities).map(city => (
-                <TouchableOpacity 
-                  key={city} 
+              {Object.keys(sindhCities).map((city) => (
+                <TouchableOpacity
+                  key={city}
                   style={styles.dropdownItem}
                   onPress={() => {
                     setSelectedCity(city);
-                    setSelectedDistrict('');
+                    setSelectedDistrict(sindhCities[city][0]);
                     setShowCityDropdown(false);
                   }}
                 >
-                  <Text style={styles.dropdownItemText}>{city}</Text>
+                  <Text style={styles.dropdownItemText}>{translateDistrict(city)}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -340,8 +405,10 @@ export default function CaseForm() {
         {/* District Dropdown */}
         {selectedCity !== '' && (
           <View style={styles.formGroup}>
-            <Text style={styles.formLabel}>District *</Text>
-            <TouchableOpacity 
+            <Text style={styles.formLabel}>
+              {t('case.district', 'DISTRICT *')}
+            </Text>
+            <TouchableOpacity
               style={styles.dropdownSelector}
               onPress={() => {
                 setShowDistrictDropdown(!showDistrictDropdown);
@@ -349,22 +416,22 @@ export default function CaseForm() {
               }}
             >
               <Text style={styles.dropdownValue}>
-                {selectedDistrict || 'Select District'}
+                {translateDistrict(selectedDistrict) || selectedDistrict}
               </Text>
             </TouchableOpacity>
-            
+
             {showDistrictDropdown && (
               <View style={styles.dropdownList}>
-                {sindhCities[selectedCity].map(dist => (
-                  <TouchableOpacity 
-                    key={dist} 
+                {sindhCities[selectedCity].map((dist) => (
+                  <TouchableOpacity
+                    key={dist}
                     style={styles.dropdownItem}
                     onPress={() => {
                       setSelectedDistrict(dist);
                       setShowDistrictDropdown(false);
                     }}
                   >
-                    <Text style={styles.dropdownItemText}>{dist}</Text>
+                    <Text style={styles.dropdownItemText}>{translateDistrict(dist)}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -374,7 +441,9 @@ export default function CaseForm() {
 
         {/* Uneditable Actual Date */}
         <View style={styles.formGroup}>
-          <Text style={styles.formLabel}>Filing Date</Text>
+          <Text style={styles.formLabel}>
+            {t('case.filingDate', 'FILING DATE')}
+          </Text>
           <View style={styles.uneditableField}>
             <Text style={styles.uneditableFieldText}>{todayDate}</Text>
           </View>
@@ -384,16 +453,18 @@ export default function CaseForm() {
         <View style={styles.evidenceSection}>
           <View style={styles.evidenceHeader}>
             <View>
-              <Text style={styles.evidenceTitle}>Secure Evidence Collection</Text>
+              <Text style={styles.evidenceTitle}>
+                {t('case.secureEvidence', 'Secure Evidence Collection')}
+              </Text>
               <Text style={styles.evidenceHint}>
-                Attach documents or photos directly from your phone.
+                {t('case.evidenceHint', 'Attach documents or photos directly from your phone.')}
               </Text>
             </View>
           </View>
 
           {/* Direct Phone Attachment Buttons */}
           <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={{
                 flex: 1,
                 backgroundColor: '#5C1A1A',
@@ -407,11 +478,11 @@ export default function CaseForm() {
               disabled={pickingLoading}
             >
               <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
-                Phone File (PDF)
+                {t('case.phonePdf', 'Phone File (PDF)')}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={{
                 flex: 1,
                 backgroundColor: '#0F2744',
@@ -425,11 +496,11 @@ export default function CaseForm() {
               disabled={pickingLoading}
             >
               <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
-                Gallery Photo
+                {t('case.galleryPhoto', 'Gallery Photo')}
               </Text>
             </TouchableOpacity>
 
-            <TouchableOpacity 
+            <TouchableOpacity
               style={{
                 flex: 1,
                 backgroundColor: '#1B4332',
@@ -443,7 +514,7 @@ export default function CaseForm() {
               disabled={pickingLoading}
             >
               <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
-                Snap Camera
+                {t('case.snapCamera', 'Snap Camera')}
               </Text>
             </TouchableOpacity>
           </View>
@@ -451,44 +522,76 @@ export default function CaseForm() {
           {pickingLoading && (
             <View style={{ paddingVertical: 10, alignItems: 'center' }}>
               <ActivityIndicator color="#FF9500" />
-              <Text style={{ fontSize: 11, color: 'rgba(255, 220, 180, 0.6)', marginTop: 4 }}>Accessing phone file system...</Text>
+              <Text style={{ fontSize: 11, color: 'rgba(255, 220, 180, 0.6)', marginTop: 4 }}>
+                {t('common.loading', 'Accessing phone file system...')}
+              </Text>
             </View>
           )}
 
           {evidenceList.length === 0 && !pickingLoading && (
-            <View style={{ paddingVertical: 14, alignItems: 'center', backgroundColor: 'rgba(25, 12, 5, 0.65)', borderRadius: 8, borderWidth: 1, borderColor: 'rgba(255, 149, 0, 0.25)', borderStyle: 'dashed' }}>
-              <Text style={{ fontSize: 12, color: 'rgba(255, 220, 180, 0.55)', fontWeight: '500' }}>
-                No evidence attached yet. Tap a button above to add files.
+            <View
+              style={{
+                paddingVertical: 14,
+                alignItems: 'center',
+                backgroundColor: 'rgba(25, 12, 5, 0.65)',
+                borderRadius: 8,
+                borderWidth: 1,
+                borderColor: 'rgba(255, 149, 0, 0.25)',
+                borderStyle: 'dashed',
+              }}
+            >
+              <Text style={{ fontSize: 12, color: 'rgba(255, 220, 180, 0.55)', fontWeight: '500', textAlign: 'center' }}>
+                {t('case.noEvidence', 'No evidence attached yet. Tap a button above to add files.')}
               </Text>
             </View>
           )}
 
           {evidenceList.map((item, index) => (
             <View key={item.id || index} style={styles.evidenceItem}>
-              <View style={{ width: 34, height: 34, borderRadius: 8, backgroundColor: 'rgba(255, 149, 0, 0.15)', borderWidth: 1, borderColor: 'rgba(255, 160, 40, 0.3)', alignItems: 'center', justifyContent: 'center', marginRight: 10 }}>
-                <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFB74D' }}>{item.type === 'Photo' ? 'IMG' : 'DOC'}</Text>
+              <View
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: 8,
+                  backgroundColor: 'rgba(255, 149, 0, 0.15)',
+                  borderWidth: 1,
+                  borderColor: 'rgba(255, 160, 40, 0.3)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginRight: 10,
+                }}
+              >
+                <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFB74D' }}>
+                  {item.type === 'Photo' ? 'IMG' : 'DOC'}
+                </Text>
               </View>
               <View style={styles.evidenceInfo}>
-                <Text style={styles.evidenceName} numberOfLines={1}>{item.name}</Text>
+                <Text style={styles.evidenceName} numberOfLines={1}>
+                  {item.name}
+                </Text>
                 <Text style={styles.evidenceMeta}>
                   {item.type} • {item.size || 'Attached'} {item.date ? `• ${item.date}` : ''}
                 </Text>
               </View>
               <View style={styles.evidenceActions}>
                 <TouchableOpacity onPress={() => handleDeleteEvidence(item.id)} style={styles.deleteBtn}>
-                  <Text style={styles.deleteBtnText}>Remove</Text>
+                  <Text style={styles.deleteBtnText}>{t('case.remove', 'Remove')}</Text>
                 </TouchableOpacity>
               </View>
             </View>
           ))}
         </View>
 
-        {/* Liquid Glass Submit Button */}
+        {/* Clean Submit Button: "SUBMIT" */}
         <View style={{ marginVertical: 18 }}>
-          <LiquidGlassButton
-            title="SUBMIT CASE FOR VERIFICATION"
-            onPress={handleSubmit}
-          />
+          {submitting ? (
+            <ActivityIndicator color="#FF9500" size="large" />
+          ) : (
+            <LiquidGlassButton
+              title={t('case.submit', 'SUBMIT')}
+              onPress={handleSubmit}
+            />
+          )}
         </View>
       </ScrollView>
 

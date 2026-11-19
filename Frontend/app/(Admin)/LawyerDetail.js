@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity,
-  StatusBar, StyleSheet, Dimensions,
+  StatusBar, StyleSheet, Dimensions, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -9,6 +9,8 @@ import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
+import api from '../../constants/api';
+import { showConfirm, showMessage } from '../../constants/dialog';
 
 const { width } = Dimensions.get('window');
 
@@ -44,8 +46,66 @@ export default function LawyerDetail() {
   const params = useLocalSearchParams();
   const [activeTab, setActiveTab] = useState('Personal');
 
-  // Back button returns to Lawyer Management or Admin Overview
-  useAppNavigation({ isHome: false, homeRoute: '/(Admin)/LawyerManagement' });
+  const [currentStatus, setCurrentStatus] = useState(data.status || 'Active');
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const handleToggleStatus = (newStatus) => {
+    const isSuspending = newStatus.toLowerCase() === 'suspended';
+    Alert.alert(
+      `${isSuspending ? 'Suspend' : 'Activate'} Advocate License`,
+      `Are you sure you want to ${isSuspending ? 'suspend' : 'activate'} Advocate ${displayName} on the Sindh Bar Council register?`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: `Confirm ${isSuspending ? 'Suspend' : 'Activate'}`,
+          style: isSuspending ? 'destructive' : 'default',
+          onPress: async () => {
+            try {
+              setActionLoading(true);
+              const res = await api.put(`/admin/lawyers/${data.id}/status`, {
+                status: newStatus.toLowerCase(),
+                reason: `Administrative oversight: status updated to ${newStatus}`,
+              });
+              Alert.alert('Status Updated', res.data?.message || 'Advocate status updated successfully.');
+              setCurrentStatus(newStatus);
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.message || err.message);
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleRevokeRecord = () => {
+    Alert.alert(
+      'Revoke Advocate Record',
+      `Are you sure you want to remove Advocate ${displayName} from the Sindh Bar Council register? This action cannot be undone.`,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Remove Advocate',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setActionLoading(true);
+              const res = await api.delete(`/admin/lawyers/${data.id}`, {
+                data: { reason: 'Advocate license revoked by Sindh Bar Council administrator' },
+              });
+              Alert.alert('Advocate Removed', res.data?.message || 'Record successfully removed.');
+              router.replace('/(Admin)/LawyerManagement');
+            } catch (err) {
+              Alert.alert('Error', err.response?.data?.message || err.message);
+            } finally {
+              setActionLoading(false);
+            }
+          },
+        },
+      ]
+    );
+  };
 
   // Get data passed from LawyerManagement
   let lawyer = null;
@@ -208,19 +268,37 @@ export default function LawyerDetail() {
           <>
             <Section title="Account Management">
               <InfoRow label="Username"         value={data.username || (displayName.toLowerCase().replace(/\s+/g, '.') + '.sbc')} />
-              <InfoRow label="Account Status"   value={data.status || 'Active'} highlight />
-              <InfoRow label="Registered On"    value={data.registeredOn || '12 Oct 2024'} />
+              <InfoRow label="Account Status"   value={currentStatus} highlight />
+              <InfoRow label="Registered On"    value={data.created_at ? new Date(data.created_at).toLocaleDateString() : (data.registeredOn || '12 Oct 2024')} />
               <InfoRow label="Verification"     value="SBC Bar License Valid" />
             </Section>
 
             <Section title="Administrative Actions">
-              <TouchableOpacity style={styles.actionBtnPrimary} activeOpacity={0.8}>
-                <Text style={styles.actionBtnPrimaryTxt}>VERIFY SBC CREDENTIALS</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionBtnWarn} activeOpacity={0.8}>
-                <Text style={styles.actionBtnWarnTxt}>Suspend License</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.actionBtnDanger} activeOpacity={0.8}>
+              {currentStatus.toLowerCase() !== 'suspended' ? (
+                <TouchableOpacity 
+                  style={styles.actionBtnWarn} 
+                  activeOpacity={0.8}
+                  onPress={() => handleToggleStatus('Suspended')}
+                  disabled={actionLoading}
+                >
+                  <Text style={styles.actionBtnWarnTxt}>SUSPEND ADVOCATE ACCOUNT</Text>
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity 
+                  style={[styles.actionBtnPrimary, { backgroundColor: '#22c55e' }]} 
+                  activeOpacity={0.8}
+                  onPress={() => handleToggleStatus('Active')}
+                  disabled={actionLoading}
+                >
+                  <Text style={styles.actionBtnPrimaryTxt}>RE-ACTIVATE ADVOCATE</Text>
+                </TouchableOpacity>
+              )}
+              <TouchableOpacity 
+                style={styles.actionBtnDanger} 
+                activeOpacity={0.8}
+                onPress={handleRevokeRecord}
+                disabled={actionLoading}
+              >
                 <Text style={styles.actionBtnDangerTxt}>Revoke & Remove Record</Text>
               </TouchableOpacity>
             </Section>
