@@ -13,6 +13,7 @@ const {
   requestCaseNgoAid,
   getCitizenConsultations,
   createCitizenConsultation,
+  signCitizenConsultation,
   getCitizenVault,
   addCitizenVaultItem,
   deleteCitizenVaultItem,
@@ -47,6 +48,7 @@ router.post('/:id/cases/:caseId/ngo-request',   requestCaseNgoAid);
 // ── CITIZEN CONSULTATION REQUESTS ──
 router.get('/:id/consultations',  getCitizenConsultations);
 router.post('/:id/consultations', createCitizenConsultation);
+router.put('/:id/consultations/:consultationId/sign', signCitizenConsultation);
 
 // ── EVIDENCE VAULT (PRIVATE ENCRYPTED REPOSITORY) ──
 router.get('/:id/vault',          getCitizenVault);

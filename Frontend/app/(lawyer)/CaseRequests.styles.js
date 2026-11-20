@@ -200,4 +200,169 @@ export default StyleSheet.create({
     color: '#FF9500',
     fontWeight: '800',
   },
+
+  // ── INLINE EVIDENCE STYLES ON REQUEST CARDS ──
+  evidenceContainer: {
+    marginTop: 8,
+    marginBottom: 10,
+  },
+  evidenceLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#FFA726',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  evidenceThumbRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  evidenceThumbCard: {
+    width: 68,
+    height: 68,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#1C0D05',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 149, 0, 0.35)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  evidenceThumbImg: {
+    width: '100%',
+    height: '100%',
+  },
+  evidencePdfBadge: {
+    backgroundColor: 'rgba(239, 68, 68, 0.20)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#EF4444',
+    marginBottom: 2,
+  },
+  evidencePdfText: {
+    color: '#EF4444',
+    fontSize: 9,
+    fontWeight: '900',
+  },
+  evidenceThumbTitle: {
+    color: 'rgba(255,255,255,0.7)',
+    fontSize: 8,
+    textAlign: 'center',
+    paddingHorizontal: 2,
+  },
+
+  // ── CONFIRMED CLIENT CONTACT CARD STYLES ──
+  confirmedClientCard: {
+    backgroundColor: 'rgba(20, 30, 20, 0.85)',
+    borderRadius: 14,
+    borderWidth: 1.5,
+    borderColor: 'rgba(34, 197, 94, 0.60)',
+    padding: 12,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  confirmedClientHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 6,
+  },
+  confirmedClientBadge: {
+    backgroundColor: 'rgba(34, 197, 94, 0.20)',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: '#22C55E',
+  },
+  confirmedClientBadgeText: {
+    color: '#4ADE80',
+    fontSize: 10,
+    fontWeight: '800',
+  },
+  confirmedClientName: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#FFFFFF',
+    marginBottom: 2,
+  },
+  confirmedClientPhoneRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.3)',
+    padding: 8,
+    borderRadius: 8,
+    marginTop: 6,
+  },
+  confirmedPhoneText: {
+    color: '#FFFFFF',
+    fontSize: 12.5,
+    fontWeight: '700',
+  },
+  callClientBtn: {
+    backgroundColor: '#22C55E',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 6,
+  },
+  callClientBtnText: {
+    color: '#052E16',
+    fontSize: 11,
+    fontWeight: '900',
+  },
+
+  // ── AGREEMENT SENT STATUS BANNER ──
+  agreementSentBanner: {
+    backgroundColor: 'rgba(245, 158, 11, 0.15)',
+    borderWidth: 1,
+    borderColor: '#F59E0B',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 8,
+    marginBottom: 8,
+  },
+  agreementSentTitle: {
+    color: '#FBBF24',
+    fontSize: 12,
+    fontWeight: '800',
+    marginBottom: 2,
+  },
+  agreementSentText: {
+    color: 'rgba(255,235,210,0.85)',
+    fontSize: 11,
+    lineHeight: 15,
+  },
+
+  // Full Screen Image Overlay
+  fullImageOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.95)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  fullImageCloseBtn: {
+    position: 'absolute',
+    top: 45,
+    right: 20,
+    backgroundColor: 'rgba(255,255,255,0.25)',
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 20,
+    zIndex: 20,
+  },
+  fullImageCloseText: {
+    color: '#FFFFFF',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  fullImage: {
+    width: '100%',
+    height: '75%',
+    resizeMode: 'contain',
+  },
 });

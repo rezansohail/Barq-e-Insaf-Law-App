@@ -207,6 +207,21 @@ const createCitizenConsultation = async (req, res) => {
   }
 };
 
+
+// PUT /api/citizens/:id/consultations/:consultationId/sign
+const signCitizenConsultation = async (req, res) => {
+  try {
+    const result = await citizenService.signCitizenConsultation(req.params.id, req.params.consultationId, req.body);
+    return res.status(200).json(result);
+  } catch (error) {
+    const statusCode = error.statusCode || 500;
+    return res.status(statusCode).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 // GET /api/citizens/:id/vault
 const getCitizenVault = async (req, res) => {
   try {
@@ -293,6 +308,7 @@ module.exports = {
   requestCaseNgoAid,
   getCitizenConsultations,
   createCitizenConsultation,
+  signCitizenConsultation,
   getCitizenVault,
   addCitizenVaultItem,
   deleteCitizenVaultItem,

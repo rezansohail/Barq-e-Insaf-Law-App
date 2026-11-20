@@ -9,19 +9,15 @@ import {
   Dimensions,
   StatusBar,
   Image,
-  ImageBackground,
   Platform,
   useWindowDimensions,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
-import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { useFonts, RacingSansOne_400Regular } from '@expo-google-fonts/racing-sans-one';
 import { useAppTranslation } from '../utils/translationHelper';
 import { openAIChat } from '../constants/chatBotStore';
-
-const STATUSBAR_HEIGHT = Platform.OS === 'android' ? (StatusBar.currentHeight || 36) : 0;
 
 export default function LandingScreen() {
   const router = useRouter();
@@ -78,32 +74,22 @@ export default function LandingScreen() {
       <SafeAreaView style={styles.safeArea}>
         {/* ── 1. HEADER NAV BAR ── */}
         <View style={styles.headerNav}>
-          <TouchableOpacity
-            style={styles.headerBackBtn}
-            onPress={() => router.replace('/StartScreen')}
-            hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-            accessibilityLabel="Back to Start Screen"
-          >
-            <Image
-              source={require('../assets/images/backarrow.png')}
-              style={{ width: 22, height: 15 }}
-              resizeMode="contain"
-            />
-          </TouchableOpacity>
-
-          <View style={styles.brandGroup}>
-            <Image
-              source={require('../assets/images/logo.png')}
-              style={styles.logoImage}
-              resizeMode="contain"
-            />
-            <Text 
-              style={[
-                styles.brandTitle,
-                (fontsLoaded && currentLang === 'en') ? { fontFamily: 'RacingSansOne_400Regular' } : { fontFamily: 'System' }
-              ]}
+          <View style={styles.leftNavGroup}>
+            <TouchableOpacity
+              style={styles.headerBackBtn}
+              onPress={() => router.replace('/StartScreen')}
+              hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
+              accessibilityLabel="Back to Start Screen"
             >
-              {appName}
+              <Image
+                source={require('../assets/images/backarrow.png')}
+                style={{ width: 22, height: 15 }}
+                resizeMode="contain"
+              />
+            </TouchableOpacity>
+
+            <Text style={styles.navTitle}>
+              {currentLang === 'ur' ? 'ایپ کا جائزہ' : currentLang === 'sd' ? 'ايپ جو جائزو' : 'Explore App'}
             </Text>
           </View>
 
@@ -127,22 +113,27 @@ export default function LandingScreen() {
               start={{ x: 0.5, y: 0 }}
               end={{ x: 0.5, y: 1 }}
             >
-              <View style={styles.badgePill}>
-                <Text style={styles.badgePillText}>{t('landing.badge', 'SMART DECISIONS FOR LEGAL MATTERS')}</Text>
+              <View style={styles.logo}>
+                <Image
+                  source={require('../assets/images/logo.png')}
+                  style={[styles.logoImage, { width: 120, height: 120 }]}
+                  resizeMode="contain"
+                />
               </View>
 
-              <Text 
+              <Text
                 style={[
                   styles.heroTitle,
-                  (fontsLoaded && currentLang === 'en') ? { fontFamily: 'RacingSansOne_400Regular' } : { fontFamily: 'System' }
+                  (fontsLoaded && currentLang === 'en') ? { fontFamily: 'RacingSansOne_400Regular' } : { fontFamily: 'System' },
                 ]}
               >
                 {appName}
               </Text>
+
               <Text style={styles.heroSubtitle}>
                 {t('landing.heroSubtitle', "Pakistan's Premier AI Legal Assistant & Verified Advocate Network")}
               </Text>
-              
+
               <Text style={styles.heroDesc}>
                 {t('landing.heroDesc', 'Instant AI legal guidance in Urdu & Sindhi for Pakistan Penal Code, Property, and Family laws, paired with Sindh Bar Council verified advocates.')}
               </Text>
@@ -253,7 +244,7 @@ export default function LandingScreen() {
               </View>
               <View style={styles.featureTextGroup}>
                 <Text style={styles.featureTitle}>{t('landing.feature2Title', 'SBC Verified Advocate Directory')}</Text>
-                <Text style={styles.featureDesc}>{t('landing.feature2Desc', 'Connect with certified Sindh Bar Council lawyers with transparent client ratings and misconduct reporting.')}</Text>
+                <Text style={styles.featureDesc}>{t('landing.feature2Desc', 'Connect with certified Sindh Bar Council lawyers with transparent case assistance and misconduct reporting.')}</Text>
               </View>
             </View>
 
@@ -274,15 +265,15 @@ export default function LandingScreen() {
 
           {/* ── 6. GET STARTED CTA CARD ── */}
           <View style={styles.ctaCard}>
-            <LinearGradient 
-              colors={['rgba(255, 132, 0, 0.29)', 'rgba(20, 10, 4, 0.7)', 'rgba(10, 4, 2, 0.9)']} 
+            <LinearGradient
+              colors={['rgba(255, 132, 0, 0.29)', 'rgba(20, 10, 4, 0.7)', 'rgba(10, 4, 2, 0.9)']}
               style={styles.ctaGradient}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
             >
               <Text style={styles.ctaTitle}>{t('landing.ctaTitle', 'Ready to Get Started?')}</Text>
               <Text style={styles.ctaSubtitle}>{t('landing.ctaSubtitle', 'Select your portal to log in as a Citizen, Verified Lawyer, or NGO Administrator.')}</Text>
-              
+
               <TouchableOpacity
                 style={styles.ctaBtn}
                 activeOpacity={0.88}
@@ -315,19 +306,25 @@ export default function LandingScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#473d3b' },
-  safeArea: { flex: 1 },
+  container: {
+    flex: 1,
+    backgroundColor: '#0A0402',
+  },
+  safeArea: {
+    flex: 1,
+  },
   ambientHalo: {
     position: 'absolute',
     borderRadius: 999,
   },
-  
+
   // ── HEADER ──
   headerNav: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
+    paddingTop: 8,
     paddingBottom: 12,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 215, 150, 0.1)',
@@ -341,24 +338,32 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingRight: 4,
   },
-  navTitle: { 
-    color: '#FFF2DF', 
-    fontSize: 18, 
-    fontWeight: '900', 
+  navTitle: {
+    color: '#FFF2DF',
+    fontSize: 18,
+    fontWeight: '900',
   },
-  signInBtn: { 
-    paddingHorizontal: 14, 
-    paddingVertical: 6, 
-    borderRadius: 16, 
+  signInBtn: {
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 16,
     backgroundColor: 'rgba(255, 152, 0, 0.15)',
     borderWidth: 1,
     borderColor: 'rgba(255, 180, 80, 0.3)',
   },
-  signInText: { color: '#FFD9A0', fontSize: 12, fontWeight: '700' },
-  
+  signInText: {
+    color: '#FFD9A0',
+    fontSize: 12,
+    fontWeight: '700',
+  },
+
   // ── SCROLL ──
-  scrollContent: { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8 },
-  
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 40,
+  },
+
   // ── HERO ──
   heroCard: {
     borderRadius: 24,
@@ -376,39 +381,38 @@ const styles = StyleSheet.create({
     padding: 22,
     alignItems: 'center',
   },
-  badgePill: {
-    backgroundColor: 'rgba(251, 191, 36, 0.12)',
-    borderWidth: 1,
-    borderColor: 'rgba(251, 191, 36, 0.5)',
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 40,
+  logo: {
+    alignItems: 'center',
     marginBottom: 10,
   },
-  badgePillText: { color: '#fbbf24', fontSize: 8, fontWeight: '800', letterSpacing: 0.6 },
-  heroTitle: { 
-    fontSize: 28, 
-    color: '#FFF2DF', 
-    letterSpacing: -0.5, 
-    textAlign: 'center' 
+  logoImage: {
+    width: 120,
+    height: 120,
   },
-  heroSubtitle: { 
-    fontSize: 14, 
-    color: '#FF9800', 
-    fontWeight: '700', 
-    marginTop: -5, 
-    marginBottom: 5,
-    textAlign: 'center' 
+  heroTitle: {
+    fontSize: 26,
+    fontWeight: '900',
+    color: '#FFF2DF',
+    letterSpacing: -0.5,
+    textAlign: 'center',
+    marginBottom: 4,
   },
-  heroDesc: { 
-    fontSize: 11, 
-    color: 'rgba(255, 240, 224, 0.65)', 
-    textAlign: 'center', 
-    marginTop: 8, 
-    lineHeight: 18, 
-    fontWeight: '500' 
+  heroSubtitle: {
+    fontSize: 13.5,
+    color: '#FF9800',
+    fontWeight: '700',
+    marginBottom: 6,
+    textAlign: 'center',
   },
-  
+  heroDesc: {
+    fontSize: 11,
+    color: 'rgba(255, 240, 224, 0.65)',
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 17,
+    fontWeight: '500',
+  },
+
   // ── SEARCH ──
   searchContainer: {
     width: '100%',
@@ -426,26 +430,41 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.13,
     shadowRadius: 1,
   },
-  searchInput: { 
-    flex: 1, 
-    paddingHorizontal: 12, 
+  searchInput: {
+    flex: 1,
+    paddingHorizontal: 12,
     paddingVertical: 8,
-    fontSize: 12, 
-    color: '#ffffff' 
+    fontSize: 12,
+    color: '#ffffff',
   },
-  askAiBtn: { borderRadius: 12, overflow: 'hidden' },
-  askAiGradient: { paddingHorizontal: 14, paddingVertical: 9, borderRadius: 12 },
-  askAiText: { color: '#fff', fontSize: 12, fontWeight: '900' },
-  
+  askAiBtn: {
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  askAiGradient: {
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: 12,
+  },
+  askAiText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '900',
+  },
+
   // ── SHOWCASE ──
-  showcaseSection: { marginBottom: 18 },
-  sectionHeader: { 
-    fontSize: 16, 
-    fontWeight: '900', 
-    color: '#FFF2DF', 
-    marginBottom: 12 
+  showcaseSection: {
+    marginBottom: 18,
   },
-  carouselContainer: { gap: 10 },
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#FFF2DF',
+    marginBottom: 12,
+  },
+  carouselContainer: {
+    gap: 10,
+  },
   imageCard: {
     width: Dimensions.get('window').width * 0.7,
     height: 160,
@@ -456,28 +475,43 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: 'rgba(255, 180, 80, 0.12)',
   },
-  cardPhoto: { width: '100%', height: '100%' },
-  imageGradient: { 
-    position: 'absolute', 
-    width: '100%', 
-    height: '100%', 
-    justifyContent: 'flex-end', 
-    padding: 12 
+  cardPhoto: {
+    width: '100%',
+    height: '100%',
   },
-  cardTag: { color: '#fbbf24', fontSize: 8, fontWeight: '900', letterSpacing: 0.6 },
-  cardTitle: { color: '#FFF2DF', fontSize: 12, fontWeight: '800', marginTop: 1 },
-  
+  imageGradient: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    justifyContent: 'flex-end',
+    padding: 12,
+  },
+  cardTag: {
+    color: '#fbbf24',
+    fontSize: 8,
+    fontWeight: '900',
+    letterSpacing: 0.6,
+  },
+  cardTitle: {
+    color: '#FFF2DF',
+    fontSize: 12,
+    fontWeight: '800',
+    marginTop: 1,
+  },
+
   // ── FEATURES ──
-  featuresSection: { marginBottom: 18 },
-  featureBox: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    gap: 12, 
-    backgroundColor: 'rgba(75, 49, 34, 0.5)', 
-    padding: 14, 
-    borderRadius: 13, 
-    marginBottom: 10, 
-    borderWidth: 2, 
+  featuresSection: {
+    marginBottom: 18,
+  },
+  featureBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: 'rgba(75, 49, 34, 0.5)',
+    padding: 14,
+    borderRadius: 13,
+    marginBottom: 10,
+    borderWidth: 2,
     borderColor: 'rgba(255, 180, 80, 0.12)',
     shadowColor: '#ff7b00a6',
     shadowOffset: { width: 0, height: 1 },
@@ -485,59 +519,73 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 0.5,
   },
-  featureIconCircle: { 
-    width: 45, 
-    height: 45, 
-    borderRadius: 19, 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  featureIconCircle: {
+    width: 45,
+    height: 45,
+    borderRadius: 19,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  featureIcon: { 
-    width: 50, 
+  featureIcon: {
+    width: 50,
     height: 50,
     borderRadius: 7,
   },
-  featureTextGroup: { flex: 1 },
-  featureTitle: { fontSize: 13, fontWeight: '800', color: '#f5e1c4' },
-  featureDesc: { fontSize: 11, color: 'rgba(233, 224, 216, 0.7)', marginTop: 2, lineHeight: 16 },
-  
+  featureTextGroup: {
+    flex: 1,
+  },
+  featureTitle: {
+    fontSize: 13,
+    fontWeight: '800',
+    color: '#f5e1c4',
+  },
+  featureDesc: {
+    fontSize: 11,
+    color: 'rgba(233, 224, 216, 0.7)',
+    marginTop: 2,
+    lineHeight: 16,
+  },
+
   // ── CTA ──
-  ctaCard: { 
-    borderRadius: 20, 
-    overflow: 'hidden', 
+  ctaCard: {
+    borderRadius: 20,
+    overflow: 'hidden',
     marginTop: 2,
     borderWidth: 3,
     borderColor: 'rgba(255, 180, 80, 0.15)',
   },
-  ctaGradient: { padding: 22, alignItems: 'center' },
-  ctaTitle: { 
-    color: '#FFF2DF', 
-    fontSize: 18, 
-    fontWeight: '900', 
-    textAlign: 'center' 
+  ctaGradient: {
+    padding: 22,
+    alignItems: 'center',
   },
-  ctaSubtitle: { 
-    color: 'rgba(255, 215, 178, 0.71)', 
-    fontSize: 11, 
-    textAlign: 'center', 
-    marginTop: 4, 
-    lineHeight: 16 
+  ctaTitle: {
+    color: '#FFF2DF',
+    fontSize: 18,
+    fontWeight: '900',
+    textAlign: 'center',
   },
-  ctaBtn: { 
+  ctaSubtitle: {
+    color: 'rgba(255, 215, 178, 0.71)',
+    fontSize: 11,
+    textAlign: 'center',
+    marginTop: 4,
+    lineHeight: 16,
+  },
+  ctaBtn: {
     marginTop: 14,
     borderRadius: 12,
     overflow: 'hidden',
   },
-  ctaBtnGradient: { 
-    paddingHorizontal: 24, 
-    paddingVertical: 12, 
+  ctaBtnGradient: {
+    paddingHorizontal: 24,
+    paddingVertical: 12,
     borderRadius: 12,
     alignItems: 'center',
   },
-  ctaBtnText: { 
-    color: '#fff', 
-    fontSize: 13, 
-    fontWeight: '900', 
-    letterSpacing: 0.5 
+  ctaBtnText: {
+    color: '#fff',
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 0.5,
   },
 });

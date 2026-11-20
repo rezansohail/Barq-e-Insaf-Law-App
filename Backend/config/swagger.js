@@ -42,7 +42,7 @@ Provides endpoints across all portals:
   },
   tags: [
     { name: '1. Citizen Controller', description: 'Citizen registration, authentication, cases, legal vault, consultations, and requests' },
-    { name: '2. Lawyer Controller', description: 'SBC Advocate portal, licensing, intake cases, schedule, consultations, and ratings' },
+    { name: '2. Lawyer Controller', description: 'SBC Advocate portal, licensing, intake cases, schedule, and consultations' },
     { name: '3. Admin Controller', description: 'Sindh Bar Council administrative governance, ecosystem monitoring, account management & audit logs' },
     { name: '4. NGO Controller', description: 'NCHD Legal Aid, pro-bono assistance, community stories, reports, and case heatmaps' },
     { name: '5. Media Controller', description: 'KTN News Journalism desk, broadcast stories, investigative leads, and press reports' },
@@ -599,7 +599,7 @@ Provides endpoints across all portals:
     '/lawyers/{id}/rate': {
       post: {
         tags: ['2. Lawyer Controller'],
-        summary: 'Submit client review and rating for an advocate',
+        summary: 'Advocate rating policy endpoint (ratings retired per SBC standards)',
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'integer' } }
         ],

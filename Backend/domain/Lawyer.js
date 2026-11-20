@@ -12,11 +12,11 @@ class Lawyer {
     city,
     sbc_number,
     specialty,
+    specialization,
+    license_number,
     password,
     is_verified,
     verification_status,
-    rating,
-    total_ratings,
     experience_years,
     bio,
     education,
@@ -32,15 +32,13 @@ class Lawyer {
     this.email = email;
     this.phone = phone;
     this.cnic = cnic;
-    this.district = district;
-    this.city = city || district;
-    this.sbc_number = sbc_number;
-    this.specialty = specialty;
+    this.district = district || city || 'Sindh';
+    this.city = city || district || 'Sindh';
+    this.sbc_number = sbc_number || license_number || 'SBC Verified';
+    this.specialty = specialty || specialization || 'General Practice';
     this.password = password;
     this.is_verified = is_verified !== undefined ? is_verified : false;
     this.verification_status = verification_status || 'pending';
-    this.rating = rating !== undefined ? Number(rating) : 5.0;
-    this.total_ratings = total_ratings !== undefined ? Number(total_ratings) : 0;
     this.experience_years = experience_years !== undefined ? Number(experience_years) : 0;
     this.bio = bio || '';
     this.education = education || '';
@@ -79,8 +77,6 @@ class Lawyer {
       specialty: this.specialty,
       isVerified: this.is_verified,
       verificationStatus: this.verification_status,
-      rating: this.rating,
-      totalRatings: this.total_ratings,
       experienceYears: this.experience_years,
       bio: this.bio,
       education: this.education,

@@ -113,7 +113,7 @@ const createLawyerRequest = async (req, res) => {
 // PUT /api/lawyers/:id/requests/:requestId/accept
 const acceptLawyerRequest = async (req, res) => {
   try {
-    const result = await lawyerService.acceptLawyerRequest(req.params.id, req.params.requestId);
+    const result = await lawyerService.acceptLawyerRequest(req.params.id, req.params.requestId, req.body);
     res.json(result);
   } catch (error) {
     const statusCode = error.statusCode || 500;
@@ -173,12 +173,8 @@ const updateLawyerSchedule = async (req, res) => {
 // POST /api/lawyers/:id/rate
 const rateLawyer = async (req, res) => {
   try {
-    const { rating } = req.body;
-    if (!rating || rating < 1 || rating > 5) {
-      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
-    }
-    const updated = await lawyerService.rateLawyer(req.params.id, Number(rating));
-    res.json(updated);
+    const result = await lawyerService.rateLawyer(req.params.id);
+    res.json(result);
   } catch (error) {
     const statusCode = error.statusCode || 500;
     res.status(statusCode).json({ message: error.message });

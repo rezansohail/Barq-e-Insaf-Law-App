@@ -52,7 +52,8 @@ export const userData = {
 };
 
 // ── 2. LAWYERS DIRECTORY (INITIAL CACHE FOR INSTANT ZERO-LATENCY LOAD) ──
-export const lawyers = [
+export const lawyers = [];
+const _legacy_lawyers = [
   {
     id: '6',
     name: 'Advocate Tariq Hassan',
@@ -60,7 +61,6 @@ export const lawyers = [
     experience: '14 Years Practice',
     location: 'Chamber 402, Lawyers Court, Karachi',
     district: 'Karachi',
-    rating: '5.0',
     casesWon: '180+',
     phone: '+923001234567',
     sbc: 'SBC-4421',
@@ -117,7 +117,8 @@ export const lawyers = [
 ];
 
 // ── 3. NGOS & MEDIA DIRECTORY (INITIAL CACHE) ──
-export const ngos = [
+export const ngos = [];
+const _legacy_ngos = [
   {
     id: '1',
     name: 'Human Rights Commission Sindh',
@@ -257,11 +258,30 @@ export const fetchCitizenCases = async (targetId) => {
   try {
     const res = await api.get(`/citizens/${id}/cases`);
     const data = res.data || [];
+    
+    // Merge new data while preserving existing local files
+    const previousMap = {};
+    activeCases.forEach((ac) => {
+      if (ac.id) previousMap[String(ac.id)] = ac;
+    });
+
     activeCases.length = 0;
     data.forEach((c) => {
-      const caseEvidence = evidenceVault.filter((v) => String(v.caseId) === String(c.id));
+      const cIdStr = String(c.id);
+      const prev = previousMap[cIdStr];
+      
+      // Evidence priority: backend response -> previous local evidence -> evidenceVault filter
+      let caseEvidence = [];
+      if (Array.isArray(c.evidence) && c.evidence.length > 0) {
+        caseEvidence = [...c.evidence];
+      } else if (prev && Array.isArray(prev.evidence) && prev.evidence.length > 0) {
+        caseEvidence = [...prev.evidence];
+      } else {
+        caseEvidence = evidenceVault.filter((v) => String(v.caseId) === cIdStr);
+      }
+
       activeCases.push({
-        id: String(c.id),
+        id: cIdStr,
         title: c.title,
         type: c.type || 'Legal Dispute',
         description: c.description || '',
@@ -271,10 +291,18 @@ export const fetchCitizenCases = async (targetId) => {
         lastUpdated: 'Recently',
         status: c.status ? (c.status.charAt(0).toUpperCase() + c.status.slice(1)) : 'Active',
         hearingDate: c.hearingDate,
+        mediaRequested: Boolean(c.mediaRequested || c.media_coverage_requested),
+        mediaStatus: c.mediaStatus || (c.media_coverage_requested ? 'pending_review' : 'none'),
+        mediaNotes: c.mediaNotes || '',
+        ngoRequested: Boolean(c.ngoRequested || c.ngo_aid_requested),
+        ngoStatus: c.ngoStatus || (c.ngo_aid_requested ? 'pending_review' : 'none'),
+        ngoNotes: c.ngoNotes || '',
         lawyer: c.lawyer || null,
+        consultation: c.consultation || (prev ? prev.consultation : null),
         evidence: caseEvidence,
       });
     });
+
     userData.activeCasesCount = activeCases.filter((c) => c.status === 'Active').length;
     userData.pendingCasesCount = activeCases.filter((c) => c.status === 'Pending').length;
     notify();
@@ -588,6 +616,109 @@ export const removeEvidenceFromCase = async (caseId, index, targetId) => {
     if (item.id) {
       await deleteFromVault(item.id, targetId);
     }
+  }
+};
+
+
+/**
+ * Signs the digital representation agreement with a lawyer and confirms booking
+ */
+export const signConsultationAgreement = async (consultationId, selectedTimeSlot, citizenSignature, targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
+  try {
+    const res = await api.put(`/citizens/${id}/consultations/${consultationId}/sign`, {
+      selectedTimeSlot,
+      citizenSignature: citizenSignature || userData.name || 'Citizen Signed',
+    });
+
+    // Update local consultation in consultationRequests & activeCases
+    const crIndex = consultationRequests.findIndex((cr) => String(cr.id) === String(consultationId));
+    if (crIndex !== -1) {
+      consultationRequests[crIndex] = {
+        ...consultationRequests[crIndex],
+        status: 'booked',
+        appointmentTime: selectedTimeSlot,
+        citizenSigned: true,
+        citizenSignature: citizenSignature || userData.name || 'Citizen Signed',
+      };
+    }
+
+    activeCases.forEach((c) => {
+      if (c.consultation && String(c.consultation.id) === String(consultationId)) {
+        c.consultation = {
+          ...c.consultation,
+          status: 'booked',
+          appointmentTime: selectedTimeSlot,
+          citizenSigned: true,
+          citizenSignature: citizenSignature || userData.name || 'Citizen Signed',
+        };
+        if (res.data?.lawyer) {
+          c.lawyer = res.data.lawyer;
+        }
+      }
+    });
+
+    await fetchCitizenCases(id);
+    await fetchCitizenConsultations(id);
+    notify();
+    return res.data;
+  } catch (err) {
+    console.error('[CITIZEN] Error signing agreement:', err.response?.data || err.message);
+    throw err;
+  }
+};
+
+/**
+ * Requests NGO aid (NCHD) for a specific case
+ */
+export const requestNgoAidForCase = async (caseId, notes = '', allowContact = true, targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
+  const cIndex = activeCases.findIndex((c) => String(c.id) === String(caseId));
+  if (cIndex !== -1) {
+    activeCases[cIndex] = {
+      ...activeCases[cIndex],
+      ngoRequested: true,
+      ngoStatus: 'pending_review',
+      ngoNotes: notes,
+    };
+    notify();
+  }
+
+  try {
+    const res = await api.post(`/citizens/${id}/cases/${caseId}/ngo-request`, {
+      allowContact,
+      notes,
+    });
+    return res.data;
+  } catch (err) {
+    console.warn('[CITIZEN] Local NGO request state saved:', err.response?.data || err.message);
+  }
+};
+
+/**
+ * Requests Broadcast Media coverage (KTN News) for a specific case
+ */
+export const requestMediaCoverageForCase = async (caseId, notes = '', allowContact = true, targetId) => {
+  const id = targetId || userData.id || getCurrentCitizenId();
+  const cIndex = activeCases.findIndex((c) => String(c.id) === String(caseId));
+  if (cIndex !== -1) {
+    activeCases[cIndex] = {
+      ...activeCases[cIndex],
+      mediaRequested: true,
+      mediaStatus: 'pending_review',
+      mediaNotes: notes,
+    };
+    notify();
+  }
+
+  try {
+    const res = await api.post(`/citizens/${id}/cases/${caseId}/media-request`, {
+      allowContact,
+      notes,
+    });
+    return res.data;
+  } catch (err) {
+    console.warn('[CITIZEN] Local Media request state saved:', err.response?.data || err.message);
   }
 };
 

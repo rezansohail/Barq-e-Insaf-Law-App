@@ -34,7 +34,6 @@ export const lawyerProfile = {
   id: 6,
   name: '',
   spec: 'General Practice',
-  rating: 5.0,
   sbc: '',
   successfulCasesCount: 0,
   activeCasesCount: 0,
@@ -217,20 +216,37 @@ export const fetchRequests = async (targetId) => {
     data.forEach((r) => {
       caseRequests.push({
         id: String(r.id),
+        caseId: r.caseId || null,
         name: r.citizenName || 'Citizen Client',
+        citizenName: r.citizenName || 'Citizen Client',
         spec: r.problemStatement || 'Legal Consultation',
         desc: r.caseSummary || r.problemStatement || 'Consultation requested',
+        caseTitle: r.caseTitle || r.problemStatement || 'Legal Consultation Request',
+        caseDescription: r.caseDescription || r.caseSummary || '',
         court: 'District Court',
         contact: r.citizenPhone || '',
+        citizenPhone: r.citizenPhone || '',
         email: r.citizenEmail || '',
+        citizenEmail: r.citizenEmail || '',
         location: r.district || lawyerProfile.district || 'Sindh',
+        district: r.district || lawyerProfile.district || 'Sindh',
         time: r.appointmentDate ? new Date(r.appointmentDate).toLocaleDateString() : 'Recent',
+        appointmentDate: r.appointmentDate,
+        appointmentTime: r.appointmentTime || '10:00 AM',
         status: r.status,
         declineReason: r.declineReason,
         problemStatement: r.problemStatement || r.caseSummary,
+        evidence: Array.isArray(r.evidence) ? r.evidence : (Array.isArray(r.sharedEvidence) ? r.sharedEvidence : []),
+        sharedEvidence: Array.isArray(r.sharedEvidence) ? r.sharedEvidence : (Array.isArray(r.evidence) ? r.evidence : []),
+        timeSlots: Array.isArray(r.timeSlots) ? r.timeSlots : [],
+        lawyerSigned: Boolean(r.lawyerSigned),
+        lawyerSignature: r.lawyerSignature,
+        citizenSigned: Boolean(r.citizenSigned),
+        citizenSignature: r.citizenSignature,
+        agreementTerms: r.agreementTerms,
       });
     });
-    lawyerProfile.pendingRequestsCount = caseRequests.filter((r) => r.status === 'pending').length;
+    lawyerProfile.pendingRequestsCount = caseRequests.filter((r) => r.status === 'pending' || r.status === 'agreement_sent').length;
     notify();
   } catch (err) {
     console.error('Error fetching case requests:', err.response?.data || err.message);
@@ -238,13 +254,29 @@ export const fetchRequests = async (targetId) => {
 };
 
 /**
- * Accepts a consultation request and creates an active case
+ * Accepts a consultation request and creates an active case with digital agreement
  */
-export const acceptRequest = async (requestId, targetId) => {
+export const acceptRequest = async (requestId, agreementData = {}, targetId) => {
   const id = targetId || lawyerProfile.id || getCurrentLawyerId();
   try {
-    const res = await api.put(`/lawyers/${id}/requests/${requestId}/accept`);
-    await Promise.all([fetchRequests(id), fetchCases(id), fetchLawyerDashboard(id)]);
+    const payload = typeof agreementData === 'object' && agreementData !== null ? agreementData : {};
+    const res = await api.put(`/lawyers/${id}/requests/${requestId}/accept`, payload);
+    
+    // Update local state immediately
+    const reqIndex = caseRequests.findIndex((r) => String(r.id) === String(requestId));
+    if (reqIndex !== -1) {
+      caseRequests[reqIndex] = {
+        ...caseRequests[reqIndex],
+        status: 'agreement_sent',
+        lawyerSigned: true,
+        lawyerSignature: payload.lawyerSignature || lawyerProfile.name || 'Advocate Signed (SBC)',
+        timeSlots: payload.timeSlots || ['Tomorrow 10:30 AM', 'Tomorrow 02:30 PM', 'Next Working Day 11:00 AM'],
+        agreementTerms: payload.agreementTerms || 'Digital Legal Representation Agreement under Sindh Bar Council (SBC) Rules.',
+      };
+      notify();
+    }
+
+    await Promise.allSettled([fetchRequests(id), fetchCases(id), fetchLawyerDashboard(id)]);
     return res.data;
   } catch (err) {
     console.error('Error accepting request:', err.response?.data || err.message);
@@ -445,7 +477,6 @@ export const fetchOtherLawyers = async (currentId) => {
           id: String(l.id),
           name: l.name,
           spec: l.specialty,
-          rating: String(l.rating || '5.0'),
           casesWon: `${l.stats?.successfulCasesCount || 0}+`,
           district: l.district || 'Sindh',
           phone: l.phone || '',

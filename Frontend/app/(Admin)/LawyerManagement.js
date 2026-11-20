@@ -218,7 +218,7 @@ export default function LawyerManagement() {
                       {l.district || l.city || 'Sindh'} · {l.experience_years ? `${l.experience_years} yrs exp` : 'Verified Advocate'}
                     </Text>
                     <Text style={{ fontSize: 10, color: '#FF9500', marginTop: 3 }}>
-                      {l.cases_count ?? 0} Cases Assigned · Rating: {l.rating || '5.0'} ★
+                      {l.cases_count ?? 0} Cases Assigned · SBC Verified Advocate
                     </Text>
                   </View>
                   <View style={[styles.statusBadge, { borderColor: badgeColor, backgroundColor: badgeColor + '22' }]}>

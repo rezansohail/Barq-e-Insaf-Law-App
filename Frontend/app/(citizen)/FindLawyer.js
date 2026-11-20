@@ -8,6 +8,7 @@ import {
   TextInput,
   Modal,
   Image,
+  RefreshControl,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -32,6 +33,13 @@ export default function FindLawyer() {
   const [search, setSearch] = useState('');
   const [selectedLawyer, setSelectedLawyer] = useState(null);
   const [showLawyerProfile, setShowLawyerProfile] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    await fetchLawyersList();
+    setRefreshing(false);
+  };
 
   // Hardware back returns to CitizenHome
   useAppNavigation({ isHome: false, homeRoute: '/(citizen)/CitizenHome' });
@@ -89,6 +97,9 @@ export default function FindLawyer() {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#FF9500" colors={['#FF9500']} />
+        }
       >
         {/* SEARCH BAR */}
         <View style={styles.searchBar}>
@@ -170,12 +181,12 @@ export default function FindLawyer() {
           filtered.map((l, i) => (
             <View key={l.id || i} style={styles.lawyerCard}>
               <View style={[styles.lawyerAvatar, { backgroundColor: l.color || 'rgba(255, 149, 0, 0.15)' }]}>
-                <Text style={styles.lawyerAvatarText}>{l.initials || 'ADV'}</Text>
+                <Text style={styles.lawyerAvatarText}>{l.initials || (l.name ? l.name.replace(/^(Adv\.?|Advocate)\s+/i, '').slice(0, 2).toUpperCase() : 'ADV')}</Text>
               </View>
 
               <View style={styles.lawyerInfo}>
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={styles.lawyerName}>{translateLawyerName(l.name)}</Text>
+                  <Text style={styles.lawyerName}>{translateLawyerName(l.name) || l.name || 'Advocate'}</Text>
                 </View>
 
                 <Text style={styles.lawyerSpec}>{translateCategory(l.spec) || l.spec} · {l.experience || 'Sindh Bar'}</Text>

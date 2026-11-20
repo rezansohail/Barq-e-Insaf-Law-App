@@ -7,6 +7,8 @@ import {
   TouchableOpacity,
   StatusBar,
   Alert,
+  Platform,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
@@ -38,6 +40,60 @@ export default function MediaExportReports() {
     },
   ];
 
+  const [downloadSuccess, setDownloadSuccess] = useState(null);
+
+  const handleDirectDownload = async () => {
+    try {
+      setGenerating(true);
+      setDownloadSuccess(null);
+
+      const res = await api.post('/media/reports/export', {
+        format: selectedFormat.toLowerCase(),
+        range: 'This Month',
+        anonymizeLitigants: includeBiometric,
+        includeKtnSeal: includeKTN,
+      });
+
+      const reportData = res.data;
+      if (!reportData?.downloadUrl) {
+        throw new Error('Server did not return a valid download URL.');
+      }
+
+      const base = BASE_URL.replace(/\/api\/?$/, '');
+      const fullUrl = reportData.downloadUrl.startsWith('http')
+        ? reportData.downloadUrl
+        : `${base}${reportData.downloadUrl.startsWith('/') ? '' : '/'}${reportData.downloadUrl}`;
+
+      const filename = `${reportData.reportId || 'KTN-PRESS-BRIEF'}.${selectedFormat.toLowerCase()}`;
+
+      if (Platform.OS === 'web' && typeof window !== 'undefined') {
+        const link = document.createElement('a');
+        link.href = fullUrl;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      } else {
+        await Linking.openURL(fullUrl);
+      }
+
+      setDownloadSuccess({
+        reportId: reportData.reportId,
+        format: reportData.format || selectedFormat,
+        fullUrl,
+        timestamp: new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' }),
+      });
+    } catch (err) {
+      console.error('[MEDIA_DOWNLOAD] Error:', err.message);
+      Alert.alert(
+        'Export Notice',
+        'Could not complete instant download. Please check your connection to the server.'
+      );
+    } finally {
+      setGenerating(false);
+    }
+  };
+
   const handleGenerate = () => {
     setGenerating(true);
     setTimeout(() => {
@@ -64,6 +120,30 @@ export default function MediaExportReports() {
       />
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+        {downloadSuccess && (
+          <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.14)', borderColor: '#10B981', borderWidth: 1.2, borderRadius: 14, padding: 14, marginBottom: 14 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Text style={{ color: '#10B981', fontSize: 13, fontWeight: '800' }}>
+                ✓ {downloadSuccess.format} Downloaded Directly
+              </Text>
+              <Text style={{ color: '#6EE7B7', fontSize: 10, fontWeight: '700' }}>
+                {downloadSuccess.timestamp} PKT
+              </Text>
+            </View>
+            <Text style={{ color: '#FFFFFF', fontSize: 11.5, fontWeight: '700', marginTop: 6 }}>
+              {downloadSuccess.reportId}
+            </Text>
+            <Text style={{ color: 'rgba(255, 235, 215, 0.7)', fontSize: 10.5, marginTop: 2 }}>
+              1-Page Official Judicial Press Packet saved directly to your device.
+            </Text>
+            <TouchableOpacity
+              style={{ marginTop: 8, alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 8, backgroundColor: 'rgba(16, 185, 129, 0.25)', borderRadius: 6 }}
+              onPress={handleDirectDownload}
+            >
+              <Text style={{ color: '#10B981', fontSize: 10.5, fontWeight: '800' }}>⬇ Re-Download File</Text>
+            </TouchableOpacity>
+          </View>
+        )}
         <View style={[styles.card, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.94)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
           <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Select Output Format</Text>
           <Text style={[styles.cardSub, { color: isDarkMode ? 'rgba(255, 235, 215, 0.7)' : '#664530' }]}>

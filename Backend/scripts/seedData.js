@@ -55,8 +55,6 @@ const seed = async () => {
       experience: 8,
       is_verified: true,
       verification_status: 'approved',
-      rating: 4.9,
-      total_ratings: 34,
       total_cases: 42,
     },
     {
@@ -68,8 +66,6 @@ const seed = async () => {
       experience: 6,
       is_verified: true,
       verification_status: 'approved',
-      rating: 4.7,
-      total_ratings: 28,
       total_cases: 31,
     },
   ]);

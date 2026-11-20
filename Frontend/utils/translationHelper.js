@@ -361,16 +361,39 @@ export function translateDistrict(districtName, lang = 'en') {
 // Translate Legal Category
 export function translateCategory(category, lang = 'en') {
   if (!category || lang === 'en') return category;
-  const match = LEGAL_CATEGORIES_TRANSLATIONS[category];
+  const clean = String(category).trim();
+  const match = LEGAL_CATEGORIES_TRANSLATIONS[clean];
   if (match && match[lang]) return match[lang];
-  return category;
+
+  // Partial or case-insensitive matching
+  const lower = clean.toLowerCase();
+  for (const [key, trans] of Object.entries(LEGAL_CATEGORIES_TRANSLATIONS)) {
+    if (key.toLowerCase() === lower || key.toLowerCase().includes(lower) || lower.includes(key.toLowerCase())) {
+      if (trans[lang]) return trans[lang];
+    }
+  }
+
+  // Fallback to phrase lookup or original
+  return GLOBAL_PHRASES[clean]?.[lang] || category;
 }
+
+// Translate Court
+export function translateCourt(court, lang = 'en') {
+  if (!court || lang === 'en') return court;
+  const match = COURTS_TRANSLATIONS[court];
+  if (match && match[lang]) return match[lang];
+  return court;
+}
+
 
 // Common Lawyer Names Mapping (English -> Urdu & Sindhi)
 export const LAWYER_NAMES_TRANSLATIONS = {
   'Advocate Tariq Hassan': { ur: 'ایڈووکیٹ طارق حسن', sd: 'ايڊووڪيٽ طارق حسن' },
   'Advocate Tariq Aziz': { ur: 'ایڈووکیٹ طارق عزیز', sd: 'ايڊووڪيٽ طارق عزيز' },
   'Advocate Sara Malik': { ur: 'ایڈووکیٹ سارہ ملک', sd: 'ايڊووڪيٽ سارا ملڪ' },
+  'Advocate Ahmed Khan': { ur: 'ایڈووکیٹ احمد خان', sd: 'ايڊووڪيٽ احمد خان' },
+  'Adv. Fatima Shah': { ur: 'ایڈووکیٹ فاطمہ شاہ', sd: 'ايڊووڪيٽ فاطمه شاهه' },
+  'Advocate Fatima Shah': { ur: 'ایڈووکیٹ فاطمہ شاہ', sd: 'ايڊووڪيٽ فاطمه شاهه' },
   'Advocate Zainab Ali': { ur: 'ایڈووکیٹ زینب علی', sd: 'ايڊووڪيٽ زينب علي' },
   'Advocate Bilal Ahmed': { ur: 'ایڈووکیٹ بلال احمد', sd: 'ايڊووڪيٽ بلال احمد' },
   'Advocate Kamran Shah': { ur: 'ایڈووکیٹ کامران شاہ', sd: 'ايڊووڪيٽ ڪامران شاهه' },
