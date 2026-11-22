@@ -20,7 +20,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { subscribeToChat, closeAIChat } from '../constants/chatBotStore';
+import { getDevHost } from '../constants/api';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -30,6 +33,8 @@ export default function AIChatFloatingButton() {
   const [modalVisible, setModalVisible] = useState(false);
   const [inputText, setInputText] = useState('');
   const [loading, setLoading] = useState(false);
+  const [selectedSource, setSelectedSource] = useState(null);
+  const [docModalVisible, setDocModalVisible] = useState(false);
   const scrollViewRef = useRef(null);
 
   const [messages, setMessages] = useState([
@@ -39,6 +44,81 @@ export default function AIChatFloatingButton() {
       text: 'السلام علیکم! I am your Barq-e-Insaf AI Legal Assistant. Ask me any Pakistan legal law question in Urdu, Sindhi, or English!',
     },
   ]);
+
+  // Clean raw markdown hashes, dividers, and emojis
+  const cleanRawText = (raw) => {
+    if (!raw) return '';
+    // Strip emojis
+    let t = raw.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]/gu, '');
+    // Strip divider lines
+    t = t.replace(/^[-=_*]{3,}$/gm, '');
+    // Strip leading hashes (### or ## or #)
+    t = t.replace(/^#{1,6}\s*/gm, '');
+    t = t.replace(/#{2,}/g, '');
+    return t.trim();
+  };
+
+  // Open Full PDF in Browser / Viewer
+  const openPdf = async (source) => {
+    if (!source || !source.source) return;
+    const host = getDevHost();
+    const pageParam = source.page && source.page !== 'N/A' ? `#page=${source.page}` : '';
+    const url = `http://${host}:5001/api/pdf/${encodeURIComponent(source.source)}${pageParam}`;
+    try {
+      await WebBrowser.openBrowserAsync(url);
+    } catch (err) {
+      try {
+        await Linking.openURL(url);
+      } catch (e) {
+        console.warn('Could not open PDF URL:', url);
+      }
+    }
+  };
+
+  // Render nicely formatted text with bold tags (**bold**) for React Native
+  const renderFormattedText = (rawText, isUser) => {
+    const cleaned = cleanRawText(rawText);
+    const lines = cleaned.split('\n');
+
+    return lines.map((line, lineIdx) => {
+      const trimmed = line.trim();
+      if (!trimmed) {
+        return <View key={lineIdx} style={{ height: 6 }} />;
+      }
+
+      // Check for headings or numbered points
+      const isHeading = /^\d+\.\s+[A-Za-z]/.test(trimmed) || /^[A-Z][a-zA-Z\s]+:$/.test(trimmed);
+      const isBullet = trimmed.startsWith('* ') || trimmed.startsWith('- ') || trimmed.startsWith('• ');
+      const displayLine = isBullet ? `•  ${trimmed.substring(2)}` : line;
+
+      // Split line by bold tags (**bold**)
+      const parts = displayLine.split(/(\*\*.*?\*\*)/g);
+
+      return (
+        <Text
+          key={lineIdx}
+          style={[
+            styles.msgText,
+            isUser ? styles.userMsgText : styles.aiMsgText,
+            isHeading && styles.headingLine,
+            isBullet && styles.bulletLine,
+          ]}
+        >
+          {parts.map((part, partIdx) => {
+            if (part.startsWith('**') && part.endsWith('**')) {
+              const boldContent = part.slice(2, -2);
+              return (
+                <Text key={partIdx} style={styles.boldText}>
+                  {boldContent}
+                </Text>
+              );
+            }
+            return part;
+          })}
+        </Text>
+      );
+    });
+  };
 
   // DRAGGABLE PAN RESPONDER
   const pan = useRef(new Animated.ValueXY({ x: SCREEN_WIDTH - 84, y: SCREEN_HEIGHT - 170 })).current;
@@ -75,16 +155,16 @@ export default function AIChatFloatingButton() {
 
     try {
       // Automatically detect the laptop's IP address so it works on any Wi-Fi!
-      const laptopIp = Constants.expoConfig?.hostUri?.split(':')[0] || 'localhost';
+      const host = getDevHost();
       
-      const response = await fetch(`http://${laptopIp}:5001/api/chat`, {
+      const response = await fetch(`http://${host}:5001/api/chat`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: userQuery, model: 'llama-3.3-70b-versatile', temperature: 0.3 }),
+        body: JSON.stringify({ message: userQuery, model: 'qwen/qwen3.8-27b', temperature: 0.3, language: 'Auto-Detect' }),
       });
 
       const data = await response.json();
-      const aiResponseText = data.response || data.answer || 'Thank you for your legal query. For formal court filings, connect with a verified advocate on Barq-e-Insaf.';
+      const aiResponseText = data.answer || data.response || 'Thank you for your legal query. For formal court filings, connect with a verified advocate on Barq-e-Insaf.';
 
       setMessages((prev) => [...prev, { id: (Date.now() + 1).toString(), sender: 'ai', text: aiResponseText, sources: data.sources }]);
     } catch (error) {
@@ -194,17 +274,52 @@ export default function AIChatFloatingButton() {
             >
               {messages.map((msg) => (
                 <View key={msg.id} style={[styles.msgBubble, msg.sender === 'user' ? styles.userBubble : styles.aiBubble]}>
-                  <Text style={[styles.msgText, msg.sender === 'user' ? styles.userMsgText : styles.aiMsgText]}>{msg.text}</Text>
+                  {renderFormattedText(msg.text, msg.sender === 'user')}
                   
-                  {/* Render Sources if available */}
+                  {/* Render Sources if available as interactive cards */}
                   {msg.sources && msg.sources.length > 0 && (
                     <View style={styles.sourcesContainer}>
-                      <Text style={styles.sourcesTitle}>Reference Documents:</Text>
-                      {msg.sources.map((src, idx) => (
-                        <Text key={idx} style={styles.sourceItem}>
-                          • {src.source} {src.page && src.page !== 'N/A' ? `(Page ${src.page})` : ''}
-                        </Text>
-                      ))}
+                      <View style={styles.sourcesHeaderRow}>
+                        <View style={styles.sourcesBadgeDot} />
+                        <Text style={styles.sourcesTitle}>Official Law References ({msg.sources.length}):</Text>
+                      </View>
+                      <Text style={styles.sourcesHint}>Tap any document to view cited section or open PDF</Text>
+                      
+                      <View style={styles.sourcesList}>
+                        {msg.sources.map((src, idx) => {
+                          const cleanName = src.source.replace('.pdf', '');
+                          return (
+                            <TouchableOpacity
+                              key={idx}
+                              style={styles.sourceCard}
+                              activeOpacity={0.75}
+                              onPress={() => {
+                                setSelectedSource(src);
+                                setDocModalVisible(true);
+                              }}
+                            >
+                              <View style={styles.sourceCardLeft}>
+                                <View style={styles.pdfBadge}>
+                                  <Text style={styles.pdfBadgeText}>PDF</Text>
+                                </View>
+                                <View style={styles.sourceDetails}>
+                                  <Text style={styles.sourceTitleText} numberOfLines={1}>
+                                    {cleanName}
+                                  </Text>
+                                  <Text style={styles.sourcePageText}>
+                                    {src.page && src.page !== 'N/A' ? `Page ${src.page}` : 'Statute Book'}
+                                  </Text>
+                                </View>
+                              </View>
+
+                              <View style={styles.sourceCardAction}>
+                                <Text style={styles.viewActionText}>View</Text>
+                                <Text style={styles.viewActionArrow}>›</Text>
+                              </View>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
                     </View>
                   )}
                 </View>
@@ -238,6 +353,82 @@ export default function AIChatFloatingButton() {
 
           </SafeAreaView>
         </KeyboardAvoidingView>
+      </Modal>
+
+      {/* CITATION & PDF INSPECTOR MODAL */}
+      <Modal
+        visible={docModalVisible}
+        animationType="fade"
+        transparent
+        onRequestClose={() => setDocModalVisible(false)}
+      >
+        <View style={styles.docModalBackdrop}>
+          <View style={styles.docModalCard}>
+            {/* Modal Header */}
+            <View style={styles.docModalHeader}>
+              <View style={{ flex: 1, paddingRight: 10 }}>
+                <View style={styles.docBadgeRow}>
+                  <Text style={styles.docModalBadge}>STATUTE CITATION</Text>
+                  {selectedSource?.page && selectedSource.page !== 'N/A' && (
+                    <Text style={styles.docPageBadge}>Page {selectedSource.page}</Text>
+                  )}
+                </View>
+                <Text style={styles.docModalTitle} numberOfLines={2}>
+                  {selectedSource?.source}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={styles.docModalCloseBtn}
+                onPress={() => setDocModalVisible(false)}
+              >
+                <Text style={styles.docModalCloseText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+
+            {/* Modal Content: Highlighted Statutory Text */}
+            <ScrollView style={styles.docModalScroll} showsVerticalScrollIndicator={true}>
+              <Text style={styles.docSectionSub}>Cited Statutory Clause & Section:</Text>
+              <View style={styles.docExcerptBox}>
+                <Text style={styles.docExcerptText}>
+                  {selectedSource?.text || selectedSource?.snippet || 'Legal statute excerpt loaded from Pakistan Law Database.'}
+                </Text>
+              </View>
+
+              <Text style={styles.docNoticeText}>
+                Verified clause from the official statute books of Pakistan. Tap below to view or download the complete PDF document.
+              </Text>
+            </ScrollView>
+
+            {/* Modal Actions */}
+            <View style={styles.docModalActions}>
+              <TouchableOpacity
+                style={styles.openPdfBtn}
+                activeOpacity={0.85}
+                onPress={() => {
+                  if (selectedSource) openPdf(selectedSource);
+                }}
+              >
+                <LinearGradient
+                  colors={['#2563EB', '#1D4ED8']}
+                  style={styles.openPdfGradient}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 0 }}
+                >
+                  <Text style={styles.openPdfBtnText}>
+                    Open Full PDF {selectedSource?.page && selectedSource.page !== 'N/A' ? `(Page ${selectedSource.page})` : ''}
+                  </Text>
+                </LinearGradient>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.closeDocBtn}
+                onPress={() => setDocModalVisible(false)}
+              >
+                <Text style={styles.closeDocBtnText}>Close</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </>
   );
@@ -327,18 +518,140 @@ const styles = StyleSheet.create({
   closeBtnText: { color: '#f8fafc', fontSize: 16, fontWeight: '800' },
   chatScroll: { flex: 1, backgroundColor: '#0F172A' },
   chatContent: { padding: 18, gap: 12 },
-  msgBubble: { maxWidth: '84%', padding: 14, borderRadius: 18, marginBottom: 8 },
-  userBubble: { alignSelf: 'flex-end', backgroundColor: '#3b82f6', borderBottomRightRadius: 4 },
+  msgBubble: { maxWidth: '88%', padding: 14, borderRadius: 18, marginBottom: 10 },
+  userBubble: { alignSelf: 'flex-end', backgroundColor: '#2563eb', borderBottomRightRadius: 4 },
   aiBubble: { alignSelf: 'flex-start', backgroundColor: '#1E293B', borderBottomLeftRadius: 4, borderWidth: 1, borderColor: '#334155' },
-  userMsgText: { color: '#ffffff', fontSize: 13, lineHeight: 19 },
-  aiMsgText: { color: '#e2e8f0', fontSize: 13, lineHeight: 19 },
+  userMsgText: { color: '#ffffff', fontSize: 13.5, lineHeight: 21 },
+  aiMsgText: { color: '#e2e8f0', fontSize: 13.5, lineHeight: 21 },
+  boldText: { fontWeight: '700', color: '#f8fafc' },
+  headingLine: { fontWeight: '700', fontSize: 14, color: '#60a5fa', marginTop: 8, marginBottom: 2 },
+  bulletLine: { paddingLeft: 4, marginVertical: 1.5 },
   loadingRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   loadingText: { color: '#94a3b8', fontSize: 12, fontStyle: 'italic' },
   inputBar: { flexDirection: 'row', alignItems: 'center', padding: 14, paddingHorizontal: 16, backgroundColor: '#020617', borderTopWidth: 1, borderTopColor: '#1E293B', gap: 10 },
   textInput: { flex: 1, backgroundColor: '#1E293B', borderRadius: 24, paddingHorizontal: 18, paddingVertical: 10, fontSize: 13, color: '#f8fafc' },
   sendBtn: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#3b82f6', justifyContent: 'center', alignItems: 'center' },
   sendBtnText: { color: '#ffffff', fontSize: 18, fontWeight: '800' },
-  sourcesContainer: { marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: '#334155' },
-  sourcesTitle: { color: '#fbbf24', fontSize: 11, fontWeight: 'bold', marginBottom: 4 },
-  sourceItem: { color: '#94a3b8', fontSize: 11, fontStyle: 'italic', marginBottom: 2 },
+
+  // Sources Interactive Styles
+  sourcesContainer: { marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#334155' },
+  sourcesHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 3 },
+  sourcesBadgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#fbbf24' },
+  sourcesTitle: { color: '#fbbf24', fontSize: 12, fontWeight: '700' },
+  sourcesHint: { color: '#94a3b8', fontSize: 11, marginBottom: 8 },
+  sourcesList: { gap: 6 },
+  sourceCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    backgroundColor: '#0F172A',
+    borderWidth: 1,
+    borderColor: '#334155',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+  },
+  sourceCardLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1, marginRight: 8 },
+  pdfBadge: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderWidth: 1,
+    borderColor: '#ef4444',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  pdfBadgeText: { color: '#f87171', fontSize: 9, fontWeight: '800' },
+  sourceDetails: { flex: 1 },
+  sourceTitleText: { color: '#f1f5f9', fontSize: 12, fontWeight: '600' },
+  sourcePageText: { color: '#94a3b8', fontSize: 10.5, marginTop: 1 },
+  sourceCardAction: { flexDirection: 'row', alignItems: 'center', gap: 2 },
+  viewActionText: { color: '#38bdf8', fontSize: 11, fontWeight: '700' },
+  viewActionArrow: { color: '#38bdf8', fontSize: 14, fontWeight: '800' },
+
+  // Document Inspector Modal Styles
+  docModalBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 16,
+  },
+  docModalCard: {
+    width: '100%',
+    maxHeight: SCREEN_HEIGHT * 0.78,
+    backgroundColor: '#0F172A',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#38bdf8',
+    padding: 18,
+    shadowColor: '#38bdf8',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 20,
+  },
+  docModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    borderBottomWidth: 1,
+    borderBottomColor: '#1E293B',
+    paddingBottom: 12,
+    marginBottom: 12,
+  },
+  docBadgeRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  docModalBadge: {
+    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+    color: '#60a5fa',
+    fontSize: 9.5,
+    fontWeight: '800',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(59, 130, 246, 0.4)',
+  },
+  docPageBadge: {
+    backgroundColor: 'rgba(251, 191, 36, 0.2)',
+    color: '#fbbf24',
+    fontSize: 9.5,
+    fontWeight: '800',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  docModalTitle: { color: '#f8fafc', fontSize: 14, fontWeight: '700', lineHeight: 20 },
+  docModalCloseBtn: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: '#1E293B',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  docModalCloseText: { color: '#94a3b8', fontSize: 13, fontWeight: 'bold' },
+  docModalScroll: { maxHeight: SCREEN_HEIGHT * 0.45, marginBottom: 14 },
+  docSectionSub: { color: '#94a3b8', fontSize: 11, fontWeight: '600', marginBottom: 6 },
+  docExcerptBox: {
+    backgroundColor: '#1E293B',
+    borderLeftWidth: 3,
+    borderLeftColor: '#38bdf8',
+    padding: 12,
+    borderRadius: 8,
+    marginBottom: 10,
+  },
+  docExcerptText: { color: '#e2e8f0', fontSize: 12.5, lineHeight: 19 },
+  docNoticeText: { color: '#64748b', fontSize: 10.5, fontStyle: 'italic', marginTop: 4 },
+  docModalActions: { gap: 8 },
+  openPdfBtn: { borderRadius: 12, overflow: 'hidden' },
+  openPdfGradient: { paddingVertical: 12, alignItems: 'center', justifyContent: 'center' },
+  openPdfBtnText: { color: '#ffffff', fontSize: 13, fontWeight: '700' },
+  closeDocBtn: {
+    paddingVertical: 10,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#1E293B',
+    borderRadius: 12,
+  },
+  closeDocBtnText: { color: '#94a3b8', fontSize: 12.5, fontWeight: '600' },
 });

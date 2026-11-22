@@ -1,6 +1,7 @@
-// Application State
+﻿// Application State
 let currentSources = [];
 let isSubmitting = false;
+let activeInspectorMode = "excerpt"; // "excerpt" or "pdf"
 
 // DOM Elements
 const chatForm = document.getElementById("chat-form");
@@ -15,26 +16,32 @@ const chunkCount = document.getElementById("chunk-count");
 const reingestBtn = document.getElementById("reingest-btn");
 const inspectorPane = document.getElementById("inspector-pane");
 const inspectorBody = document.getElementById("inspector-body");
+const inspectorTabs = document.getElementById("inspector-tabs");
+const inspectorDocTitle = document.getElementById("inspector-doc-title");
+const inspectorPagePill = document.getElementById("inspector-page-pill");
+const openPdfExternalBtn = document.getElementById("open-pdf-external-btn");
 const closeInspectorBtn = document.getElementById("close-inspector-btn");
 const toast = document.getElementById("toast");
 
-// Check if admin mode is enabled via URL parameters
+// Check if admin mode is enabled via URL parameters (?admin=true)
 const urlParams = new URLSearchParams(window.location.search);
-const isAdmin = urlParams.get('admin') === 'true';
+const isAdmin = urlParams.get("admin") === "true";
 
 // Setup Event Listeners
 document.addEventListener("DOMContentLoaded", () => {
     if (isAdmin) {
-        document.querySelectorAll('.admin-only').forEach(el => {
-            el.style.display = 'block';
+        document.querySelectorAll(".admin-only").forEach(el => {
+            el.style.display = "block";
         });
         fetchStatus();
     }
     
     // Slider value update
-    tempSlider.addEventListener("input", (e) => {
-        tempValue.textContent = e.target.value;
-    });
+    if (tempSlider) {
+        tempSlider.addEventListener("input", (e) => {
+            tempValue.textContent = e.target.value;
+        });
+    }
 
     // Auto-grow textarea
     chatInput.addEventListener("input", function() {
@@ -54,20 +61,27 @@ document.addEventListener("DOMContentLoaded", () => {
     chatForm.addEventListener("submit", handleChatSubmit);
 
     // Re-ingest button click
-    reingestBtn.addEventListener("click", handleReingest);
+    if (reingestBtn) {
+        reingestBtn.addEventListener("click", handleReingest);
+    }
 
     // Inspector close button
     closeInspectorBtn.addEventListener("click", closeInspector);
 
     // Dynamic prompt chips click handler
     document.addEventListener("click", (e) => {
-        if (e.target.classList.contains("prompt-chip")) {
-            const question = e.target.getAttribute("data-question");
+        const chip = e.target.closest(".prompt-chip");
+        if (chip) {
+            const question = chip.getAttribute("data-question");
             chatInput.value = question;
-            chatInput.dispatchEvent(new Event("input")); // trigger auto-grow
+            chatInput.dispatchEvent(new Event("input"));
             chatInput.focus();
         }
     });
+    
+    if (window.lucide) {
+        lucide.createIcons();
+    }
 });
 
 // Toast notification helper
@@ -77,7 +91,7 @@ function showToast(message, type = "success") {
         <i data-lucide="${type === 'success' ? 'check-circle' : 'alert-circle'}"></i>
         <span>${message}</span>
     `;
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
     
     setTimeout(() => {
         toast.classList.remove("show");
@@ -90,13 +104,21 @@ function isRtlText(text) {
     return rtlPattern.test(text);
 }
 
-// Simple Markdown to HTML Formatter
+// Markdown to HTML Formatter
 function parseMarkdown(text) {
     if (!text) return "";
-    let html = text;
     
-    // Escaping html characters
-    html = html
+    // Strip emojis
+    let clean = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1FA70}-\u{1FAFF}]/gu, '');
+    
+    // Strip divider lines (--- or ___)
+    clean = clean.replace(/^[-=_*]{3,}$/gm, '');
+
+    // Strip leading hashes (### Header -> Header)
+    clean = clean.replace(/^#{1,6}\s*(.*)$/gm, '<strong>$1</strong>');
+    clean = clean.replace(/#{2,}/g, '');
+
+    let html = clean
         .replace(/&/g, "&amp;")
         .replace(/</g, "&lt;")
         .replace(/>/g, "&gt;");
@@ -104,16 +126,14 @@ function parseMarkdown(text) {
     // Format bold text (**text**)
     html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
     
-    // Split text into lines to process lists
+    // Lists
     const lines = html.split('\n');
     let inList = false;
-    let listType = null; // 'ul' or 'ol'
+    let listType = null;
     let newLines = [];
     
     for (let line of lines) {
         let trimmed = line.trim();
-        
-        // Bullet list
         if (trimmed.startsWith('* ') || trimmed.startsWith('- ')) {
             if (!inList || listType !== 'ul') {
                 if (inList) newLines.push(`</${listType}>`);
@@ -122,9 +142,7 @@ function parseMarkdown(text) {
                 listType = 'ul';
             }
             newLines.push(`<li>${trimmed.substring(2)}</li>`);
-        } 
-        // Numbered list (e.g. 1. text)
-        else if (/^\d+\.\s/.test(trimmed)) {
+        } else if (/^\d+\.\s/.test(trimmed)) {
             if (!inList || listType !== 'ol') {
                 if (inList) newLines.push(`</${listType}>`);
                 newLines.push('<ol>');
@@ -133,9 +151,7 @@ function parseMarkdown(text) {
             }
             const content = trimmed.replace(/^\d+\.\s/, '');
             newLines.push(`<li>${content}</li>`);
-        } 
-        // Normal paragraph/text line
-        else {
+        } else {
             if (inList) {
                 newLines.push(`</${listType}>`);
                 inList = false;
@@ -144,14 +160,9 @@ function parseMarkdown(text) {
             newLines.push(line);
         }
     }
-    
-    if (inList) {
-        newLines.push(`</${listType}>`);
-    }
+    if (inList) newLines.push(`</${listType}>`);
     
     html = newLines.join('\n');
-    
-    // Replace newline with br (except around structural tags)
     html = html.replace(/\n/g, '<br>');
     html = html.replace(/<br><ul>/g, '<ul>');
     html = html.replace(/<\/ul><br>/g, '</ul>');
@@ -168,13 +179,12 @@ async function fetchStatus() {
         const res = await fetch("/api/status");
         const data = await res.json();
         
-        chunkCount.textContent = data.document_count || 0;
+        if (chunkCount) chunkCount.textContent = data.document_count || 0;
+        if (!fileList) return;
         
-        // Render file list in sidebar
         fileList.innerHTML = "";
-        
         if (!data.files || data.files.length === 0) {
-            fileList.innerHTML = `<li class="loading-files">No PDFs in data/raw_pdfs</li>`;
+            fileList.innerHTML = `<li class="loading-files">No PDFs found</li>`;
             return;
         }
         
@@ -193,11 +203,11 @@ async function fetchStatus() {
         });
         
         if (!data.api_key_set) {
-            showToast("Warning: Groq API Key is not set in backend .env file!", "error");
+            showToast("Warning: GROQ_API_KEY is not set in backend .env file!", "error");
         }
     } catch (err) {
-        console.error("Error fetching server status:", err);
-        fileList.innerHTML = `<li class="loading-files" style="color: #ef4444;">API server offline</li>`;
+        console.error("Error fetching status:", err);
+        if (fileList) fileList.innerHTML = `<li class="loading-files" style="color: #ef4444;">API server offline</li>`;
     }
 }
 
@@ -205,16 +215,18 @@ async function fetchStatus() {
 async function handleReingest() {
     reingestBtn.classList.add("spinning");
     reingestBtn.disabled = true;
-    showToast("Starting PDF Ingestion... please wait.", "success");
+    showToast("Starting PDF Ingestion & OCR... please wait.", "success");
     
     try {
         const res = await fetch("/api/ingest", {
-            method: "POST"
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ force: true })
         });
         const data = await res.json();
         
         if (data.status === "success") {
-            showToast("All PDFs successfully ingested and embedded!", "success");
+            showToast(`Ingestion complete! ${data.document_count} chunks indexed.`, "success");
         } else {
             showToast(`Ingestion failed: ${data.message}`, "error");
         }
@@ -236,28 +248,22 @@ async function handleChatSubmit(e) {
     
     isSubmitting = true;
     
-    // Add User Message to UI
     appendMessage(messageText, "user");
     
-    // Reset inputs
     chatInput.value = "";
     chatInput.style.height = "auto";
     
-    // Add typing indicator
     const typingIndicator = appendTypingIndicator();
     chatMessages.scrollTop = chatMessages.scrollHeight;
     
-    // Read state parameters
-    const model = modelSelect.value;
-    const temperature = tempSlider.value;
-    const language = langSelect.value;
+    const model = modelSelect ? modelSelect.value : "qwen/qwen3.8-27b";
+    const temperature = tempSlider ? tempSlider.value : 0.3;
+    const language = langSelect ? langSelect.value : "Auto-Detect";
     
     try {
         const res = await fetch("/api/chat", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 message: messageText,
                 model: model,
@@ -267,30 +273,27 @@ async function handleChatSubmit(e) {
         });
         
         const data = await res.json();
-        
-        // Remove typing indicator
         typingIndicator.remove();
         
         if (data.error) {
             appendMessage(`Error: ${data.error}`, "bot", [], true);
         } else {
-            appendMessage(data.answer, "bot", data.sources);
+            appendMessage(data.answer, "bot", data.sources, false, data.detected_language);
         }
     } catch (err) {
         typingIndicator.remove();
-        appendMessage("Error communicating with legal API. Make sure the server is running.", "bot", [], true);
+        appendMessage("Error communicating with legal AI server. Please make sure run_chatbot.bat is active.", "bot", [], true);
     } finally {
         isSubmitting = false;
         chatMessages.scrollTop = chatMessages.scrollHeight;
     }
 }
 
-// Append Chat Message to DOM
-function appendMessage(text, sender, sources = [], isError = false) {
+// Append Chat Message
+function appendMessage(text, sender, sources = [], isError = false, detectedLang = null) {
     const messageDiv = document.createElement("div");
     messageDiv.classList.add("message", `${sender}-msg`);
     
-    // Detect RTL script (Urdu/Sindhi) for right-to-left formatting
     const isRtl = isRtlText(text);
     if (isRtl) {
         messageDiv.classList.add("urdu-text");
@@ -300,35 +303,42 @@ function appendMessage(text, sender, sources = [], isError = false) {
     }
 
     const icon = sender === "user" ? "👤" : "⚖️";
-    
     const parsedContent = parseMarkdown(text);
     
     let citationsHTML = "";
     if (sources && sources.length > 0) {
         citationsHTML = `
             <div class="citations-container">
-                ${sources.map((src, i) => `
-                    <button class="citation-tag" onclick="inspectSource(${i})">
-                        <i data-lucide="file-text" style="width: 10px; height: 10px;"></i>
-                        Reference ${i+1}: ${src.source} (p. ${src.page})
-                    </button>
-                `).join('')}
+                <span class="citations-label"><i data-lucide="bookmark"></i> Cited Legal References (Click to view PDF):</span>
+                <div class="citations-pills">
+                    ${sources.map((src, i) => `
+                        <button type="button" class="citation-tag" onclick="inspectSource(${i})">
+                            <i data-lucide="file-text"></i>
+                            <span>Ref ${i+1}: ${src.source.replace('.pdf', '')} (p. ${src.page})</span>
+                        </button>
+                    `).join('')}
+                </div>
             </div>
         `;
-        // Cache the latest query's sources globally
         currentSources = sources;
+    }
+    
+    let langPill = "";
+    if (detectedLang && sender === "bot") {
+        langPill = `<span class="lang-indicator-pill"><i data-lucide="globe"></i> ${detectedLang}</span>`;
     }
     
     messageDiv.innerHTML = `
         <div class="msg-icon">${icon}</div>
         <div class="msg-content">
+            ${langPill}
             <div class="msg-text">${parsedContent}</div>
             ${citationsHTML}
         </div>
     `;
     
     chatMessages.appendChild(messageDiv);
-    lucide.createIcons();
+    if (window.lucide) lucide.createIcons();
     chatMessages.scrollTop = chatMessages.scrollHeight;
 }
 
@@ -350,23 +360,77 @@ function appendTypingIndicator() {
     return messageDiv;
 }
 
-// Inspect Source Citation (Open right-hand inspector)
+// Inspect Source Citation (Open right-hand inspector with PDF Viewer & Highlights)
 window.inspectSource = function(index) {
     const source = currentSources[index];
     if (!source) return;
     
-    // Open Inspector panel
     inspectorPane.classList.add("active");
+    if (inspectorTabs) inspectorTabs.style.display = "flex";
+    
+    // Set Header
+    inspectorDocTitle.innerHTML = `<i data-lucide="file-text"></i> ${source.source}`;
+    inspectorPagePill.textContent = `Page ${source.page}`;
+    
+    // Setup External PDF Link
+    const pdfUrl = `/api/pdf/${encodeURIComponent(source.source)}#page=${source.page}`;
+    if (openPdfExternalBtn) {
+        openPdfExternalBtn.href = pdfUrl;
+        openPdfExternalBtn.style.display = "inline-flex";
+    }
+    
+    // Highlight matched passage in text
+    let highlightedText = source.text;
+    const snippet = source.snippet || "";
+    if (snippet && snippet.length > 5) {
+        const cleanSnippet = snippet.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const reg = new RegExp(`(${cleanSnippet})`, "gi");
+        highlightedText = highlightedText.replace(reg, '<mark class="pdf-highlight">$1</mark>');
+    }
     
     inspectorBody.innerHTML = `
-        <div class="source-detail-card">
-            <div class="source-detail-header">
-                <span>📄 ${source.source}</span>
-                <span>Page: ${source.page}</span>
+        <!-- View 1: Highlighted Text View -->
+        <div id="inspector-excerpt-view" class="source-detail-card" style="display: ${activeInspectorMode === 'excerpt' ? 'block' : 'none'};">
+            <div class="citation-meta-row">
+                <span class="law-title">${source.source}</span>
+                <span class="law-page">Page ${source.page}</span>
             </div>
-            <div class="source-detail-text">${source.text}</div>
+            <div class="law-text-content">${highlightedText}</div>
+            <div class="view-pdf-prompt">
+                <button type="button" class="open-tab-btn" onclick="switchInspectorTab('pdf')">
+                    <i data-lucide="eye"></i> View Live PDF Page ${source.page}
+                </button>
+            </div>
+        </div>
+
+        <!-- View 2: Live Embedded PDF Viewer -->
+        <div id="inspector-pdf-view" style="display: ${activeInspectorMode === 'pdf' ? 'flex' : 'none'}; flex-direction: column; height: 100%; flex: 1;">
+            <iframe id="pdf-viewer-frame" src="${pdfUrl}" style="width: 100%; height: 600px; border: none; background: #0f172a; border-radius: 8px;"></iframe>
         </div>
     `;
+    
+    if (window.lucide) lucide.createIcons();
+};
+
+// Switch Between Excerpt View & Live PDF Page View
+window.switchInspectorTab = function(tabName) {
+    activeInspectorMode = tabName;
+    const excerptBtn = document.getElementById("tab-excerpt-btn");
+    const pdfBtn = document.getElementById("tab-pdf-btn");
+    const excerptView = document.getElementById("inspector-excerpt-view");
+    const pdfView = document.getElementById("inspector-pdf-view");
+    
+    if (tabName === 'pdf') {
+        if (excerptBtn) excerptBtn.classList.remove('active');
+        if (pdfBtn) pdfBtn.classList.add('active');
+        if (excerptView) excerptView.style.display = 'none';
+        if (pdfView) pdfView.style.display = 'flex';
+    } else {
+        if (pdfBtn) pdfBtn.classList.remove('active');
+        if (excerptBtn) excerptBtn.classList.add('active');
+        if (pdfView) pdfView.style.display = 'none';
+        if (excerptView) excerptView.style.display = 'block';
+    }
 };
 
 // Close Inspector Pane

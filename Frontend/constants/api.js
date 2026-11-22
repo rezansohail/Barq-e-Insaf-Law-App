@@ -32,7 +32,7 @@ const getDevHost = () => {
   }
 
   // 4. Current active laptop Wi-Fi IP fallback
-  return '10.40.236.161';
+  return '192.168.100.246';
 };
 
 const host = getDevHost();
