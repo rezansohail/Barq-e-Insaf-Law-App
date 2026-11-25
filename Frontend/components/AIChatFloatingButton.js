@@ -20,7 +20,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
+import * as WebBrowser from 'expo-web-browser';
+import * as Linking from 'expo-linking';
 import { subscribeToChat, closeAIChat } from '../constants/chatBotStore';
+import { getDevHost } from '../constants/api';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
