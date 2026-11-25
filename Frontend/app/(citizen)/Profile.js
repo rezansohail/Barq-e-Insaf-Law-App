@@ -23,7 +23,7 @@ import { useAppTheme } from '../../context/ThemeContext';
 export default function Profile() {
   useMockStore();
   const router = useRouter();
-  const { theme, isDarkMode } = useAppTheme();
+  const { theme, isDarkMode, toggleTheme } = useAppTheme();
   const params = useLocalSearchParams();
   const currentCitizenId = params.citizenId || params.id || getCurrentCitizenId();
 
@@ -118,136 +118,210 @@ export default function Profile() {
         showsVerticalScrollIndicator={false}
       >
         {/* PROFILE CARD */}
-        <View style={styles.profileCard}>
+        <View style={[styles.profileCard, { backgroundColor: isDarkMode ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 170, 60, 0.28)' : 'rgba(217, 119, 6, 0.25)' }]}>
           <View style={styles.avatarContainer}>
-            <View style={styles.avatarLarge}>
-              <Text style={styles.avatarLargeText}>{nameInitials}</Text>
+            <View style={[styles.avatarLarge, !isDarkMode && { backgroundColor: '#FFF7ED', borderColor: '#F59E0B' }]}>
+              <Text style={[styles.avatarLargeText, !isDarkMode && { color: '#B45309' }]}>{nameInitials}</Text>
             </View>
-            <Text style={styles.userName}>{userData.fullName || userData.name || 'Citizen'}</Text>
-            <Text style={styles.userRole}>Verified Citizen · Sindh, Pakistan</Text>
+            <Text style={[styles.userName, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>{userData.fullName || userData.name || 'Citizen'}</Text>
+            <Text style={[styles.userRole, { color: isDarkMode ? '#FF9500' : '#D97706' }]}>Verified Citizen · Sindh, Pakistan</Text>
           </View>
 
           {/* EDIT / SAVE BUTTON */}
           <TouchableOpacity
-            style={editMode ? styles.saveProfileBtn : styles.editProfileBtn}
+            style={[
+              editMode ? styles.saveProfileBtn : styles.editProfileBtn,
+              !isDarkMode && {
+                backgroundColor: editMode ? '#10B981' : '#F59E0B',
+                borderColor: editMode ? '#059669' : '#D97706',
+              },
+            ]}
             onPress={editMode ? handleSave : () => setEditMode(true)}
             activeOpacity={0.8}
             disabled={saving}
           >
             {saving ? (
-              <ActivityIndicator color="#0A0301" size="small" />
+              <ActivityIndicator color={isDarkMode ? '#0A0301' : '#FFFFFF'} size="small" />
             ) : (
-              <Text style={editMode ? styles.saveProfileBtnText : styles.editProfileBtnText}>
+              <Text
+                style={[
+                  editMode ? styles.saveProfileBtnText : styles.editProfileBtnText,
+                  !isDarkMode && { color: editMode ? '#FFFFFF' : '#000000', fontWeight: '900' },
+                ]}
+              >
                 {editMode ? 'SAVE PROFILE' : 'EDIT PROFILE'}
               </Text>
             )}
           </TouchableOpacity>
 
-          {/* CONTACT INFO GRID (CNIC STRICTLY REMOVED) */}
-          <View style={styles.infoGrid}>
-            <View style={styles.infoGridItem}>
-              <Text style={styles.infoGridLabel}>Full Name</Text>
+          {/* CONTACT INFO GRID */}
+          <View
+            style={[
+              styles.infoGrid,
+              {
+                backgroundColor: isDarkMode ? 'rgba(15, 7, 3, 0.65)' : '#FAF5F0',
+                borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.18)' : 'rgba(217, 119, 6, 0.20)',
+              },
+            ]}
+          >
+            <View style={[styles.infoGridItem, { borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)' }]}>
+              <Text style={[styles.infoGridLabel, !isDarkMode && { color: '#9A5B32' }]}>Full Name</Text>
               {editMode ? (
                 <TextInput
-                  style={styles.infoInput}
+                  style={[styles.infoInput, !isDarkMode && { backgroundColor: '#FFFFFF', borderColor: 'rgba(217, 119, 6, 0.35)', color: '#1A0C04' }]}
                   value={inputName}
                   onChangeText={setInputName}
                   placeholder="Your Full Name"
-                  placeholderTextColor="rgba(255, 220, 180, 0.4)"
+                  placeholderTextColor={isDarkMode ? 'rgba(255, 220, 180, 0.4)' : '#A3704C'}
                 />
               ) : (
-                <Text style={styles.infoGridValue}>{userData.fullName || userData.name || '—'}</Text>
+                <Text style={[styles.infoGridValue, !isDarkMode && { color: '#1A0C04' }]}>{userData.fullName || userData.name || '—'}</Text>
               )}
             </View>
 
-            <View style={styles.infoGridItem}>
-              <Text style={styles.infoGridLabel}>Email Address</Text>
+            <View style={[styles.infoGridItem, { borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)' }]}>
+              <Text style={[styles.infoGridLabel, !isDarkMode && { color: '#9A5B32' }]}>Email Address</Text>
               {editMode ? (
                 <TextInput
-                  style={styles.infoInput}
+                  style={[styles.infoInput, !isDarkMode && { backgroundColor: '#FFFFFF', borderColor: 'rgba(217, 119, 6, 0.35)', color: '#1A0C04' }]}
                   value={inputEmail}
                   onChangeText={setInputEmail}
                   placeholder="email@example.com"
-                  placeholderTextColor="rgba(255, 220, 180, 0.4)"
+                  placeholderTextColor={isDarkMode ? 'rgba(255, 220, 180, 0.4)' : '#A3704C'}
                   keyboardType="email-address"
                 />
               ) : (
-                <Text style={styles.infoGridValue}>{userData.email || '—'}</Text>
+                <Text style={[styles.infoGridValue, !isDarkMode && { color: '#1A0C04' }]}>{userData.email || '—'}</Text>
               )}
             </View>
 
-            <View style={styles.infoGridItem}>
-              <Text style={styles.infoGridLabel}>Phone Number</Text>
+            <View style={[styles.infoGridItem, { borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)' }]}>
+              <Text style={[styles.infoGridLabel, !isDarkMode && { color: '#9A5B32' }]}>Phone Number</Text>
               {editMode ? (
                 <TextInput
-                  style={styles.infoInput}
+                  style={[styles.infoInput, !isDarkMode && { backgroundColor: '#FFFFFF', borderColor: 'rgba(217, 119, 6, 0.35)', color: '#1A0C04' }]}
                   value={inputPhone}
                   onChangeText={setInputPhone}
                   placeholder="03001234567"
-                  placeholderTextColor="rgba(255, 220, 180, 0.4)"
+                  placeholderTextColor={isDarkMode ? 'rgba(255, 220, 180, 0.4)' : '#A3704C'}
                   keyboardType="phone-pad"
                 />
               ) : (
-                <Text style={styles.infoGridValue}>{userData.phone || '—'}</Text>
+                <Text style={[styles.infoGridValue, !isDarkMode && { color: '#1A0C04' }]}>{userData.phone || '—'}</Text>
               )}
             </View>
 
-            <View style={styles.infoGridItem}>
-              <Text style={styles.infoGridLabel}>District (Sindh)</Text>
+            <View style={[styles.infoGridItem, { borderBottomColor: isDarkMode ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)' }]}>
+              <Text style={[styles.infoGridLabel, !isDarkMode && { color: '#9A5B32' }]}>District (Sindh)</Text>
               {editMode ? (
                 <TextInput
-                  style={styles.infoInput}
+                  style={[styles.infoInput, !isDarkMode && { backgroundColor: '#FFFFFF', borderColor: 'rgba(217, 119, 6, 0.35)', color: '#1A0C04' }]}
                   value={inputDistrict}
                   onChangeText={setInputDistrict}
                   placeholder="e.g. Korangi, Karachi Central"
-                  placeholderTextColor="rgba(255, 220, 180, 0.4)"
+                  placeholderTextColor={isDarkMode ? 'rgba(255, 220, 180, 0.4)' : '#A3704C'}
                 />
               ) : (
-                <Text style={styles.infoGridValue}>{userData.district || userData.city || 'Sindh'}</Text>
+                <Text style={[styles.infoGridValue, !isDarkMode && { color: '#1A0C04' }]}>{userData.district || userData.city || 'Sindh'}</Text>
               )}
             </View>
 
             <View style={[styles.infoGridItem, { borderBottomWidth: 0 }]}>
-              <Text style={styles.infoGridLabel}>Residential Address</Text>
+              <Text style={[styles.infoGridLabel, !isDarkMode && { color: '#9A5B32' }]}>Residential Address</Text>
               {editMode ? (
                 <TextInput
-                  style={styles.infoInput}
+                  style={[styles.infoInput, !isDarkMode && { backgroundColor: '#FFFFFF', borderColor: 'rgba(217, 119, 6, 0.35)', color: '#1A0C04' }]}
                   value={inputAddress}
                   onChangeText={setInputAddress}
                   placeholder="Address or Mohalla"
-                  placeholderTextColor="rgba(255, 220, 180, 0.4)"
+                  placeholderTextColor={isDarkMode ? 'rgba(255, 220, 180, 0.4)' : '#A3704C'}
                 />
               ) : (
-                <Text style={styles.infoGridValue}>{userData.address || 'Sindh, Pakistan'}</Text>
+                <Text style={[styles.infoGridValue, !isDarkMode && { color: '#1A0C04' }]}>{userData.address || 'Sindh, Pakistan'}</Text>
               )}
             </View>
           </View>
 
           {/* TELEMETRY METRICS */}
-          <View style={styles.statsRow}>
+          <View
+            style={[
+              styles.statsRow,
+              {
+                backgroundColor: isDarkMode ? 'rgba(26, 12, 5, 0.85)' : '#FAF5F0',
+                borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.22)' : 'rgba(217, 119, 6, 0.20)',
+              },
+            ]}
+          >
             <View style={styles.statBox}>
               <Text style={styles.statNum}>{userData.activeCasesCount || 0}</Text>
-              <Text style={styles.statLbl}>Active Cases</Text>
+              <Text style={[styles.statLbl, !isDarkMode && { color: '#7C4A28' }]}>Active Cases</Text>
             </View>
-            <View style={styles.statDiv} />
+            <View style={[styles.statDiv, !isDarkMode && { backgroundColor: 'rgba(0, 0, 0, 0.08)' }]} />
             <View style={styles.statBox}>
-              <Text style={styles.statNum}>{userData.consultationsCount || 0}</Text>
-              <Text style={styles.statLbl}>Consultations</Text>
+              <Text style={[styles.statNum, { color: '#38BDF8' }]}>{userData.consultationsCount || 0}</Text>
+              <Text style={[styles.statLbl, !isDarkMode && { color: '#7C4A28' }]}>Consultations</Text>
             </View>
-            <View style={styles.statDiv} />
+            <View style={[styles.statDiv, !isDarkMode && { backgroundColor: 'rgba(0, 0, 0, 0.08)' }]} />
             <View style={styles.statBox}>
-              <Text style={styles.statNum}>{userData.totalVaultItems || 0}</Text>
-              <Text style={styles.statLbl}>Vault Items</Text>
+              <Text style={[styles.statNum, { color: '#4ADE80' }]}>{userData.totalVaultItems || 0}</Text>
+              <Text style={[styles.statLbl, !isDarkMode && { color: '#7C4A28' }]}>Vault Items</Text>
             </View>
           </View>
 
+          {/* APP THEME APPEARANCE TOGGLE */}
+          <TouchableOpacity
+            style={[
+              styles.termsBtn,
+              {
+                flexDirection: 'row',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                backgroundColor: isDarkMode ? 'rgba(38, 20, 10, 0.94)' : '#FAF5F0',
+                borderColor: isDarkMode ? 'rgba(255, 170, 60, 0.28)' : 'rgba(217, 119, 6, 0.22)',
+              },
+            ]}
+            onPress={toggleTheme}
+            activeOpacity={0.8}
+          >
+            <View>
+              <Text style={[styles.termsBtnText, { color: isDarkMode ? '#FFFFFF' : '#1A0C04', textAlign: 'left', fontWeight: '700' }]}>
+                App Appearance
+              </Text>
+              <Text style={{ fontSize: 11, color: isDarkMode ? '#C8A892' : '#7C6859', marginTop: 2 }}>
+                Current mode: {isDarkMode ? 'Dark (Night Obsidian)' : 'Light (Day White)'}
+              </Text>
+            </View>
+            <View
+              style={{
+                backgroundColor: isDarkMode ? 'rgba(255, 149, 0, 0.2)' : '#F59E0B',
+                paddingHorizontal: 12,
+                paddingVertical: 6,
+                borderRadius: 12,
+                borderWidth: 1,
+                borderColor: isDarkMode ? '#FF9500' : '#D97706',
+              }}
+            >
+              <Text style={{ color: isDarkMode ? '#FF9500' : '#000000', fontWeight: '900', fontSize: 11 }}>
+                {isDarkMode ? 'SWITCH TO LIGHT' : 'SWITCH TO DARK'}
+              </Text>
+            </View>
+          </TouchableOpacity>
+
           {/* TERMS AND CONDITIONS LINK */}
           <TouchableOpacity
-            style={styles.termsBtn}
+            style={[
+              styles.termsBtn,
+              {
+                backgroundColor: isDarkMode ? '#1E202C' : '#FAF5F0',
+                borderColor: isDarkMode ? '#2F3144' : 'rgba(217, 119, 6, 0.22)',
+              },
+            ]}
             onPress={() => router.push('/TermsScreen')}
             activeOpacity={0.8}
           >
-            <Text style={styles.termsBtnText}>View Terms & Conditions</Text>
+            <Text style={[styles.termsBtnText, { color: isDarkMode ? '#FFA726' : '#B45309' }]}>
+              View Terms & Conditions
+            </Text>
           </TouchableOpacity>
 
           {/* SIGN OUT BUTTON BELOW PROFILE CONTENT */}

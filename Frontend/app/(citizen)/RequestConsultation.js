@@ -36,12 +36,23 @@ export default function RequestConsultation() {
     district: 'Sindh',
   };
 
+  // Extract lawyer's set office timings
+  const rawSlots = Array.isArray(lawyer.officeHours) && lawyer.officeHours.length > 0
+    ? lawyer.officeHours
+    : (Array.isArray(lawyer.availableSlots) && lawyer.availableSlots.length > 0
+      ? lawyer.availableSlots
+      : (Array.isArray(lawyer.schedule) && lawyer.schedule.length > 0
+        ? lawyer.schedule.map(s => typeof s === 'string' ? s : (s.time || s.label || '10:00 AM - 01:00 PM'))
+        : ['10:00 AM - 01:00 PM', '02:00 PM - 05:00 PM', '05:00 PM - 08:00 PM']));
+
+  const lawyerAvailableSlots = rawSlots.filter(Boolean);
+
   const [selectedCaseId, setSelectedCaseId] = useState(params.caseId || (activeCases[0]?.id || ''));
   const [problemStatement, setProblemStatement] = useState('');
   const [caseSummary, setCaseSummary] = useState('');
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [selectedTime, setSelectedTime] = useState(
-    lawyer.schedule && lawyer.schedule[0] ? lawyer.schedule[0].time : '10:00 AM - 01:00 PM'
+    lawyerAvailableSlots[0] || '10:00 AM - 01:00 PM'
   );
   const [submitting, setSubmitting] = useState(false);
 
@@ -79,10 +90,10 @@ export default function RequestConsultation() {
       });
 
       const successMsg = currentLang === 'ur'
-        ? `آپ کی قانونی مشاورت کی درخواست وکیل ${translateLawyerName(lawyer.name)} کو بھیج دی گئی ہے۔ وہ آپ کے کیس اور ثبوت کا جائزہ لیں گے۔`
+        ? `آپ کی قانونی مشاورت کی درخواست وکیل ${translateLawyerName(lawyer.name)} کو بھیج دی گئی ہے۔ آپ کے ثبوت والٹ میں محفوظ اور مقفل رہیں گے۔`
         : currentLang === 'sd'
-        ? `توهان جي قانوني صلاح جي درخواست وڪيل ${translateLawyerName(lawyer.name)} ڏانهن موڪلي وئي آهي. هو توهان جي ڪيس ۽ ثبوتن جو جائزو وٺندا.`
-        : `Your consultation request and case details have been sent to ${lawyer.name}. They can now review your files.`;
+        ? `توهان جي قانوني صلاح جي درخواست وڪيل ${translateLawyerName(lawyer.name)} ڏانهن موڪلي وئي آهي. توهان جا ثبوت والٽ ۾ محفوظ رهندا.`
+        : `Your consultation request has been sent to ${lawyer.name}. Your evidence files remain encrypted and locked in your private vault until you grant access after booking.`;
 
       if (Platform.OS === 'web') {
         alert(successMsg);
@@ -211,36 +222,32 @@ export default function RequestConsultation() {
             onChangeText={setSelectedDate}
           />
 
-          {/* Time Slot Selection from Lawyer's Real Office Hours */}
+          {/* Time Slot Selection from Lawyer's Configured Office Hours (Fixed options only, not editable) */}
           <Text style={styles.label}>
             {t('consult.slot', 'Available Office Hours Slot')}
           </Text>
-          {Array.isArray(lawyer.schedule) && lawyer.schedule.length > 0 ? (
-            <View style={styles.slotsRow}>
-              {lawyer.schedule.map((slot, idx) => (
-                <TouchableOpacity
-                  key={slot.id || idx}
-                  style={[styles.slotChip, selectedTime === slot.time && styles.slotChipActive]}
-                  onPress={() => setSelectedTime(slot.time)}
+          <View style={styles.slotsRow}>
+            {lawyerAvailableSlots.map((slotTime, idx) => (
+              <TouchableOpacity
+                key={idx}
+                style={[
+                  styles.slotChip,
+                  selectedTime === slotTime && styles.slotChipActive,
+                ]}
+                onPress={() => setSelectedTime(slotTime)}
+                activeOpacity={0.8}
+              >
+                <Text
+                  style={[
+                    styles.slotChipText,
+                    selectedTime === slotTime && styles.slotChipTextActive,
+                  ]}
                 >
-                  <Text style={[styles.slotChipDay, selectedTime === slot.time && styles.slotChipDayActive]}>
-                    {slot.day}
-                  </Text>
-                  <Text style={[styles.slotChipText, selectedTime === slot.time && styles.slotChipTextActive]}>
-                    {slot.time}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          ) : (
-            <TextInput
-              style={styles.input}
-              placeholder="e.g. 10:00 AM - 01:00 PM"
-              placeholderTextColor="rgba(255,255,255,0.3)"
-              value={selectedTime}
-              onChangeText={setSelectedTime}
-            />
-          )}
+                  {slotTime}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
 
           <TouchableOpacity
             style={[styles.submitBtn, submitting && { opacity: 0.7 }]}

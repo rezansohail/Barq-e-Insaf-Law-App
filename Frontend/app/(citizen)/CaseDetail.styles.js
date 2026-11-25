@@ -770,6 +770,25 @@ export default StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
   },
+  downloadCertBtn: {
+    backgroundColor: '#B8860B',
+    borderRadius: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#D4AF37',
+    gap: 8,
+  },
+  downloadCertBtnText: {
+    color: '#0A0502',
+    fontSize: 12,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+  },
 
   // Institutional Assistance Row (NGO & Media)
   institutionActionRow: {
@@ -854,5 +873,47 @@ export default StyleSheet.create({
   timeSlotChipTextActive: {
     color: '#080301',
     fontWeight: '900',
+  },
+
+  // ── EVIDENCE VAULT ACCESS CONTROL STYLES ──
+  vaultAccessControlBox: {
+    backgroundColor: 'rgba(20, 10, 4, 0.65)',
+    borderRadius: 12,
+    padding: 12,
+    marginVertical: 10,
+    borderWidth: 1.2,
+    borderColor: 'rgba(255, 149, 0, 0.28)',
+  },
+  vaultAccessControlHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  vaultAccessControlIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  vaultAccessControlTitle: {
+    color: '#FFEED6',
+    fontSize: 12,
+    fontWeight: '800',
+  },
+  vaultAccessControlSub: {
+    color: 'rgba(255, 230, 205, 0.65)',
+    fontSize: 10.5,
+    marginTop: 2,
+  },
+  vaultAccessExplain: {
+    color: 'rgba(255, 220, 180, 0.75)',
+    fontSize: 10.5,
+    lineHeight: 15,
+    marginTop: 8,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.08)',
+    paddingTop: 6,
   },
 });

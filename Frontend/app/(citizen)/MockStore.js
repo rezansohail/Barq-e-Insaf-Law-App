@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import api from '../../constants/api';
 import { getCurrentCitizenId, getCurrentCitizenUser } from '../../constants/authStore';
 import { saveFileToLocalVault, deleteLocalVaultFile } from '../../services/vaultStorage';
+import safeStorage from '../../services/safeStorage';
 
 let listeners = [];
 
@@ -64,6 +65,7 @@ const _legacy_lawyers = [
     casesWon: '180+',
     phone: '+923001234567',
     sbc: 'SBC-4421',
+    officeHours: ['11:00 AM - 02:00 PM', '03:00 PM - 06:00 PM'],
     schedule: [
       { id: 'ts-2', day: 'Wednesday', time: '03:00 PM - 06:00 PM' },
       { id: 'ts-3', day: 'Saturday', time: '11:00 AM - 02:00 PM' },
@@ -82,7 +84,11 @@ const _legacy_lawyers = [
     casesWon: '120+',
     phone: '+923334567890',
     sbc: 'KHI-9921',
-    schedule: [],
+    officeHours: ['10:00 AM - 01:00 PM', '02:00 PM - 05:00 PM'],
+    schedule: [
+      { id: 'ts-3-1', day: 'Monday - Friday', time: '10:00 AM - 01:00 PM' },
+      { id: 'ts-3-2', day: 'Monday - Friday', time: '02:00 PM - 05:00 PM' },
+    ],
     initials: 'TA',
     color: '#5C1A1A',
   },
@@ -96,7 +102,11 @@ const _legacy_lawyers = [
     casesWon: '90+',
     phone: '+923219876543',
     sbc: 'ISB-5531',
-    schedule: [],
+    officeHours: ['10:00 AM - 01:00 PM', '05:00 PM - 08:00 PM'],
+    schedule: [
+      { id: 'ts-2-1', day: 'Monday - Saturday', time: '10:00 AM - 01:00 PM' },
+      { id: 'ts-2-2', day: 'Monday - Saturday', time: '05:00 PM - 08:00 PM' },
+    ],
     initials: 'SM',
     color: '#1B4332',
   },
@@ -110,7 +120,12 @@ const _legacy_lawyers = [
     casesWon: '140+',
     phone: '+923001234567',
     sbc: 'LHR-8842',
-    schedule: [],
+    officeHours: ['09:00 AM - 12:00 PM', '02:00 PM - 05:00 PM', '07:00 PM - 09:00 PM'],
+    schedule: [
+      { id: 'ts-1-1', day: 'Morning Session', time: '09:00 AM - 12:00 PM' },
+      { id: 'ts-1-2', day: 'Afternoon Session', time: '02:00 PM - 05:00 PM' },
+      { id: 'ts-1-3', day: 'Evening Chamber', time: '07:00 PM - 09:00 PM' },
+    ],
     initials: 'AK',
     color: '#0F2744',
   },
@@ -362,11 +377,16 @@ export const fetchLawyersList = async (specialty = '') => {
     const data = res.data || [];
     lawyers.length = 0;
     data.forEach((l) => {
+      const rawExp = l.pastExperience || (l.experienceYears ? `${l.experienceYears} Years Practice` : '10+ Years Practice');
+      const expMatch = rawExp ? String(rawExp).match(/(\d+\+?\s*(?:years?|yrs?))/i) : null;
+      const briefExp = expMatch ? `${expMatch[1]} Practice` : (String(rawExp).length < 24 ? rawExp : '10+ Years Practice');
+
       lawyers.push({
         id: String(l.id),
         name: l.name,
         spec: l.specialty || 'General Practice',
-        experience: l.pastExperience || (l.experienceYears ? `${l.experienceYears} Years Practice` : '10+ Years'),
+        experience: briefExp,
+        fullBio: l.pastExperience || rawExp,
         location: l.officeAddress || `${l.district || 'Karachi'}, High Court`,
         district: l.district || 'Karachi',
         casesWon: `${l.stats?.successfulCasesCount || 0}+`,
@@ -422,7 +442,16 @@ export const fetchCitizenConsultations = async (targetId) => {
     const res = await api.get(`/citizens/${id}/consultations`);
     const data = res.data || [];
     consultationRequests.length = 0;
-    data.forEach((c) => consultationRequests.push(c));
+    for (const c of data) {
+      const isGrantedLocal =
+        (await safeStorage.getItem(`@barqeinsaf_vault_access_${c.id}`)) === 'true' ||
+        (c.caseId && (await safeStorage.getItem(`@barqeinsaf_vault_access_case_${c.caseId}`)) === 'true') ||
+        Boolean(c.vaultAccessGranted);
+      consultationRequests.push({
+        ...c,
+        vaultAccessGranted: isGrantedLocal,
+      });
+    }
     userData.consultationsCount = consultationRequests.length;
     notify();
   } catch (err) {
@@ -623,12 +652,16 @@ export const removeEvidenceFromCase = async (caseId, index, targetId) => {
 /**
  * Signs the digital representation agreement with a lawyer and confirms booking
  */
-export const signConsultationAgreement = async (consultationId, selectedTimeSlot, citizenSignature, targetId) => {
+export const signConsultationAgreement = async (consultationId, selectedTimeSlot, citizenSignature, citizenSignatureSvg, targetId) => {
   const id = targetId || userData.id || getCurrentCitizenId();
   try {
+    const sigName = typeof citizenSignature === 'string' ? citizenSignature : (userData.name || 'Citizen Signed');
+    const sigSvg = Array.isArray(citizenSignatureSvg) ? citizenSignatureSvg : (citizenSignature?.citizenSignatureSvg || null);
     const res = await api.put(`/citizens/${id}/consultations/${consultationId}/sign`, {
       selectedTimeSlot,
-      citizenSignature: citizenSignature || userData.name || 'Citizen Signed',
+      citizenSignature: sigName,
+      citizenSignatureSvg: sigSvg,
+      signedAt: new Date().toISOString(),
     });
 
     // Update local consultation in consultationRequests & activeCases
@@ -639,18 +672,24 @@ export const signConsultationAgreement = async (consultationId, selectedTimeSlot
         status: 'booked',
         appointmentTime: selectedTimeSlot,
         citizenSigned: true,
-        citizenSignature: citizenSignature || userData.name || 'Citizen Signed',
+        citizenSignature: sigName,
+        citizenSignatureSvg: sigSvg,
       };
     }
 
     activeCases.forEach((c) => {
-      if (c.consultation && String(c.consultation.id) === String(consultationId)) {
+      const isMatch = (c.consultation && String(c.consultation.id) === String(consultationId)) ||
+                      (res.data?.appointment?.case_id && String(c.id) === String(res.data.appointment.case_id));
+      if (isMatch) {
+        c.status = 'Active';
         c.consultation = {
-          ...c.consultation,
+          ...(c.consultation || {}),
+          id: consultationId,
           status: 'booked',
           appointmentTime: selectedTimeSlot,
           citizenSigned: true,
-          citizenSignature: citizenSignature || userData.name || 'Citizen Signed',
+          citizenSignature: sigName,
+          citizenSignatureSvg: sigSvg,
         };
         if (res.data?.lawyer) {
           c.lawyer = res.data.lawyer;
@@ -665,6 +704,42 @@ export const signConsultationAgreement = async (consultationId, selectedTimeSlot
   } catch (err) {
     console.error('[CITIZEN] Error signing agreement:', err.response?.data || err.message);
     throw err;
+  }
+};
+
+/**
+ * Grants or revokes advocate access to the citizen's evidence vault for a consultation/case
+ */
+export const setVaultAccessPermission = async (consultationId, caseId, isGranted) => {
+  try {
+    const grantedBool = Boolean(isGranted);
+    if (consultationId) {
+      await safeStorage.setItem(`@barqeinsaf_vault_access_${consultationId}`, grantedBool ? 'true' : 'false');
+    }
+    if (caseId) {
+      await safeStorage.setItem(`@barqeinsaf_vault_access_case_${caseId}`, grantedBool ? 'true' : 'false');
+    }
+
+    consultationRequests.forEach((cr) => {
+      if (String(cr.id) === String(consultationId) || (caseId && String(cr.caseId) === String(caseId))) {
+        cr.vaultAccessGranted = grantedBool;
+      }
+    });
+
+    activeCases.forEach((c) => {
+      if ((caseId && String(c.id) === String(caseId)) || (c.consultation && String(c.consultation.id) === String(consultationId))) {
+        c.vaultAccessGranted = grantedBool;
+        if (c.consultation) {
+          c.consultation.vaultAccessGranted = grantedBool;
+        }
+      }
+    });
+
+    notify();
+    return grantedBool;
+  } catch (err) {
+    console.error('[CITIZEN] Error setting vault access permission:', err);
+    return false;
   }
 };
 

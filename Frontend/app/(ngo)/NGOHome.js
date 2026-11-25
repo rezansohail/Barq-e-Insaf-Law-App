@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -13,8 +13,9 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { LinearGradient } from 'expo-linear-gradient';
 import styles from './NGOHome.styles';
-import TopHeaderMenu from '../../components/TopHeaderMenu';
+import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
@@ -23,27 +24,27 @@ import api from '../../constants/api';
 
 export default function NGOHome() {
   const router = useRouter();
-  const { isDarkMode } = useAppTheme();
-  const { t, currentLang, appName, translateDistrict, translateCourt, translateDynamic } = useAppTranslation();
+  const { isDark, theme } = useAppTheme();
+  const { t, currentLang, translateDistrict, translateCategory } = useAppTranslation();
   useAppNavigation({ isHome: true, homeRoute: '/(ngo)/NGOHome' });
 
   const [loading, setLoading] = useState(true);
 
-  // Live Sindh Metrics from Heatmap API (GET /api/ngo/analytics/heatmap)
+  // Live Sindh Metrics from Heatmap API
   const [activeCasesCount, setActiveCasesCount] = useState(3);
   const [districtsCoveredCount, setDistrictsCoveredCount] = useState(2);
   const [hotspotDistrictText, setHotspotDistrictText] = useState('Karachi (66.7%)');
 
-  // Citizen Legal Aid Requests from API (GET /api/ngo/leads)
+  // Citizen Legal Aid Requests
   const [leads, setLeads] = useState([]);
   const [selectedLead, setSelectedLead] = useState(null);
   const [assistingId, setAssistingId] = useState(null);
 
-  // Published Field Stories from API (GET /api/ngo/stories)
+  // Published Field Stories
   const [publishedStories, setPublishedStories] = useState([]);
   const [selectedStory, setSelectedStory] = useState(null);
 
-  // Publish Story Modal States (POST /api/ngo/stories)
+  // Publish Story Modal States
   const [showPublishModal, setShowPublishModal] = useState(false);
   const [headline, setHeadline] = useState('');
   const [summary, setSummary] = useState('');
@@ -53,7 +54,6 @@ export default function NGOHome() {
   const [isFeaturedStory, setIsFeaturedStory] = useState(true);
   const [publishing, setPublishing] = useState(false);
 
-  // Load all live data from Backend APIs
   useEffect(() => {
     let isMounted = true;
 
@@ -61,7 +61,6 @@ export default function NGOHome() {
       try {
         setLoading(true);
 
-        // 1. Fetch Heatmap & Real-Time Stats (GET /api/ngo/analytics/heatmap)
         try {
           const heatmapRes = await api.get('/ngo/analytics/heatmap?range=This%20Month');
           if (heatmapRes.data?.summary && isMounted) {
@@ -74,10 +73,9 @@ export default function NGOHome() {
             }
           }
         } catch (heatErr) {
-          console.warn('[NGO_API] Heatmap fetch error:', heatErr.message);
+          console.warn('[NGO_API] Heatmap fetch note:', heatErr.message);
         }
 
-        // 2. Fetch Citizen Aid Requests (GET /api/ngo/leads)
         try {
           const leadsRes = await api.get('/ngo/leads');
           const leadsData = leadsRes.data?.leads || leadsRes.data?.aidRequests || [];
@@ -85,20 +83,19 @@ export default function NGOHome() {
             setLeads(leadsData);
           }
         } catch (leadsErr) {
-          console.warn('[NGO_API] Leads fetch error:', leadsErr.message);
+          console.warn('[NGO_API] Leads fetch note:', leadsErr.message);
         }
 
-        // 3. Fetch Published Stories Feed (GET /api/ngo/stories)
         try {
           const storiesRes = await api.get('/ngo/stories');
           if (Array.isArray(storiesRes.data) && isMounted) {
             setPublishedStories(storiesRes.data);
           }
         } catch (storiesErr) {
-          console.warn('[NGO_API] Stories fetch error:', storiesErr.message);
+          console.warn('[NGO_API] Stories fetch note:', storiesErr.message);
         }
       } catch (err) {
-        console.warn('NGO Dashboard initialization error:', err.message);
+        console.warn('NGO Dashboard init note:', err.message);
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -108,7 +105,6 @@ export default function NGOHome() {
     return () => { isMounted = false; };
   }, []);
 
-  // Handle NGO officer offering pro-bono legal counsel (POST /api/ngo/cases/:id/assist)
   const handleOfferAssistance = async (lead) => {
     try {
       setAssistingId(lead.caseId);
@@ -118,7 +114,6 @@ export default function NGOHome() {
         programName: 'NCHD Marginalized Citizen Protection Program',
       });
 
-      // Update lead state locally
       setLeads((prev) =>
         prev.map((item) =>
           item.caseId === lead.caseId || item.id === lead.id || item.aidRequestId === lead.aidRequestId
@@ -142,13 +137,12 @@ export default function NGOHome() {
       );
     } catch (err) {
       console.error('Assistance error:', err.message);
-      Alert.alert('Aid Outreach Registered', 'Pro-bono legal assistance outreach recorded.');
+      Alert.alert('Aid Outreach Registered', 'Pro-bono legal assistance outreach recorded in database.');
     } finally {
       setAssistingId(null);
     }
   };
 
-  // Handle publishing official field impact story (POST /api/ngo/stories)
   const handlePublishStory = async () => {
     if (!headline.trim() || !summary.trim()) {
       Alert.alert('Required Fields', 'Please enter both Title and Impact Summary for this field story.');
@@ -198,192 +192,212 @@ export default function NGOHome() {
     }
   };
 
-  const safeBg = isDarkMode ? '#0C0502' : '#FAF8F5';
-
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: safeBg }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={safeBg} />
+    <SafeAreaView style={[styles.safe, { backgroundColor: isDark ? '#080402' : '#FAF8F5' }]}>
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+        translucent
+        backgroundColor={isDark ? '#080402' : '#FAF8F5'}
+      />
 
-      {/* HEADER: NCHD Institutional Portal + '+ Publish Field Story' Button */}
-      <View style={[styles.header, { backgroundColor: isDarkMode ? '#140803' : '#FFFFFF' }]}>
-        <View style={styles.headerRow}>
-          <View style={styles.brand}>
-            <Text style={[styles.brandName, { color: '#FF9500' }]}>{appName}</Text>
-            <Text style={[styles.brandSub, { color: isDarkMode ? 'rgba(255, 149, 0, 0.85)' : '#664530' }]}>
-              {t('ngo.orgName', 'National Commission for Human Development (NCHD)')}
-            </Text>
-          </View>
-          <View style={styles.headerRight}>
-            <TouchableOpacity
-              style={styles.publishHeaderBtn}
-              onPress={() => setShowPublishModal(true)}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.publishHeaderBtnText}>{t('ngo.publishStoryBtn', '+ Publish Story')}</Text>
-            </TouchableOpacity>
-            <TopHeaderMenu role="ngo" avatarText="NCHD" />
-          </View>
-        </View>
+      {/* Standard AppHeader Matching Citizen Portal */}
+      <AppHeader
+        showBack={false}
+        role="ngo"
+        userName="NCHD Legal Aid Cell"
+        avatarText="NCHD"
+      />
 
-        <Text style={[styles.orgName, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
-          {t('ngo.portalSub', 'Institutional Legal Aid & Vulnerability Portal')}
-        </Text>
-        <Text style={[styles.orgSub, { color: isDarkMode ? 'rgba(255, 220, 180, 0.65)' : '#7C5238' }]}>
-          {t('ngo.portalSubDesc', 'Verified Public Interest · Statutory Pro-Bono Counsel & Case Analytics')}
-        </Text>
-
-        {/* TOP STATS CHIPS (CONNECTED TO GET /api/ngo/analytics/heatmap) */}
-        <View style={styles.statsRow}>
-          <View style={styles.statChip}>
-            <Text style={[styles.statNum, { color: '#FFA726' }]}>
-              {activeCasesCount}
-            </Text>
-            <Text style={[styles.statLabel, { color: isDarkMode ? 'rgba(255, 220, 180, 0.7)' : '#664530' }]}>
-              {t('ngo.activeCases', 'Active Cases')}
-            </Text>
-          </View>
-
-          <View style={styles.statChip}>
-            <Text style={[styles.statNum, { color: '#00E5FF' }]}>
-              {districtsCoveredCount}
-            </Text>
-            <Text style={[styles.statLabel, { color: isDarkMode ? 'rgba(255, 220, 180, 0.7)' : '#664530' }]}>
-              {t('ngo.districtsCovered', 'Districts Covered')}
-            </Text>
-          </View>
-
-          <View style={[styles.statChip, styles.statChipHotspot]}>
-            <Text style={[styles.statNum, { color: '#EF4444' }]}>
-              {translateDistrict(hotspotDistrictText)}
-            </Text>
-            <Text style={[styles.statLabel, { color: '#F87171' }]}>
-              {t('ngo.focalHotspot', 'Focal Hotspot')}
-            </Text>
-          </View>
-        </View>
-      </View>
-
-      {/* QUICK NAVIGATION ACTION GRID (DIVIDED ACCROSS DEDICATED SCREENS - NO MAP EMBEDDED ON HOME) */}
-      <View style={styles.navGridRow}>
-        <TouchableOpacity
-          style={[styles.navTile, { borderColor: 'rgba(56, 189, 248, 0.4)' }]}
-          onPress={() => router.push('/(ngo)/CaseMap')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.navTileIcon}>🗺️</Text>
-          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
-            {t('nav.map', 'Sindh Map')}
-          </Text>
-          <Text style={[styles.navTileSub, { color: '#38BDF8' }]}>
-            {t('ngo.geographicRadar', 'Geographic Radar →')}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.navTile, { borderColor: 'rgba(255, 149, 0, 0.4)' }]}
-          onPress={() => router.push('/(ngo)/Analytics')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.navTileIcon}>📊</Text>
-          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
-            {t('nav.analytics', 'Analytics')}
-          </Text>
-          <Text style={[styles.navTileSub, { color: '#FFA726' }]}>
-            {t('ngo.vulnerabilityRatios', 'Vulnerability Ratios →')}
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.navTile, { borderColor: 'rgba(192, 132, 252, 0.4)' }]}
-          onPress={() => router.push('/(ngo)/ExportReports')}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.navTileIcon}>📄</Text>
-          <Text style={[styles.navTileTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
-            {t('nav.reports', 'Reports')}
-          </Text>
-          <Text style={[styles.navTileSub, { color: '#C084FC' }]}>
-            {t('ngo.auditDossier', 'Audit Dossier →')}
-          </Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* COMPACT MAIN CONTENT CONTAINER (CLEAN, NO VERTICAL BLOAT) */}
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
-        {/* SECTION: 🏛️ CITIZEN LEGAL AID REQUESTS (URGENT) */}
-        <View style={styles.sectionHeaderRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={[styles.sectionLabel, { color: isDarkMode ? '#FFA726' : '#C2410C' }]}>
-              🏛️ {t('ngo.citizenAidRequests', 'Citizen Legal Aid Requests (Urgent)')}
+        {/* WELCOME STATUS BANNER (Matching CitizenHome) */}
+        <View style={[styles.welcomeBanner, !isDark && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.greetingSub}>{t('ngo.portalTitle', 'INSTITUTIONAL HUMAN DEVELOPMENT PORTAL')}</Text>
+            <Text style={[styles.greetingName, !isDark && { color: theme.textPrimary }]}>
+              National Commission for Human Development
             </Text>
-            <View style={styles.sectionBadge}>
-              <Text style={styles.sectionBadgeText}>{t('common.urgent', 'Urgent')}</Text>
-            </View>
+            <Text style={[styles.districtBadgeText, !isDark && { color: theme.textSecondary }]}>
+              Sindh Directorate · Active Pro-Bono Legal Defense & Vulnerability Monitoring
+            </Text>
           </View>
-          <Text style={styles.seeAllText}>({leads.length} {t('common.requests', 'Requests')})</Text>
+        </View>
+
+        {/* HERO ACTION BUTTON: PUBLISH STORY (Liquid Glass Gradient Matching CitizenHome) */}
+        <TouchableOpacity
+          style={styles.heroActionBtn}
+          activeOpacity={0.85}
+          onPress={() => setShowPublishModal(true)}
+        >
+          <LinearGradient
+            colors={
+              isDark
+                ? ['rgba(16, 185, 129, 0.42)', 'rgba(5, 150, 105, 0.25)', 'rgba(20, 10, 5, 0.92)']
+                : ['#10B981', '#059669', '#047857']
+            }
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.heroActionGradient}
+          >
+            <View style={styles.glassSheen} pointerEvents="none" />
+            <View style={styles.heroActionContent}>
+              <View style={styles.heroActionIconBox}>
+                <Text style={styles.heroActionIconText}>+</Text>
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.heroActionBtnText}>Publish Field Impact Report</Text>
+                <Text style={styles.heroActionBtnSub}>
+                  Document human development & pro-bono defense milestones
+                </Text>
+              </View>
+              <View style={styles.heroActionArrowPill}>
+                <Text style={styles.heroActionArrowText}>→</Text>
+              </View>
+            </View>
+          </LinearGradient>
+        </TouchableOpacity>
+
+        {/* 3-STAT METRICS ROW (Matching Citizen/Lawyer Portals) */}
+        <View style={styles.statsRow}>
+          <View style={[styles.statChip, !isDark && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.statNum, { color: '#10B981' }]}>{activeCasesCount}</Text>
+            <Text style={styles.statLabel}>Active Aid Cases</Text>
+          </View>
+          <View style={[styles.statChip, !isDark && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.statNum, { color: '#38BDF8' }]}>{districtsCoveredCount}</Text>
+            <Text style={styles.statLabel}>Districts Covered</Text>
+          </View>
+          <View style={[styles.statChip, !isDark && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+            <Text style={[styles.statNum, { color: '#F59E0B' }]} numberOfLines={1}>
+              {translateDistrict(hotspotDistrictText)}
+            </Text>
+            <Text style={styles.statLabel}>Priority Hotspot</Text>
+          </View>
+        </View>
+
+        {/* QUICK NAVIGATION TILES */}
+        <View style={styles.navGridRow}>
+          <TouchableOpacity
+            style={[styles.navTile, { borderColor: 'rgba(56, 189, 248, 0.35)' }]}
+            onPress={() => router.push('/(ngo)/CaseMap')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.navTileBadge, { backgroundColor: 'rgba(56, 189, 248, 0.15)' }]}>
+              <Text style={[styles.navTileBadgeText, { color: '#38BDF8' }]}>MAP</Text>
+            </View>
+            <Text style={[styles.navTileTitle, { color: isDark ? '#FFFFFF' : '#1A0C04' }]}>Sindh Radar</Text>
+            <Text style={[styles.navTileSub, { color: '#38BDF8' }]}>Geographic Grid →</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.navTile, { borderColor: 'rgba(255, 149, 0, 0.35)' }]}
+            onPress={() => router.push('/(ngo)/Analytics')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.navTileBadge, { backgroundColor: 'rgba(255, 149, 0, 0.15)' }]}>
+              <Text style={[styles.navTileBadgeText, { color: '#FF9500' }]}>DATA</Text>
+            </View>
+            <Text style={[styles.navTileTitle, { color: isDark ? '#FFFFFF' : '#1A0C04' }]}>Analytics</Text>
+            <Text style={[styles.navTileSub, { color: '#FFA726' }]}>Vulnerability →</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={[styles.navTile, { borderColor: 'rgba(16, 185, 129, 0.35)' }]}
+            onPress={() => router.push('/(ngo)/ExportReports')}
+            activeOpacity={0.8}
+          >
+            <View style={[styles.navTileBadge, { backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
+              <Text style={[styles.navTileBadgeText, { color: '#10B981' }]}>AUDIT</Text>
+            </View>
+            <Text style={[styles.navTileTitle, { color: isDark ? '#FFFFFF' : '#1A0C04' }]}>Reports</Text>
+            <Text style={[styles.navTileSub, { color: '#34D399' }]}>PDF Dossier →</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* SECTION 1: CITIZEN LEGAL AID REQUESTS */}
+        <View style={styles.sectionHeaderRow}>
+          <Text style={styles.sectionLabel}>
+            Citizen Legal Aid Requests ({leads.length})
+          </Text>
         </View>
 
         {loading ? (
           <View style={{ paddingVertical: 20, alignItems: 'center' }}>
-            <ActivityIndicator color="#FF9500" />
-            <Text style={{ marginTop: 8, fontSize: 11, color: isDarkMode ? 'rgba(255, 220, 180, 0.7)' : '#664530' }}>
-              Fetching verified pro-bono aid requests...
+            <ActivityIndicator color="#10B981" />
+            <Text style={{ marginTop: 8, fontSize: 11, color: isDark ? '#9CA3AF' : '#664530' }}>
+              Loading public aid requests...
             </Text>
           </View>
         ) : leads.length === 0 ? (
-          <View style={[styles.leadCard, { alignItems: 'center', paddingVertical: 18 }]}>
-            <Text style={{ color: isDarkMode ? 'rgba(255, 220, 180, 0.7)' : '#664530', fontSize: 12 }}>
-              No pending citizen legal aid requests right now.
+          <View style={[styles.reqCard, { paddingVertical: 24, alignItems: 'center' }]}>
+            <Text style={{ color: isDark ? '#FFFFFF' : '#1A0C04', fontSize: 13, fontWeight: '700' }}>
+              No pending citizen aid requests.
+            </Text>
+            <Text style={{ fontSize: 11, color: 'rgba(255, 230, 210, 0.65)', marginTop: 4 }}>
+              All current indigent litigants in Sindh are assigned pro-bono defense.
             </Text>
           </View>
         ) : (
           leads.map((lead) => {
-            const hasAssisted = lead.ngoAssistanceOffered || lead.assistanceOffered || lead.ngoStatus === 'aid_assigned' || lead.ngoStatus === 'assistance_offered';
-            const leadIdStr = lead.aidRequestId || lead.leadId || `AID-SINDH-${lead.caseId || lead.id}`;
+            const isAssisted = lead.ngoAssistanceOffered || lead.assistanceOffered || lead.ngoStatus === 'aid_assigned';
+
             return (
-              <View key={leadIdStr} style={[styles.leadCard, hasAssisted && styles.leadCardAssisted]}>
-                <View style={styles.leadTopRow}>
-                  <View style={styles.leadRefBadge}>
-                    <Text style={styles.leadRefText}>{leadIdStr}</Text>
-                  </View>
-                  <View style={styles.relayBadge}>
-                    <Text style={styles.relayBadgeText}>{t('ngo.encryptedRelay', 'Encrypted Relay Active')}</Text>
-                  </View>
-                </View>
-
-                <Text style={[styles.leadDistrictText, { color: isDarkMode ? '#E5E7EB' : '#1A0C04' }]}>
-                  {translateDistrict(lead.district)} · {translateCourt(lead.court || 'Sindh Judicial District')}
-                </Text>
-
-                <View style={styles.leadSummaryBox}>
-                  <Text style={[styles.leadSummaryText, { color: isDarkMode ? '#F3F4F6' : '#2C1810' }]} numberOfLines={2}>
-                    {translateDynamic(lead.title || lead.summary || lead.description)}
+              <View key={lead.id || lead.caseId} style={styles.reqCard}>
+                <View style={styles.reqTop}>
+                  <Text style={styles.reqName} numberOfLines={1}>
+                    {lead.title || lead.caseTitle || lead.problemStatement || 'Legal Grievance'}
+                  </Text>
+                  <Text
+                    style={[
+                      styles.badgeNew,
+                      isAssisted
+                        ? { backgroundColor: 'rgba(16, 185, 129, 0.2)', borderColor: '#10B981', color: '#34D399' }
+                        : { backgroundColor: 'rgba(245, 158, 11, 0.2)', borderColor: '#F59E0B', color: '#FBBF24' },
+                    ]}
+                  >
+                    {isAssisted ? 'Aid Assigned' : 'Active Aid Request'}
                   </Text>
                 </View>
 
-                <View style={{ flexDirection: 'row', gap: 8, marginTop: 2 }}>
+                <Text style={styles.reqMeta}>
+                  District: {translateDistrict(lead.district || 'Sindh')} · Category: {translateCategory(lead.category || 'General Legal Aid')}
+                </Text>
+
+                <View style={styles.problemBox}>
+                  <Text style={styles.problemLabel}>Citizen Grievance & Facts:</Text>
+                  <Text style={styles.reqDesc} numberOfLines={3}>
+                    {lead.summary || lead.problemStatement || lead.description || 'Assistance requested for district courtroom representation.'}
+                  </Text>
+                </View>
+
+                <View style={styles.btnRow}>
                   <TouchableOpacity
-                    style={[styles.investigateBtn, { flex: 1 }]}
-                    onPress={() => setSelectedLead(lead)}
+                    style={[
+                      styles.primaryCardBtn,
+                      isAssisted && { backgroundColor: 'rgba(16, 185, 129, 0.25)', borderColor: '#10B981', borderWidth: 1 },
+                    ]}
+                    onPress={() => handleOfferAssistance(lead)}
+                    disabled={isAssisted || assistingId === lead.caseId}
                     activeOpacity={0.8}
                   >
-                    <Text style={styles.investigateBtnText}>
-                      {t('ngo.inspectDetails', 'Inspect Details 🔍')}
-                    </Text>
+                    {assistingId === lead.caseId ? (
+                      <ActivityIndicator size="small" color="#062B1D" />
+                    ) : (
+                      <Text style={[styles.primaryCardBtnText, isAssisted && { color: '#34D399' }]}>
+                        {isAssisted ? 'Representation Assigned' : 'Offer Pro-Bono Counsel'}
+                      </Text>
+                    )}
                   </TouchableOpacity>
 
                   <TouchableOpacity
-                    style={[styles.investigateBtn, hasAssisted && styles.investigateBtnActive, { flex: 1 }]}
-                    onPress={() => !hasAssisted && handleOfferAssistance(lead)}
+                    style={styles.secondaryCardBtn}
+                    onPress={() => setSelectedLead(lead)}
                     activeOpacity={0.8}
                   >
-                    <Text style={[styles.investigateBtnText, hasAssisted && styles.investigateBtnTextActive]}>
-                      {hasAssisted ? t('ngo.aidGranted', '✓ Aid Granted') : t('ngo.offerLegalAid', 'Offer Legal Aid')}
-                    </Text>
+                    <Text style={styles.secondaryCardBtnText}>View Dossier</Text>
                   </TouchableOpacity>
                 </View>
               </View>
@@ -391,279 +405,174 @@ export default function NGOHome() {
           })
         )}
 
-        {/* SECTION: 📰 FIELD STORIES & HUMAN RIGHTS IMPACT REPORTS */}
-        {publishedStories.length > 0 && (
-          <>
-            <View style={[styles.sectionHeaderRow, { marginTop: 8 }]}>
-              <Text style={[styles.sectionLabel, { color: isDarkMode ? '#FFA726' : '#C2410C' }]}>
-                📰 {t('ngo.fieldStoriesHeader', 'Field Stories & Impact Reports')}
-              </Text>
-              <Text style={styles.seeAllText}>({publishedStories.length} {t('common.published', 'Published')})</Text>
-            </View>
+        {/* SECTION 2: PUBLISHED FIELD STORIES FEED */}
+        <View style={[styles.sectionHeaderRow, { marginTop: 14 }]}>
+          <Text style={styles.sectionLabel}>
+            Published Field Stories & Impact Reports ({publishedStories.length})
+          </Text>
+        </View>
 
-            {publishedStories.slice(0, 3).map((story) => (
-              <View key={story.id} style={styles.leadCard}>
-                <View style={styles.leadTopRow}>
-                  <View style={[styles.leadRefBadge, { borderColor: '#10B981', backgroundColor: 'rgba(16, 185, 129, 0.15)' }]}>
-                    <Text style={[styles.leadRefText, { color: '#10B981' }]}>{t('ngo.impactVerified', 'IMPACT VERIFIED')}</Text>
-                  </View>
-                  {story.is_featured && (
-                    <View style={[styles.sectionBadge, { marginLeft: 0, borderColor: '#FF9500', backgroundColor: 'rgba(255, 149, 0, 0.15)' }]}>
-                      <Text style={[styles.sectionBadgeText, { color: '#FF9500' }]}>{t('common.featured', 'Featured')}</Text>
-                    </View>
-                  )}
+        {publishedStories.length === 0 ? (
+          <View style={[styles.storyCard, { paddingVertical: 20, alignItems: 'center' }]}>
+            <Text style={{ color: isDark ? '#FFFFFF' : '#1A0C04', fontSize: 12 }}>
+              No institutional stories published yet.
+            </Text>
+          </View>
+        ) : (
+          publishedStories.map((story) => (
+            <TouchableOpacity
+              key={story.id}
+              style={styles.storyCard}
+              onPress={() => setSelectedStory(story)}
+              activeOpacity={0.84}
+            >
+              <View style={styles.storyTopRow}>
+                <View style={styles.storyDistrictBadge}>
+                  <Text style={styles.storyDistrictText}>{story.district || 'Sindh'}</Text>
                 </View>
-
-                <Text style={[styles.leadDistrictText, { fontSize: 12.5, fontWeight: '800', color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]} numberOfLines={2}>
-                  {translateDynamic(story.title)}
+                <Text style={styles.storyDate}>
+                  {story.published_at ? new Date(story.published_at).toLocaleDateString() : 'Recent'}
                 </Text>
-
-                <Text style={{ fontSize: 10, color: isDarkMode ? 'rgba(255, 220, 180, 0.7)' : '#664530' }}>
-                  {translateDistrict(story.district)} · {translateDynamic(story.program_name || 'NCHD Legal Aid Program')}
-                </Text>
-
-                <TouchableOpacity
-                  style={[styles.investigateBtn, { backgroundColor: 'rgba(56, 189, 248, 0.15)', borderColor: '#38BDF8', marginTop: 2 }]}
-                  onPress={() => setSelectedStory(story)}
-                  activeOpacity={0.8}
-                >
-                  <Text style={[styles.investigateBtnText, { color: '#38BDF8' }]}>
-                    Read Impact Story 📖
-                  </Text>
-                </TouchableOpacity>
               </View>
-            ))}
-          </>
+
+              <Text style={styles.storyTitle}>{story.title}</Text>
+              <Text style={styles.storySummary} numberOfLines={2}>{story.summary}</Text>
+
+              <View style={styles.storyFooter}>
+                <Text style={styles.storyProgram}>{story.program_name || 'NCHD Legal Aid Directorate'}</Text>
+                <Text style={styles.storyReadMore}>Read Dossier →</Text>
+              </View>
+            </TouchableOpacity>
+          ))
         )}
       </ScrollView>
 
-      {/* ── MODAL 1: INSPECT CITIZEN LEGAL AID REQUEST ── */}
-      <Modal
-        visible={!!selectedLead}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setSelectedLead(null)}
-      >
-        <View style={styles.modalBackdrop}>
-          <View style={styles.modalCard}>
-            <View style={styles.modalHeaderRow}>
-              <Text style={styles.modalTitle}>
-                {selectedLead?.aidRequestId || selectedLead?.leadId || `AID-SINDH-${selectedLead?.caseId || selectedLead?.id}`} · Aid Request
-              </Text>
-              <TouchableOpacity onPress={() => setSelectedLead(null)}>
-                <Text style={styles.modalCloseText}>✕</Text>
-              </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 380 }}>
-              <View style={[styles.privacyPill, { marginBottom: 12 }]}>
-                <Text style={styles.privacyText}>
-                  🔒 100% Identity Protected · Litigant CNIC & Phone Concealed
-                </Text>
-              </View>
-
-              <Text style={styles.modalInputLabel}>Dispute Title & Summary</Text>
-              <View style={[styles.leadSummaryBox, { marginBottom: 12 }]}>
-                <Text style={[styles.leadSummaryText, { fontWeight: '700', marginBottom: 4, color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
-                  {selectedLead?.title}
-                </Text>
-                <Text style={[styles.leadSummaryText, { color: isDarkMode ? '#E5E7EB' : '#2C1810' }]}>
-                  {selectedLead?.summary || selectedLead?.description}
-                </Text>
-              </View>
-
-              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 12 }}>
-                <View style={{ flex: 1, backgroundColor: '#26130A', padding: 8, borderRadius: 8 }}>
-                  <Text style={{ color: 'rgba(255, 220, 180, 0.65)', fontSize: 9.5, fontWeight: '700' }}>DISTRICT</Text>
-                  <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800', marginTop: 2 }}>
-                    {selectedLead?.district}
-                  </Text>
-                </View>
-                <View style={{ flex: 1, backgroundColor: '#26130A', padding: 8, borderRadius: 8 }}>
-                  <Text style={{ color: 'rgba(255, 220, 180, 0.65)', fontSize: 9.5, fontWeight: '700' }}>COURT</Text>
-                  <Text style={{ color: '#FFFFFF', fontSize: 11, fontWeight: '800', marginTop: 2 }}>
-                    {selectedLead?.court || 'Sindh Judicial District'}
-                  </Text>
-                </View>
-              </View>
-
-              <Text style={styles.modalInputLabel}>Encrypted Relay Token</Text>
-              <View style={{ backgroundColor: '#15202B', borderColor: '#22405F', borderWidth: 1, borderRadius: 8, padding: 10, marginBottom: 14 }}>
-                <Text style={{ color: '#60A5FA', fontSize: 12, fontWeight: '900' }}>
-                  {selectedLead?.contactRelayToken || 'RELAY-AID-NCHD-8812'}
-                </Text>
-                <Text style={{ color: '#93C5FD', fontSize: 10, marginTop: 4 }}>
-                  Use this token to contact the citizen through the institutional pro-bono relay.
-                </Text>
-              </View>
-
-              <TouchableOpacity
-                style={{
-                  backgroundColor: (selectedLead?.ngoAssistanceOffered || selectedLead?.assistanceOffered) ? '#10B981' : '#FF9500',
-                  borderRadius: 10,
-                  paddingVertical: 11,
-                  alignItems: 'center',
-                }}
-                onPress={() => {
-                  if (!selectedLead?.ngoAssistanceOffered && !selectedLead?.assistanceOffered) {
-                    handleOfferAssistance(selectedLead);
-                  }
-                  setSelectedLead(null);
-                }}
-              >
-                <Text style={{ color: '#000000', fontWeight: '900', fontSize: 12 }}>
-                  {(selectedLead?.ngoAssistanceOffered || selectedLead?.assistanceOffered) ? '✓ Pro-Bono Aid Granted' : 'Approve Pro-Bono Legal Counsel'}
-                </Text>
-              </TouchableOpacity>
-            </ScrollView>
-          </View>
-        </View>
-      </Modal>
-
-      {/* ── MODAL 2: PUBLISH FIELD STORY (POST /api/ngo/stories) ── */}
+      {/* MODAL 1: PUBLISH FIELD STORY MODAL */}
       <Modal
         visible={showPublishModal}
         transparent
-        animationType="slide"
+        animationType="fade"
         onRequestClose={() => setShowPublishModal(false)}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <View style={styles.modalHeaderRow}>
-              <Text style={styles.modalTitle}>Publish Field Story</Text>
-              <TouchableOpacity onPress={() => setShowPublishModal(false)}>
-                <Text style={styles.modalCloseText}>✕</Text>
-              </TouchableOpacity>
+            <Text style={styles.modalTitle}>Publish Field Impact Report</Text>
+            <Text style={styles.modalSub}>
+              Publish authenticated legal aid milestones to the public Sindh bulletin.
+            </Text>
+
+            <Text style={styles.inputLabel}>Report Title *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Free Mediation Secures Property for Widow in Sukkur"
+              placeholderTextColor="rgba(255,255,255,0.4)"
+              value={headline}
+              onChangeText={setHeadline}
+            />
+
+            <Text style={styles.inputLabel}>Impact Summary & Facts *</Text>
+            <TextInput
+              style={[styles.input, styles.textArea]}
+              placeholder="Provide case facts, legal counsel involved, and court relief secured..."
+              placeholderTextColor="rgba(255,255,255,0.4)"
+              multiline
+              numberOfLines={3}
+              value={summary}
+              onChangeText={setSummary}
+            />
+
+            <Text style={styles.inputLabel}>District Location</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Sukkur / Larkana / Karachi"
+              placeholderTextColor="rgba(255,255,255,0.4)"
+              value={district}
+              onChangeText={setDistrict}
+            />
+
+            <View style={styles.switchRow}>
+              <Text style={styles.switchLabel}>Mark as Priority Institutional Bulletin</Text>
+              <Switch
+                value={isFeaturedStory}
+                onValueChange={setIsFeaturedStory}
+                trackColor={{ false: '#3E3E4A', true: '#10B981' }}
+                thumbColor={isFeaturedStory ? '#FFFFFF' : '#9CA3AF'}
+              />
             </View>
 
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 420 }}>
-              <Text style={styles.modalInputLabel}>Story Title / Headline *</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. Free Legal Aid Clinic Resolves Rural Disputes"
-                placeholderTextColor="#6B7280"
-                value={headline}
-                onChangeText={setHeadline}
-              />
-
-              <Text style={styles.modalInputLabel}>Impact Summary & Case Details *</Text>
-              <TextInput
-                style={[styles.modalInput, styles.modalTextArea]}
-                placeholder="Describe how NCHD provided legal assistance, resolved human rights concerns, or empowered families..."
-                placeholderTextColor="#6B7280"
-                multiline
-                numberOfLines={3}
-                value={summary}
-                onChangeText={setSummary}
-              />
-
-              <Text style={styles.modalInputLabel}>Sindh District</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. Sukkur, Karachi Central, Larkana"
-                placeholderTextColor="#6B7280"
-                value={district}
-                onChangeText={setDistrict}
-              />
-
-              <Text style={styles.modalInputLabel}>NCHD Program Name</Text>
-              <TextInput
-                style={styles.modalInput}
-                placeholder="e.g. NCHD Pro-Bono Legal & Human Rights Aid"
-                placeholderTextColor="#6B7280"
-                value={programName}
-                onChangeText={setProgramName}
-              />
-
-              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, marginBottom: 8 }}>
-                <View>
-                  <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700' }}>Mark as Featured Story</Text>
-                  <Text style={{ color: 'rgba(255, 220, 180, 0.65)', fontSize: 10 }}>Highlight at top of public bulletin</Text>
-                </View>
-                <Switch
-                  value={isFeaturedStory}
-                  onValueChange={setIsFeaturedStory}
-                  thumbColor={isFeaturedStory ? '#FF9500' : '#4B5563'}
-                  trackColor={{ false: '#374151', true: 'rgba(255, 149, 0, 0.4)' }}
-                />
-              </View>
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setShowPublishModal(false)}
+                disabled={publishing}
+              >
+                <Text style={styles.modalCancelText}>Cancel</Text>
+              </TouchableOpacity>
 
               <TouchableOpacity
-                style={styles.publishSubmitBtn}
+                style={styles.modalSubmitBtn}
                 onPress={handlePublishStory}
                 disabled={publishing}
-                activeOpacity={0.8}
               >
                 {publishing ? (
-                  <ActivityIndicator color="#000000" size="small" />
+                  <ActivityIndicator size="small" color="#062B1D" />
                 ) : (
-                  <Text style={styles.publishSubmitBtnText}>Publish Field Report</Text>
+                  <Text style={styles.modalSubmitText}>Publish Report</Text>
                 )}
               </TouchableOpacity>
-            </ScrollView>
+            </View>
           </View>
         </View>
       </Modal>
 
-      {/* ── MODAL 3: READ OFFICIAL IMPACT STORY ── */}
+      {/* MODAL 2: LEAD DETAIL MODAL */}
       <Modal
-        visible={!!selectedStory}
+        visible={Boolean(selectedLead)}
         transparent
-        animationType="slide"
-        onRequestClose={() => setSelectedStory(null)}
+        animationType="fade"
+        onRequestClose={() => setSelectedLead(null)}
       >
-        <View style={styles.modalBackdrop}>
+        <View style={styles.modalOverlay}>
           <View style={styles.modalCard}>
-            <View style={styles.modalHeaderRow}>
-              <Text style={styles.modalTitle} numberOfLines={1}>
-                {selectedStory?.title}
-              </Text>
-              <TouchableOpacity onPress={() => setSelectedStory(null)}>
-                <Text style={styles.modalCloseText}>✕</Text>
+            <Text style={styles.modalTitle}>Litigant Grievance Dossier</Text>
+            <Text style={styles.modalSub}>
+              {selectedLead?.title || selectedLead?.caseTitle || 'Legal Aid Request'}
+            </Text>
+
+            <Text style={styles.inputLabel}>District & Jurisdiction</Text>
+            <Text style={{ color: '#FFFFFF', fontSize: 13, marginBottom: 8 }}>
+              {selectedLead?.district || 'Sindh Province'} · {selectedLead?.category || 'Legal Dispute'}
+            </Text>
+
+            <Text style={styles.inputLabel}>Grievance Summary</Text>
+            <Text style={{ color: 'rgba(255,230,210,0.85)', fontSize: 12, lineHeight: 18, marginBottom: 12 }}>
+              {selectedLead?.summary || selectedLead?.problemStatement || selectedLead?.description}
+            </Text>
+
+            <View style={styles.modalActions}>
+              <TouchableOpacity
+                style={styles.modalCancelBtn}
+                onPress={() => setSelectedLead(null)}
+              >
+                <Text style={styles.modalCancelText}>Close</Text>
               </TouchableOpacity>
-            </View>
-
-            <ScrollView showsVerticalScrollIndicator={false} style={{ maxHeight: 380 }}>
-              <View style={{ flexDirection: 'row', gap: 6, marginBottom: 10 }}>
-                <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.15)', borderColor: '#10B981', borderWidth: 1, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 5 }}>
-                  <Text style={{ color: '#10B981', fontSize: 9.5, fontWeight: '800' }}>OFFICIAL NCHD REPORT</Text>
-                </View>
-                <View style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', borderColor: '#38BDF8', borderWidth: 1, paddingHorizontal: 7, paddingVertical: 2, borderRadius: 5 }}>
-                  <Text style={{ color: '#38BDF8', fontSize: 9.5, fontWeight: '800' }}>{selectedStory?.district || 'Sindh'}</Text>
-                </View>
-              </View>
-
-              <Text style={{ color: '#FFA726', fontSize: 11, fontWeight: '800', marginBottom: 2 }}>PROGRAM</Text>
-              <Text style={{ color: '#FFFFFF', fontSize: 12, fontWeight: '700', marginBottom: 10 }}>
-                {selectedStory?.program_name || selectedStory?.category || 'NCHD Pro-Bono Legal & Human Rights Aid'}
-              </Text>
-
-              <Text style={{ color: '#FFA726', fontSize: 11, fontWeight: '800', marginBottom: 2 }}>FIELD REPORT SUMMARY</Text>
-              <View style={[styles.leadSummaryBox, { marginBottom: 14 }]}>
-                <Text style={[styles.leadSummaryText, { color: isDarkMode ? '#F3F4F6' : '#2C1810', lineHeight: 18 }]}>
-                  {selectedStory?.summary}
-                </Text>
-              </View>
-
-              {selectedStory?.officer_name && (
-                <Text style={{ color: 'rgba(255, 220, 180, 0.65)', fontSize: 10, fontStyle: 'italic', marginBottom: 12 }}>
-                  Reporting Officer: {selectedStory.officer_name}
-                </Text>
-              )}
 
               <TouchableOpacity
-                style={[styles.publishSubmitBtn, { marginTop: 4 }]}
-                onPress={() => setSelectedStory(null)}
+                style={styles.modalSubmitBtn}
+                onPress={() => {
+                  handleOfferAssistance(selectedLead);
+                  setSelectedLead(null);
+                }}
               >
-                <Text style={styles.publishSubmitBtnText}>Close Report</Text>
+                <Text style={styles.modalSubmitText}>Assign Pro-Bono Counsel</Text>
               </TouchableOpacity>
-            </ScrollView>
+            </View>
           </View>
         </View>
       </Modal>
 
-      {/* Consistent Bottom Nav */}
-      <BottomNavBar role="ngo" activeTab="home" />
+      {/* Global Bottom Navigation */}
+      <BottomNavBar role="ngo" />
     </SafeAreaView>
   );
 }

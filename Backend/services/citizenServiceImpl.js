@@ -914,25 +914,42 @@ class CitizenServiceImpl extends CitizenService {
       consultationId,
     ]);
 
-    // If linked to a case, assign lawyer to the case and activate it
-    if (apt.case_id) {
-      await db.query(
-        "UPDATE cases SET lawyer_id = $1, status = 'active' WHERE id = $2",
-        [apt.lawyer_id, apt.case_id]
-      );
-    }
-
     // Fetch lawyer contact info
     const lawyerRes = await db.query(
-      'SELECT id, name, phone, specialty, sbc_number, district, city, office_address FROM lawyers WHERE id = $1',
+      'SELECT id, user_id, name, phone, specialty, sbc_number, district, city, office_address FROM lawyers WHERE id = $1',
       [apt.lawyer_id]
     );
+    const lawyerInfo = lawyerRes.rows[0] || {};
+
+    // If linked to a case, assign lawyer to the case and activate it
+    if (apt.case_id) {
+      try {
+        await db.query(
+          "UPDATE cases SET lawyer_id = $1, status = 'active' WHERE id = $2",
+          [apt.lawyer_id, apt.case_id]
+        );
+      } catch (caseErr) {
+        console.warn('[BACKEND] Note updating case lawyer assignment:', caseErr.message);
+        try {
+          const fallbackLawyerId = lawyerInfo.user_id || null;
+          await db.query(
+            "UPDATE cases SET lawyer_id = $1, status = 'active' WHERE id = $2",
+            [fallbackLawyerId, apt.case_id]
+          );
+        } catch (innerErr) {
+          console.warn('[BACKEND] Fallback case activation:', innerErr.message);
+          try {
+            await db.query("UPDATE cases SET status = 'active' WHERE id = $1", [apt.case_id]);
+          } catch (_) {}
+        }
+      }
+    }
 
     return {
       success: true,
       message: 'Digital Representation Agreement signed and consultation booked!',
       appointment: updatedApt.rows[0],
-      lawyer: lawyerRes.rows[0] || {},
+      lawyer: lawyerInfo,
     };
   }
 

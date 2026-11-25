@@ -3,7 +3,7 @@ import { StyleSheet } from 'react-native';
 export default StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: '#13131A',
+    backgroundColor: '#080402',
   },
   scroll: {
     flex: 1,
@@ -13,15 +13,15 @@ export default StyleSheet.create({
     paddingBottom: 110,
   },
   introCard: {
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 16,
     marginBottom: 14,
     borderWidth: 1.2,
-    backgroundColor: '#1B1C26',
-    borderColor: '#282A3A',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.35,
+    backgroundColor: 'rgba(34, 16, 12, 0.95)',
+    borderColor: 'rgba(245, 158, 11, 0.40)',
+    shadowColor: '#F59E0B',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.25,
     shadowRadius: 8,
     elevation: 3,
   },

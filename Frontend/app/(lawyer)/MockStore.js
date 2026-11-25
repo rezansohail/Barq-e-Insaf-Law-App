@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import api from '../../constants/api';
 import { getCurrentLawyerId, getCurrentLawyerUser } from '../../constants/authStore';
+import safeStorage from '../../services/safeStorage';
 
 let listeners = [];
 
@@ -213,9 +214,18 @@ export const fetchRequests = async (targetId) => {
     const res = await api.get(`/lawyers/${id}/requests`);
     const data = res.data || [];
     caseRequests.length = 0;
-    data.forEach((r) => {
+    const seenRequestIds = new Set();
+    for (const r of data) {
+      const strId = String(r.id);
+      if (seenRequestIds.has(strId)) continue;
+      seenRequestIds.add(strId);
+      const isVaultGranted =
+        (await safeStorage.getItem(`@barqeinsaf_vault_access_${strId}`)) === 'true' ||
+        (r.caseId && (await safeStorage.getItem(`@barqeinsaf_vault_access_case_${r.caseId}`)) === 'true') ||
+        Boolean(r.vaultAccessGranted);
+
       caseRequests.push({
-        id: String(r.id),
+        id: strId,
         caseId: r.caseId || null,
         name: r.citizenName || 'Citizen Client',
         citizenName: r.citizenName || 'Citizen Client',
@@ -238,6 +248,7 @@ export const fetchRequests = async (targetId) => {
         problemStatement: r.problemStatement || r.caseSummary,
         evidence: Array.isArray(r.evidence) ? r.evidence : (Array.isArray(r.sharedEvidence) ? r.sharedEvidence : []),
         sharedEvidence: Array.isArray(r.sharedEvidence) ? r.sharedEvidence : (Array.isArray(r.evidence) ? r.evidence : []),
+        vaultAccessGranted: isVaultGranted,
         timeSlots: Array.isArray(r.timeSlots) ? r.timeSlots : [],
         lawyerSigned: Boolean(r.lawyerSigned),
         lawyerSignature: r.lawyerSignature,
@@ -245,7 +256,7 @@ export const fetchRequests = async (targetId) => {
         citizenSignature: r.citizenSignature,
         agreementTerms: r.agreementTerms,
       });
-    });
+    }
     lawyerProfile.pendingRequestsCount = caseRequests.filter((r) => r.status === 'pending' || r.status === 'agreement_sent').length;
     notify();
   } catch (err) {
@@ -270,6 +281,7 @@ export const acceptRequest = async (requestId, agreementData = {}, targetId) => 
         status: 'agreement_sent',
         lawyerSigned: true,
         lawyerSignature: payload.lawyerSignature || lawyerProfile.name || 'Advocate Signed (SBC)',
+        lawyerSignatureSvg: payload.lawyerSignatureSvg || null,
         timeSlots: payload.timeSlots || ['Tomorrow 10:30 AM', 'Tomorrow 02:30 PM', 'Next Working Day 11:00 AM'],
         agreementTerms: payload.agreementTerms || 'Digital Legal Representation Agreement under Sindh Bar Council (SBC) Rules.',
       };

@@ -29,11 +29,16 @@ export default function CaseMap() {
     return () => { isMounted = false; };
   }, []);
 
-  const safeBg = isDarkMode ? '#080402' : '#FAF8F5';
+  const { isDark } = useAppTheme();
+  const safeBg = isDark ? '#080402' : '#FAF7F2';
+  const cardBg = isDark ? 'rgba(20, 32, 24, 0.95)' : '#FFFFFF';
+  const cardBorder = isDark ? 'rgba(16, 185, 129, 0.40)' : 'rgba(16, 185, 129, 0.20)';
+  const textPrimary = isDark ? '#FFF5E8' : '#1A0F07';
+  const textSecondary = isDark ? 'rgba(230, 255, 245, 0.75)' : '#1B3B2B';
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: safeBg }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={safeBg} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor={safeBg} />
 
       <AppHeader
         title="Sindh Judicial Case Map"
@@ -44,19 +49,19 @@ export default function CaseMap() {
 
       <ScrollView style={styles.scroll} contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 }]} showsVerticalScrollIndicator={false}>
         {/* Intro Card */}
-        <View style={[styles.introCard, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.94)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
-          <Text style={[styles.introTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+        <View style={[styles.introCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+          <Text style={[styles.introTitle, { color: textPrimary }]}>
             Sindh Real-Time Dispute Map
           </Text>
-          <Text style={[styles.introSub, { color: isDarkMode ? 'rgba(255, 235, 215, 0.75)' : '#4A2A15' }]}>
+          <Text style={[styles.introSub, { color: textSecondary }]}>
             Live geographic distribution of disputes currently registered across Sindh districts. Pointers reflect dispute category and age without citizen personal identifiers.
           </Text>
         </View>
 
         {loading ? (
           <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-            <ActivityIndicator color="#FF9500" size="large" />
-            <Text style={{ marginTop: 12, fontSize: 12, color: isDarkMode ? '#FFB74D' : '#C2410C', fontWeight: '700' }}>
+            <ActivityIndicator color="#10B981" size="large" />
+            <Text style={{ marginTop: 12, fontSize: 12, color: isDark ? '#34D399' : '#059669', fontWeight: '700' }}>
               Querying Sindh District Database...
             </Text>
           </View>

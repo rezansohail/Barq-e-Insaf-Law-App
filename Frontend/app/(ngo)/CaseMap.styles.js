@@ -5,10 +5,15 @@ export default StyleSheet.create({
   scroll: { flex: 1 },
   scrollContent: { padding: 16, paddingBottom: 110 },
   introCard: {
-    borderRadius: 16,
+    borderRadius: 18,
     padding: 16,
     marginBottom: 14,
-    borderWidth: 1,
+    borderWidth: 1.2,
+    shadowColor: '#10B981',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 3,
   },
   introTitle: {
     fontSize: 16,

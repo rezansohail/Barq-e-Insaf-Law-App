@@ -5,6 +5,7 @@ import {
   StyleSheet,
   View,
   Platform,
+  Image,
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useTranslation } from 'react-i18next';
@@ -15,24 +16,24 @@ import { useAppTheme } from '../context/ThemeContext';
  * LanguageFloatingButton
  * 
  * Barq-e-Insaf floating language switcher pill at the bottom-left:
- * Shows current/toggle language (e.g. "🌐 اردو" / "🌐 سنڌي" / "🌐 English").
+ * Shows current language indicator (e.g. Urdu, Sindhi, English).
  * Tapping opens the Barq-e-Insaf Language Selection Modal.
  */
 export default function LanguageFloatingButton() {
   const { i18n } = useTranslation();
-  const { isDarkMode } = useAppTheme();
+  const { isDark } = useAppTheme();
   const { openLanguageModal } = useLanguageModal();
 
   const currentLang = i18n?.language || 'en';
 
   const getBadgeConfig = () => {
     if (currentLang === 'ur') {
-      return { label: 'Urdu', native: 'اردو', icon: '🇵🇰' };
+      return { label: 'Urdu', native: 'اردو' };
     }
     if (currentLang === 'sd') {
-      return { label: 'Sindhi', native: 'سنڌي', icon: '🏴' };
+      return { label: 'Sindhi', native: 'سنڌي' };
     }
-    return { label: 'English', native: 'English', icon: '🇬🇧' };
+    return { label: 'English', native: 'English' };
   };
 
   const badge = getBadgeConfig();
@@ -48,7 +49,7 @@ export default function LanguageFloatingButton() {
       >
         <LinearGradient
           colors={
-            isDarkMode
+            isDark
               ? ['#2A1408', '#1A0C04', '#0D0502'] // Barq-e-Insaf signature obsidian & dark amber
               : ['#EA580C', '#C2410C', '#9A3412']
           }
@@ -58,7 +59,11 @@ export default function LanguageFloatingButton() {
         >
           {/* Barq-e-Insaf Gold Specular Border & Content */}
           <View style={styles.innerRow}>
-            <Text style={styles.globeIcon}>🌐</Text>
+            <Image
+              source={require('../assets/images/lang.png')}
+              style={styles.langIcon}
+              resizeMode="contain"
+            />
             <Text style={styles.labelText}>{badge.native}</Text>
           </View>
         </LinearGradient>
@@ -105,10 +110,11 @@ const styles = StyleSheet.create({
   innerRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 6,
+    gap: 7,
   },
-  globeIcon: {
-    fontSize: 14,
+  langIcon: {
+    width: 20,
+    height: 20,
   },
   labelText: {
     color: '#FFB800',

@@ -11,10 +11,13 @@ import {
   Image,
   Platform,
   useWindowDimensions,
+  LayoutAnimation,
+  UIManager,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useRouter } from 'expo-router';
+import Svg, { Path } from 'react-native-svg';
 import { useFonts, RacingSansOne_400Regular } from '@expo-google-fonts/racing-sans-one';
 import { useAppTranslation } from '../utils/translationHelper';
 import { openAIChat } from '../constants/chatBotStore';
@@ -22,10 +25,19 @@ import { openAIChat } from '../constants/chatBotStore';
 export default function LandingScreen() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
+  const [expandedCard, setExpandedCard] = useState(null);
   const { width, height } = useWindowDimensions();
   const { t, appName, currentLang } = useAppTranslation();
 
   const [fontsLoaded] = useFonts({ RacingSansOne_400Regular });
+
+  const toggleExpandCard = (id) => {
+    if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+      UIManager.setLayoutAnimationEnabledExperimental(true);
+    }
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpandedCard((prev) => (prev === id ? null : id));
+  };
 
   const handleAskAI = () => {
     openAIChat(searchQuery);
@@ -95,7 +107,7 @@ export default function LandingScreen() {
 
           <TouchableOpacity
             style={styles.signInBtn}
-            onPress={() => router.push('/LoginScreen')}
+            onPress={() => router.push('/RoleSelectScreen')}
           >
             <Text style={styles.signInText}>{t('landing.signIn', 'Sign In')}</Text>
           </TouchableOpacity>
@@ -115,7 +127,7 @@ export default function LandingScreen() {
             >
               <View style={styles.logo}>
                 <Image
-                  source={require('../assets/images/logo.png')}
+                  source={require('../assets/images/logo1.png')}
                   style={[styles.logoImage, { width: 120, height: 120 }]}
                   resizeMode="contain"
                 />
@@ -209,58 +221,83 @@ export default function LandingScreen() {
                   resizeMode="cover"
                 />
                 <LinearGradient colors={['transparent', 'rgba(10, 4, 2, 0.95)']} style={styles.imageGradient}>
-                  <Text style={styles.cardTag}>{t('landing.card3Tag', 'BIOMETRIC CONTRACTS')}</Text>
+                  <Text style={styles.cardTag}>{t('landing.card3Tag', 'DIGITAL SIGNATURES')}</Text>
                   <Text style={styles.cardTitle}>{t('landing.card3Title', 'Digital Representation Agreements')}</Text>
                 </LinearGradient>
               </View>
             </ScrollView>
           </View>
 
-          {/* ── 5. CORE PLATFORM CAPABILITIES ── */}
+          {/* ── 5. CORE PLATFORM CAPABILITIES (EXPANDABLE CARDS) ── */}
           <View style={styles.featuresSection}>
             <Text style={styles.sectionHeader}>{t('landing.whyTitle', 'Why Barq-e-Insaf?')}</Text>
 
-            <View style={styles.featureBox}>
-              <View style={[styles.featureIconCircle, { backgroundColor: 'rgba(255, 152, 0, 0.15)' }]}>
-                <Image
-                  source={require('../assets/images/img1.png')}
-                  style={styles.featureIcon}
-                  resizeMode="contain"
-                />
-              </View>
-              <View style={styles.featureTextGroup}>
-                <Text style={styles.featureTitle}>{t('landing.feature1Title', 'Multilingual AI Legal Research')}</Text>
-                <Text style={styles.featureDesc}>{t('landing.feature1Desc', 'Get instant responses in Urdu, Sindhi, and English for PPC, property disputes, and labor rights.')}</Text>
-              </View>
-            </View>
+            {[
+              {
+                id: 'feature-1',
+                title: t('landing.feature1Title', 'Multilingual AI Legal Research'),
+                desc: t('landing.feature1Desc', 'Get instant responses in Urdu, Sindhi, and English for PPC, property disputes, and labor rights.'),
+                icon: require('../assets/images/img1.png'),
+                bgColor: 'rgba(255, 152, 0, 0.15)',
+              },
+              {
+                id: 'feature-2',
+                title: t('landing.feature2Title', 'SBC Verified Advocate Directory'),
+                desc: t('landing.feature2Desc', 'Connect with certified Sindh Bar Council lawyers with transparent case assistance and misconduct reporting.'),
+                icon: require('../assets/images/img2.png'),
+                bgColor: 'rgba(245, 158, 11, 0.15)',
+              },
+              {
+                id: 'feature-3',
+                title: t('landing.feature3Title', 'Digital signatures signing'),
+                desc: t('landing.feature3Desc', 'Sign Vakalatnama representation agreements securely with encrypted digital touch signatures.'),
+                icon: require('../assets/images/img3.png'),
+                bgColor: 'rgba(234, 88, 12, 0.15)',
+              },
+            ].map((card) => {
+              const isExpanded = expandedCard === card.id;
+              return (
+                <TouchableOpacity
+                  key={card.id}
+                  style={[
+                    styles.featureBox,
+                    isExpanded && styles.featureBoxExpanded,
+                  ]}
+                  onPress={() => toggleExpandCard(card.id)}
+                  activeOpacity={0.8}
+                >
+                  <View style={styles.featureHeaderRow}>
+                    <View style={[styles.featureIconCircle, { backgroundColor: card.bgColor }]}>
+                      <Image
+                        source={card.icon}
+                        style={styles.featureIcon}
+                        resizeMode="contain"
+                      />
+                    </View>
+                    <View style={styles.featureTextGroup}>
+                      <Text style={styles.featureTitle}>{card.title}</Text>
+                    </View>
+                    <View style={styles.chevronWrap}>
+                      <Svg width={14} height={14} viewBox="0 0 24 24" fill="none">
+                        <Path
+                          d={isExpanded ? 'M18 15l-6-6-6 6' : 'M6 9l6 6 6-6'}
+                          stroke="#FFA726"
+                          strokeWidth={2.5}
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </Svg>
+                    </View>
+                  </View>
 
-            <View style={styles.featureBox}>
-              <View style={[styles.featureIconCircle, { backgroundColor: 'rgba(245, 158, 11, 0.15)' }]}>
-                <Image
-                  source={require('../assets/images/img2.png')}
-                  style={styles.featureIcon}
-                  resizeMode="contain"
-                />
-              </View>
-              <View style={styles.featureTextGroup}>
-                <Text style={styles.featureTitle}>{t('landing.feature2Title', 'SBC Verified Advocate Directory')}</Text>
-                <Text style={styles.featureDesc}>{t('landing.feature2Desc', 'Connect with certified Sindh Bar Council lawyers with transparent case assistance and misconduct reporting.')}</Text>
-              </View>
-            </View>
-
-            <View style={styles.featureBox}>
-              <View style={[styles.featureIconCircle, { backgroundColor: 'rgba(234, 88, 12, 0.15)' }]}>
-                <Image
-                  source={require('../assets/images/img3.png')}
-                  style={styles.featureIcon}
-                  resizeMode="contain"
-                />
-              </View>
-              <View style={styles.featureTextGroup}>
-                <Text style={styles.featureTitle}>{t('landing.feature3Title', 'Biometric Contract Signing')}</Text>
-                <Text style={styles.featureDesc}>{t('landing.feature3Desc', 'Sign Vakalatnama representation agreements securely with simulated biometric fingerprint verification.')}</Text>
-              </View>
-            </View>
+                  {isExpanded && (
+                    <View style={styles.featureExpandedBody}>
+                      <Text style={styles.featureDesc}>{card.desc}</Text>
+                    </View>
+                  )}
+                </TouchableOpacity>
+              );
+            })}
           </View>
 
           {/* ── 6. GET STARTED CTA CARD ── */}
@@ -504,46 +541,71 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   featureBox: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
     backgroundColor: 'rgba(75, 49, 34, 0.5)',
-    padding: 14,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
     borderRadius: 13,
     marginBottom: 10,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 180, 80, 0.12)',
+    borderWidth: 1.5,
+    borderColor: 'rgba(255, 180, 80, 0.14)',
     shadowColor: '#ff7b00a6',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.08,
     shadowRadius: 8,
     elevation: 0.5,
   },
+  featureBoxExpanded: {
+    backgroundColor: 'rgba(88, 48, 25, 0.72)',
+    borderColor: 'rgba(255, 149, 0, 0.38)',
+  },
+  featureHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    width: '100%',
+  },
   featureIconCircle: {
-    width: 45,
-    height: 45,
-    borderRadius: 19,
+    width: 44,
+    height: 44,
+    borderRadius: 18,
     justifyContent: 'center',
     alignItems: 'center',
   },
   featureIcon: {
-    width: 50,
-    height: 50,
+    width: 38,
+    height: 38,
     borderRadius: 7,
   },
   featureTextGroup: {
     flex: 1,
+    marginLeft: 12,
+    marginRight: 8,
+    justifyContent: 'center',
   },
   featureTitle: {
-    fontSize: 13,
+    fontSize: 13.5,
     fontWeight: '800',
     color: '#f5e1c4',
+    letterSpacing: -0.1,
+  },
+  chevronWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    backgroundColor: 'rgba(255, 149, 0, 0.12)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  featureExpandedBody: {
+    marginTop: 10,
+    paddingTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 180, 80, 0.15)',
+    paddingLeft: 4,
   },
   featureDesc: {
-    fontSize: 11,
-    color: 'rgba(233, 224, 216, 0.7)',
-    marginTop: 2,
-    lineHeight: 16,
+    fontSize: 11.5,
+    color: 'rgba(245, 235, 225, 0.85)',
+    lineHeight: 17,
   },
 
   // ── CTA ──

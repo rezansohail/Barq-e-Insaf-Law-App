@@ -24,7 +24,7 @@ import { useAppTheme } from '../../context/ThemeContext';
 export default function LawyerProfile() {
   useMockStore();
   const router = useRouter();
-  const { isDark, theme } = useAppTheme();
+  const { isDark, theme, toggleTheme } = useAppTheme();
   const params = useLocalSearchParams();
   useAppNavigation({ isHome: false, homeRoute: '/(lawyer)/LawyerHome' });
 
@@ -64,6 +64,7 @@ export default function LawyerProfile() {
     isAvailable: lawyerProfile.isAvailable !== undefined ? lawyerProfile.isAvailable : true,
     experience: lawyerProfile.experience || '',
     education: lawyerProfile.education || '',
+    officeHours: lawyerProfile.officeHours || ['10:00 AM - 01:00 PM', '05:00 PM - 08:00 PM'],
   });
 
   useEffect(() => {
@@ -84,8 +85,9 @@ export default function LawyerProfile() {
       isAvailable: lawyerProfile.isAvailable !== undefined ? lawyerProfile.isAvailable : true,
       experience: lawyerProfile.experience || '',
       education: lawyerProfile.education || '',
+      officeHours: lawyerProfile.officeHours || ['10:00 AM - 01:00 PM', '05:00 PM - 08:00 PM'],
     });
-  }, [lawyerProfile.name, lawyerProfile.spec, lawyerProfile.about, lawyerProfile.address, lawyerProfile.isAvailable]);
+  }, [lawyerProfile.name, lawyerProfile.spec, lawyerProfile.about, lawyerProfile.address, lawyerProfile.isAvailable, lawyerProfile.officeHours]);
 
   const handleSave = async () => {
     try {
@@ -101,6 +103,7 @@ export default function LawyerProfile() {
         isAvailable: editedData.isAvailable,
         experience: editedData.experience,
         education: editedData.education,
+        officeHours: editedData.officeHours,
       }, currentLawyerId);
       setEditMode(false);
       Alert.alert('Success', 'Profile updated successfully and saved to database!');
@@ -403,6 +406,78 @@ export default function LawyerProfile() {
           </View>
         )}
 
+        <Text style={styles.label}>Available Office Timings</Text>
+        {editMode ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+            {[
+              '09:00 AM - 12:00 PM',
+              '10:00 AM - 01:00 PM',
+              '02:00 PM - 05:00 PM',
+              '05:00 PM - 08:00 PM',
+              '07:00 PM - 09:00 PM',
+            ].map((slot) => {
+              const currentSlots = Array.isArray(editedData.officeHours) ? editedData.officeHours : ['10:00 AM - 01:00 PM', '05:00 PM - 08:00 PM'];
+              const isSelected = currentSlots.includes(slot);
+              return (
+                <TouchableOpacity
+                  key={slot}
+                  style={{
+                    paddingHorizontal: 10,
+                    paddingVertical: 7,
+                    borderRadius: 8,
+                    borderWidth: 1.2,
+                    borderColor: isSelected ? '#FF9500' : 'rgba(255, 180, 80, 0.25)',
+                    backgroundColor: isSelected ? 'rgba(255, 149, 0, 0.22)' : 'rgba(255, 255, 255, 0.04)',
+                  }}
+                  onPress={() => {
+                    let updated = [...currentSlots];
+                    if (isSelected) {
+                      if (updated.length > 1) updated = updated.filter((s) => s !== slot);
+                    } else {
+                      updated.push(slot);
+                    }
+                    setEditedData({ ...editedData, officeHours: updated });
+                  }}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={{
+                      fontSize: 10.5,
+                      color: isSelected ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
+                      fontWeight: isSelected ? '700' : '500',
+                    }}
+                  >
+                    {slot}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ) : (
+          <View style={[styles.detailCard, dynamicStyles.detailCard]}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 6 }}>
+              {(Array.isArray(lawyerProfile.officeHours) && lawyerProfile.officeHours.length > 0
+                ? lawyerProfile.officeHours
+                : ['10:00 AM - 01:00 PM', '05:00 PM - 08:00 PM']
+              ).map((slot, i) => (
+                <View
+                  key={i}
+                  style={{
+                    backgroundColor: 'rgba(255, 149, 0, 0.15)',
+                    paddingHorizontal: 8,
+                    paddingVertical: 4,
+                    borderRadius: 6,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 149, 0, 0.35)',
+                  }}
+                >
+                  <Text style={{ fontSize: 11, color: '#FFA726', fontWeight: '700' }}>{slot}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
+
         {/* Save Button - Only show in edit mode */}
         {editMode && (
           <TouchableOpacity 
@@ -418,13 +493,34 @@ export default function LawyerProfile() {
           </TouchableOpacity>
         )}
 
+        {/* APP THEME APPEARANCE TOGGLE */}
+        <TouchableOpacity
+          style={[styles.termsBtn, { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : theme.cardBg, borderColor: isDark ? 'rgba(255, 170, 60, 0.28)' : theme.cardBorder }]}
+          onPress={toggleTheme}
+          activeOpacity={0.8}
+        >
+          <View>
+            <Text style={[styles.termsBtnText, { color: theme.textPrimary, textAlign: 'left', fontWeight: '700' }]}>
+              App Appearance
+            </Text>
+            <Text style={{ fontSize: 11, color: theme.textMuted, marginTop: 2 }}>
+              Current mode: {isDark ? 'Dark (Night Obsidian)' : 'Light (Day White)'}
+            </Text>
+          </View>
+          <View style={{ backgroundColor: isDark ? 'rgba(255, 149, 0, 0.2)' : 'rgba(234, 88, 12, 0.15)', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 12, borderWidth: 1, borderColor: '#FF9500' }}>
+            <Text style={{ color: '#FF9500', fontWeight: '800', fontSize: 11 }}>
+              {isDark ? 'SWITCH TO LIGHT' : 'SWITCH TO DARK'}
+            </Text>
+          </View>
+        </TouchableOpacity>
+
         {/* TERMS AND CONDITIONS LINK */}
         <TouchableOpacity
-          style={styles.termsBtn}
+          style={[styles.termsBtn, !isDark && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}
           onPress={() => router.push('/TermsScreen')}
           activeOpacity={0.8}
         >
-          <Text style={styles.termsBtnText}>View Terms & Conditions</Text>
+          <Text style={[styles.termsBtnText, !isDark && { color: theme.textPrimary }]}>View Terms & Conditions</Text>
         </TouchableOpacity>
 
         {/* SIGN OUT BUTTON ON PAGE BELOW WHOLE PROFILE CONTENT */}

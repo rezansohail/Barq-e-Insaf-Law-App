@@ -39,19 +39,15 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
 
   const handleProfile = () => {
     setMenuVisible(false);
-    if (role === 'citizen') {
-      router.push('/(citizen)/Profile');
-    } else if (role === 'lawyer') {
+    if (role === 'lawyer') {
       router.push('/(lawyer)/LawyerProfile');
     } else {
-      Alert.alert(
-        'Profile Information',
-        `Logged in as: ${role.toUpperCase()}\nStatus: Verified Active Organization\nAccess Level: Full Portal Access`
-      );
+      router.push('/(citizen)/Profile');
     }
   };
 
   const handleToggleTheme = () => {
+    setMenuVisible(false);
     toggleTheme();
   };
 
@@ -84,16 +80,26 @@ export default function TopHeaderMenu({ role = 'citizen', avatarText = 'BI' }) {
         accessibilityLabel="Menu Options"
       >
         <LinearGradient
-          colors={['rgba(255, 149, 0, 0.25)', 'rgba(20, 10, 4, 0.5)']}
-          style={styles.triggerGradient}
+          colors={
+            isDarkMode
+              ? ['rgba(255, 149, 0, 0.25)', 'rgba(38, 20, 10, 0.85)']
+              : ['#FFF7ED', '#FED7AA']
+          }
+          style={[
+            styles.triggerGradient,
+            {
+              borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.40)' : 'rgba(217, 119, 6, 0.50)',
+              borderWidth: 1.2,
+            },
+          ]}
         >
-          {/* Menu icon - 3 dots / lines */}
+          {/* Menu icon - 3 dots */}
           <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
             <Path
-              d="M12 13a1 1 0 100-2 1 1 0 000 2zm0-7a1 1 0 100-2 1 1 0 000 2zm0 14a1 1 0 100-2 1 1 0 000 2z"
-              stroke="#FFA726"
-              strokeWidth={2.5}
-              strokeLinecap="round"
+              d="M12 13a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0-7a1.5 1.5 0 100-3 1.5 1.5 0 000 3zm0 14a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"
+              fill={isDarkMode ? '#FFA726' : '#9A3412'}
+              stroke={isDarkMode ? '#FFA726' : '#9A3412'}
+              strokeWidth={1}
             />
           </Svg>
         </LinearGradient>

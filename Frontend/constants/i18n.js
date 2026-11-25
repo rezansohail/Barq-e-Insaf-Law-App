@@ -8,9 +8,9 @@ import roman_ur from '../locales/roman_ur.json';
 import sd from '../locales/sd.json';
 
 export const SUPPORTED_LANGUAGES = [
-  { code: 'en', label: 'English', native: 'English', isRtl: false, flag: '🇬🇧' },
-  { code: 'ur', label: 'Urdu', native: 'اردو', isRtl: true, flag: '🇵🇰' },
-  { code: 'sd', label: 'Sindhi', native: 'سنڌي', isRtl: true, flag: '🏴' },
+  { code: 'en', label: 'English', native: 'English', isRtl: false },
+  { code: 'ur', label: 'Urdu', native: 'اردو', isRtl: true },
+  { code: 'sd', label: 'Sindhi', native: 'سنڌي', isRtl: true },
 ];
 
 const resources = {

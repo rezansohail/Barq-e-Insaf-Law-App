@@ -20,7 +20,8 @@ const STATUSES = ['All', 'Active', 'Suspended', 'Restricted'];
 
 export default function CitizenManagement() {
   const router = useRouter();
-  const { isDark } = useAppTheme();
+  const { theme, isDark } = useAppTheme();
+  const { bg, cardBg, cardBorder, textPrimary, textSecondary, inputBg, inputBorder } = theme;
   
   const [citizens, setCitizens] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -136,13 +137,6 @@ export default function CitizenManagement() {
     );
   };
 
-  const bg = isDark ? '#060201' : '#FAF7F2';
-  const cardBg = isDark ? 'rgba(22, 10, 4, 0.78)' : '#FFFFFF';
-  const cardBorder = isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)';
-  const textPrimary = isDark ? '#FFF5E8' : '#1A0F07';
-  const textSecondary = isDark ? 'rgba(255, 220, 180, 0.65)' : '#6B5442';
-  const inputBg = isDark ? 'rgba(25, 12, 5, 0.75)' : '#FFFFFF';
-  const inputBorder = isDark ? 'rgba(255, 160, 40, 0.25)' : 'rgba(255, 149, 0, 0.25)';
 
   if (showDetail) {
     const currentStatus = (showDetail.status || 'active').toLowerCase();
@@ -152,7 +146,7 @@ export default function CitizenManagement() {
 
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
-        <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
+        <StatusBar barStyle={theme.statusBarStyle} translucent backgroundColor={theme.statusBarBg} />
         <AppHeader
           title={showDetail.full_name || showDetail.fullName || 'Citizen Profile'}
           showBack={true}
@@ -238,7 +232,7 @@ export default function CitizenManagement() {
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
+      <StatusBar barStyle={theme.statusBarStyle} translucent backgroundColor={theme.statusBarBg} />
 
       <AppHeader
         title="Citizen Directory"

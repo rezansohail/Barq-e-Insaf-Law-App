@@ -1,5 +1,36 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
+import React, { createContext, useContext, useState, useCallback, useEffect } from 'react';
+import { Alert, Platform } from 'react-native';
 import ThemedAlertModal from '../components/ThemedAlertModal';
+
+let globalAlertDispatcher = null;
+
+// Intercept Alert.alert globally so native/web white popup boxes are replaced with ThemedAlertModal
+if (!Alert.__originalAlert) {
+  Alert.__originalAlert = Alert.alert;
+  Alert.alert = (title, message, buttons, options) => {
+    if (globalAlertDispatcher) {
+      const titleStr = typeof title === 'string' ? title : String(title || '');
+      const type =
+        /error|fail|invalid|required|missing|decline|revok/i.test(titleStr)
+          ? 'error'
+          : /success|confirm|booked|approved|sent|verified|attach|download/i.test(titleStr)
+          ? 'success'
+          : /warn|caution|notice|limit/i.test(titleStr)
+          ? 'warning'
+          : 'info';
+
+      globalAlertDispatcher({
+        title: titleStr,
+        message: typeof message === 'string' ? message : message ? String(message) : '',
+        type,
+        buttons: Array.isArray(buttons) && buttons.length > 0 ? buttons : [{ text: 'OK' }],
+        onClose: options?.onDismiss || null,
+      });
+    } else {
+      Alert.__originalAlert(title, message, buttons, options);
+    }
+  };
+}
 
 const AlertContext = createContext({
   showAlert: () => {},
@@ -11,15 +42,15 @@ export const AlertProvider = ({ children }) => {
     visible: false,
     title: '',
     message: '',
-    type: 'error', // 'error' | 'warning' | 'info' | 'success'
-    buttons: [],
+    type: 'info', // 'error' | 'warning' | 'info' | 'success'
+    buttons: [{ text: 'OK' }],
     onClose: null,
   });
 
   const showAlert = useCallback(({
     title = '',
     message = '',
-    type = 'error',
+    type = 'info',
     buttons = [{ text: 'OK' }],
     onClose = null,
   }) => {
@@ -39,6 +70,13 @@ export const AlertProvider = ({ children }) => {
       return { ...prev, visible: false };
     });
   }, []);
+
+  useEffect(() => {
+    globalAlertDispatcher = showAlert;
+    return () => {
+      globalAlertDispatcher = null;
+    };
+  }, [showAlert]);
 
   return (
     <AlertContext.Provider value={{ showAlert, hideAlert }}>

@@ -2,6 +2,7 @@ const RegisterNgoDTO = require('../dto/RegisterNgoDTO');
 const LoginNgoDTO = require('../dto/LoginNgoDTO');
 const CreateNgoStoryDTO = require('../dto/CreateNgoStoryDTO');
 const ngoService = require('../services/ngoServiceImpl');
+const { triggerTranslate } = require('../utils/triggerTranslate');
 
 /**
  * Controller strictly for NGO (NCHD) Endpoints
@@ -13,6 +14,8 @@ const registerNgo = async (req, res) => {
   try {
     const dto = new RegisterNgoDTO(req.body);
     const result = await ngoService.registerNgo(dto);
+    // Auto-trigger translation for new NGO account
+    triggerTranslate(req.body);
     return res.status(201).json({
       success: true,
       ...result,

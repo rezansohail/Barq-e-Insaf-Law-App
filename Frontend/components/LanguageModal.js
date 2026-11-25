@@ -8,6 +8,7 @@ import {
   TouchableWithoutFeedback,
   Dimensions,
   Platform,
+  Image,
 } from 'react-native';
 import { BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -17,13 +18,20 @@ import { useAppTheme } from '../context/ThemeContext';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 
+const LANGUAGE_ICONS = {
+  en: require('../assets/images/en.png'),
+  ur: require('../assets/images/ur.png'),
+  sd: require('../assets/images/si.png'),
+  si: require('../assets/images/si.png'),
+};
+
 /**
  * Barq-e-Insaf Language Selection Popup Modal
  * Allows switching between English, Urdu (اردو), and Sindhi (سنڌي).
  */
 export default function LanguageModal({ visible, onClose }) {
   const { i18n } = useTranslation();
-  const { isDarkMode } = useAppTheme();
+  const { isDark } = useAppTheme();
   const currentLang = i18n?.language || 'en';
 
   const handleSelectLanguage = async (code) => {
@@ -44,26 +52,30 @@ export default function LanguageModal({ visible, onClose }) {
             <View style={[
               styles.modalCard,
               {
-                backgroundColor: isDarkMode ? '#140A05' : '#FFFFFF',
-                borderColor: isDarkMode ? 'rgba(255, 149, 0, 0.4)' : 'rgba(234, 88, 12, 0.3)',
+                backgroundColor: isDark ? '#140A05' : '#FFFFFF',
+                borderColor: isDark ? 'rgba(255, 149, 0, 0.4)' : 'rgba(234, 88, 12, 0.3)',
               }
             ]}>
               {/* Header */}
               <View style={styles.header}>
                 <View style={styles.globeBadge}>
-                  <Text style={styles.globeIcon}>🌐</Text>
+                  <Image
+                    source={require('../assets/images/lang.png')}
+                    style={styles.modalLangIcon}
+                    resizeMode="contain"
+                  />
                 </View>
                 <View style={{ flex: 1, marginLeft: 12 }}>
-                  <Text style={[styles.title, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+                  <Text style={[styles.title, { color: isDark ? '#FFFFFF' : '#1A0C04' }]}>
                     Select Language
                   </Text>
-                  <Text style={[styles.subtitle, { color: isDarkMode ? '#FFA726' : '#C2410C' }]}>
+                  <Text style={[styles.subtitle, { color: isDark ? '#FFA726' : '#C2410C' }]}>
                     زبان منتخب کریں / ٻولي چونڊيو
                   </Text>
                 </View>
                 <TouchableOpacity onPress={onClose} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
                   <View style={styles.closeBtn}>
-                    <Text style={{ color: isDarkMode ? '#9CA3AF' : '#6B7280', fontSize: 16, fontWeight: '700' }}>✕</Text>
+                    <Text style={{ color: isDark ? '#FFEED6' : '#6B7280', fontSize: 13, fontWeight: '800' }}>X</Text>
                   </View>
                 </TouchableOpacity>
               </View>
@@ -81,25 +93,47 @@ export default function LanguageModal({ visible, onClose }) {
                         styles.langOption,
                         {
                           backgroundColor: isSelected
-                            ? (isDarkMode ? 'rgba(255, 149, 0, 0.16)' : 'rgba(234, 88, 12, 0.12)')
-                            : (isDarkMode ? 'rgba(255, 255, 255, 0.03)' : '#F9FAFB'),
+                            ? (isDark ? 'rgba(255, 149, 0, 0.16)' : 'rgba(234, 88, 12, 0.12)')
+                            : (isDark ? 'rgba(255, 255, 255, 0.03)' : '#F9FAFB'),
                           borderColor: isSelected
                             ? '#FF9500'
-                            : (isDarkMode ? 'rgba(255, 255, 255, 0.08)' : '#E5E7EB'),
+                            : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#E5E7EB'),
                         },
                       ]}
                       onPress={() => handleSelectLanguage(lang.code)}
                       activeOpacity={0.75}
                     >
                       <View style={styles.optionLeft}>
-                        <Text style={styles.flag}>{lang.flag || '🌐'}</Text>
+                        <View style={{
+                          width: 44,
+                          height: 28,
+                          borderRadius: 6,
+                          overflow: 'hidden',
+                          backgroundColor: isSelected ? 'rgba(255, 149, 0, 0.25)' : (isDark ? 'rgba(255, 255, 255, 0.08)' : '#F3F4F6'),
+                          borderWidth: 1.5,
+                          borderColor: isSelected ? '#FF9500' : (isDark ? 'rgba(255, 255, 255, 0.15)' : '#E5E7EB'),
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}>
+                          {LANGUAGE_ICONS[lang.code] ? (
+                            <Image
+                              source={LANGUAGE_ICONS[lang.code]}
+                              style={{ width: '100%', height: '100%' }}
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <Text style={{ color: isSelected ? '#FF9500' : (isDark ? '#FFEED6' : '#4A3325'), fontSize: 11, fontWeight: '800' }}>
+                              {lang.code.toUpperCase()}
+                            </Text>
+                          )}
+                        </View>
                         <View style={{ marginLeft: 12 }}>
                           <Text style={[
                             styles.langLabel,
                             {
                               color: isSelected
                                 ? '#FF9500'
-                                : (isDarkMode ? '#FFFFFF' : '#111827'),
+                                : (isDark ? '#FFFFFF' : '#111827'),
                               fontWeight: isSelected ? '800' : '600',
                             }
                           ]}>
@@ -107,7 +141,7 @@ export default function LanguageModal({ visible, onClose }) {
                           </Text>
                           <Text style={[
                             styles.nativeLabel,
-                            { color: isDarkMode ? 'rgba(255, 220, 180, 0.7)' : '#6B7280' }
+                            { color: isDark ? 'rgba(255, 220, 180, 0.7)' : '#6B7280' }
                           ]}>
                             {lang.native}
                           </Text>
@@ -119,14 +153,16 @@ export default function LanguageModal({ visible, onClose }) {
                         styles.indicator,
                         isSelected && styles.indicatorSelected,
                       ]}>
-                        {isSelected && <Text style={styles.checkmark}>✓</Text>}
+                        {isSelected && (
+                          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: '#000000' }} />
+                        )}
                       </View>
                     </TouchableOpacity>
                   );
                 })}
               </View>
 
-              <Text style={[styles.hintText, { color: isDarkMode ? 'rgba(255, 220, 180, 0.5)' : '#9CA3AF' }]}>
+              <Text style={[styles.hintText, { color: isDark ? 'rgba(255, 220, 180, 0.5)' : '#9CA3AF' }]}>
                 Changes apply instantly across all screens.
               </Text>
             </View>
@@ -175,8 +211,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  globeIcon: {
-    fontSize: 20,
+  modalLangIcon: {
+    width: 24,
+    height: 24,
   },
   title: {
     fontSize: 16,

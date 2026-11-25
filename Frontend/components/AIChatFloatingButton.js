@@ -221,7 +221,7 @@ export default function AIChatFloatingButton() {
 
               {/* Inner Glow Circle with Chatbot Blue & Orange Legal Lightning */}
               <View style={styles.glowCircle}>
-                <Svg width={24} height={24} viewBox="0 0 24 24" fill="none">
+                <Svg width={26} height={26} viewBox="0 0 24 24" fill="none">
                   <Path
                     d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"
                     fill="#FFA726"
@@ -229,12 +229,6 @@ export default function AIChatFloatingButton() {
                     strokeWidth={1.2}
                   />
                 </Svg>
-              </View>
-
-              {/* Bottom AI Legal Tag Pill in Black & Orange with Subtle Blue Border */}
-              <View style={styles.aiTagPill}>
-                <View style={styles.aiBlueDot} />
-                <Text style={styles.aiTagText}>AI LEGAL</Text>
               </View>
             </LinearGradient>
           </TouchableOpacity>
@@ -381,7 +375,7 @@ export default function AIChatFloatingButton() {
                 style={styles.docModalCloseBtn}
                 onPress={() => setDocModalVisible(false)}
               >
-                <Text style={styles.docModalCloseText}>✕</Text>
+                <Text style={styles.docModalCloseText}>X</Text>
               </TouchableOpacity>
             </View>
 
@@ -468,18 +462,18 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(59, 130, 246, 0.65)',
   },
   glowCircle: {
-    width: 42,
-    height: 42,
-    borderRadius: 21,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: '#121829',
-    borderWidth: 1,
-    borderColor: 'rgba(59, 130, 246, 0.40)',
+    borderWidth: 1.2,
+    borderColor: 'rgba(59, 130, 246, 0.45)',
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: '#3B82F6',
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.35,
-    shadowRadius: 6,
+    shadowRadius: 8,
   },
   fabIcon: { fontSize: 24 },
   aiTagPill: {

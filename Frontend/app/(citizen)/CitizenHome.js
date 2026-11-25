@@ -191,7 +191,7 @@ export default function CitizenHome() {
             displayLawyers.map((l, i) => (
               <TouchableOpacity
                 key={l.id || i}
-                style={styles.lawyerCard}
+                style={[styles.lawyerCard, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}
                 activeOpacity={0.84}
                 onPress={() => handleLawyerPress(l)}
               >
@@ -204,8 +204,8 @@ export default function CitizenHome() {
                   </View>
                 </View>
 
-                <Text style={styles.lawyerName} numberOfLines={1}>{translateLawyerName(l.name)}</Text>
-                <Text style={styles.lawyerSpec} numberOfLines={1}>{translateCategory(l.spec) || t('citizen.legalCounsel', 'Legal Counsel')}</Text>
+                <Text style={[styles.lawyerName, !isDarkMode && { color: theme.textPrimary }]} numberOfLines={1}>{translateLawyerName(l.name)}</Text>
+                <Text style={[styles.lawyerSpec, !isDarkMode && { color: theme.textMuted }]} numberOfLines={1}>{translateCategory(l.spec) || t('citizen.legalCounsel', 'Legal Counsel')}</Text>
 
                 <View style={styles.lawyerCardFooter}>
                   <Text style={styles.consultAction}>{t('citizen.requestConsultation', 'Request Legal Consultation →')}</Text>
@@ -213,8 +213,8 @@ export default function CitizenHome() {
               </TouchableOpacity>
             ))
           ) : (
-            <View style={styles.emptyCard}>
-              <Text style={styles.emptyText}>{t('common.loading', 'Loading verified advocates...')}</Text>
+            <View style={[styles.emptyCard, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}>
+              <Text style={[styles.emptyText, !isDarkMode && { color: theme.textMuted }]}>{t('common.loading', 'Loading verified advocates...')}</Text>
             </View>
           )}
         </ScrollView>
@@ -237,15 +237,15 @@ export default function CitizenHome() {
         </View>
 
         {activeCases.length === 0 ? (
-          <TouchableOpacity style={styles.noCaseCard} onPress={handleBuildCase} activeOpacity={0.8}>
+          <TouchableOpacity style={[styles.noCaseCard, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]} onPress={handleBuildCase} activeOpacity={0.8}>
             <View style={{ marginBottom: 8 }}>
               <Svg width={28} height={28} viewBox="0 0 24 24" fill="none">
                 <Rect x={4} y={3} width={16} height={18} rx={2} stroke="#FFB74D" strokeWidth={1.8} />
                 <Path d="M8 8h8M8 12h8M8 16h5" stroke="#FFB74D" strokeWidth={1.8} strokeLinecap="round" />
               </Svg>
             </View>
-            <Text style={styles.noCaseTitle}>{t('citizen.noActiveCases', 'No Active Cases Yet')}</Text>
-            <Text style={styles.noCaseSub}>
+            <Text style={[styles.noCaseTitle, !isDarkMode && { color: theme.textPrimary }]}>{t('citizen.noActiveCases', 'No Active Cases Yet')}</Text>
+            <Text style={[styles.noCaseSub, !isDarkMode && { color: theme.textMuted }]}>
               {t('citizen.noCaseSub', "Tap here or 'Build Your Case' above to start your first legal dossier.")}
             </Text>
           </TouchableOpacity>
@@ -253,14 +253,14 @@ export default function CitizenHome() {
           activeCases.slice(0, 3).map((c, i) => (
             <TouchableOpacity
               key={c.id || i}
-              style={styles.caseItem}
+              style={[styles.caseItem, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}
               activeOpacity={0.84}
               onPress={() => handleCasePress(c)}
             >
               <View style={[styles.caseDot, { backgroundColor: c.status === 'Active' ? '#4ade80' : '#f59e0b' }]} />
               <View style={styles.caseInfo}>
-                <Text style={styles.caseTitle} numberOfLines={1}>{translateDynamic(c.title)}</Text>
-                <Text style={styles.caseSub}>{translateCategory(c.type || 'Legal Matter')} · {translateDistrict(c.district || userData.district || 'Sindh')}</Text>
+                <Text style={[styles.caseTitle, !isDarkMode && { color: theme.textPrimary }]} numberOfLines={1}>{translateDynamic(c.title)}</Text>
+                <Text style={[styles.caseSub, !isDarkMode && { color: theme.textMuted }]}>{translateCategory(c.type || 'Legal Matter')} · {translateDistrict(c.district || userData.district || 'Sindh')}</Text>
               </View>
               <View style={[styles.statusBadge, { backgroundColor: c.status === 'Active' ? 'rgba(34, 197, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)' }]}>
                 <Text style={[styles.badgeText, { color: c.status === 'Active' ? '#4ade80' : '#f59e0b' }]}>
@@ -278,7 +278,7 @@ export default function CitizenHome() {
         <View style={styles.partnerCardsContainer}>
           {/* NCHD Card */}
           <TouchableOpacity
-            style={styles.partnerCard}
+            style={[styles.partnerCard, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}
             activeOpacity={0.84}
             onPress={() => router.push({ pathname: '/NCHDInfo', params: { from: 'citizen' } })}
           >
@@ -294,10 +294,10 @@ export default function CitizenHome() {
                 <View style={styles.partnerPill}>
                   <Text style={styles.partnerPillText}>{t('citizen.govtNgoAid', 'GOVT / NGO LEGAL AID')}</Text>
                 </View>
-                <Text style={styles.partnerTitle}>
+                <Text style={[styles.partnerTitle, !isDarkMode && { color: theme.textPrimary }]}>
                   {t('National Commission for Human Development (NCHD)')}
                 </Text>
-                <Text style={styles.partnerSub}>
+                <Text style={[styles.partnerSub, !isDarkMode && { color: theme.textMuted }]}>
                   {t('Grassroots legal aid, adult literacy & community relief')}
                 </Text>
               </View>
@@ -314,7 +314,7 @@ export default function CitizenHome() {
 
           {/* KTN News Card */}
           <TouchableOpacity
-            style={styles.partnerCard}
+            style={[styles.partnerCard, !isDarkMode && { backgroundColor: theme.cardBg, borderColor: theme.cardBorder }]}
             activeOpacity={0.84}
             onPress={() => router.push({ pathname: '/KTNNewsInfo', params: { from: 'citizen' } })}
           >
@@ -330,10 +330,10 @@ export default function CitizenHome() {
                 <View style={[styles.partnerPill, { backgroundColor: 'rgba(245, 158, 11, 0.18)', borderColor: 'rgba(245, 158, 11, 0.35)' }]}>
                   <Text style={[styles.partnerPillText, { color: '#F59E0B' }]}>{t('24/7 BROADCAST JOURNALISM')}</Text>
                 </View>
-                <Text style={styles.partnerTitle}>
+                <Text style={[styles.partnerTitle, !isDarkMode && { color: theme.textPrimary }]}>
                   {t('KTN News (Kawish Television Network)')}
                 </Text>
-                <Text style={styles.partnerSub}>
+                <Text style={[styles.partnerSub, !isDarkMode && { color: theme.textMuted }]}>
                   {t('Court reporting, investigative journalism & public grievance desk')}
                 </Text>
               </View>

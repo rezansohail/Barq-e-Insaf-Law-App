@@ -33,19 +33,14 @@ const DETAIL_TABS = ['Organization', 'Verification', 'Statistics', 'Account'];
 // ─── DETAIL VIEW ──────────────────────────────────────────────────────────────
 function NGODetail({ ngo: n, onBack }) {
   const [tab, setTab] = useState('Organization');
-  const { isDark } = useAppTheme();
+  const { theme, isDark } = useAppTheme();
+  const { bg, cardBg, cardBorder, textPrimary, textSecondary } = theme;
   const sc = statusColors[n.status] || statusColors['Pending'];
   const initials = (n.name || '').split(' ').map(w => w[0]).join('').slice(0, 2);
 
-  const bg = isDark ? '#060201' : '#FAF7F2';
-  const cardBg = isDark ? 'rgba(22, 10, 4, 0.78)' : '#FFFFFF';
-  const cardBorder = isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)';
-  const textPrimary = isDark ? '#FFF5E8' : '#1A0F07';
-  const textSecondary = isDark ? 'rgba(255, 220, 180, 0.65)' : '#6B5442';
-
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
+      <StatusBar barStyle={theme.statusBarStyle} translucent backgroundColor={theme.statusBarBg} />
 
       {/* Modern Header */}
       <AppHeader
@@ -202,7 +197,8 @@ function IR({ label, value, highlight }) {
 // ─── MAIN LIST VIEW ──────────────────────────────────────────────────────────
 export default function NGOManagement() {
   const router = useRouter();
-  const { isDark } = useAppTheme();
+  const { theme, isDark } = useAppTheme();
+  const { bg, cardBg, cardBorder, textPrimary, textSecondary, inputBg, inputBorder } = theme;
   const [data, setData]         = useState([]);
   const [loading, setLoading]   = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -317,14 +313,6 @@ export default function NGOManagement() {
     );
   };
 
-  const bg = isDark ? '#060201' : '#FAF7F2';
-  const cardBg = isDark ? 'rgba(22, 10, 4, 0.78)' : '#FFFFFF';
-  const cardBorder = isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)';
-  const textPrimary = isDark ? '#FFF5E8' : '#1A0F07';
-  const textSecondary = isDark ? 'rgba(255, 220, 180, 0.65)' : '#6B5442';
-  const inputBg = isDark ? 'rgba(25, 12, 5, 0.75)' : '#FFFFFF';
-  const inputBorder = isDark ? 'rgba(255, 160, 40, 0.25)' : 'rgba(255, 149, 0, 0.25)';
-
   if (detail) {
     return <NGODetail ngo={detail} onBack={() => setDetail(null)} />;
   }
@@ -333,7 +321,7 @@ export default function NGOManagement() {
 
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
+      <StatusBar barStyle={theme.statusBarStyle} translucent backgroundColor={theme.statusBarBg} />
 
       {/* Modern '< NGO Directory' Header */}
       <AppHeader

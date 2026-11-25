@@ -53,7 +53,14 @@ export default function LawyerHome() {
     return `Adv. ${raw}`;
   };
 
-  const pendingRequests = caseRequests.filter((r) => r.status === 'pending');
+  const pendingRequests = React.useMemo(() => {
+    const map = new Map();
+    (caseRequests || []).filter((r) => r.status === 'pending').forEach((r, idx) => {
+      const key = r?.id ? String(r.id) : `req-${idx}`;
+      if (!map.has(key)) map.set(key, r);
+    });
+    return Array.from(map.values());
+  }, [caseRequests]);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
@@ -91,7 +98,7 @@ export default function LawyerHome() {
             !lawyerProfile.isVerified && { backgroundColor: 'rgba(245, 158, 11, 0.18)', borderColor: 'rgba(245, 158, 11, 0.4)' }
           ]}>
             <Text style={[styles.verifiedText, !lawyerProfile.isVerified && { color: '#f59e0b' }]}>
-              {lawyerProfile.isVerified ? t('lawyer.sbcVerified', '✓ SBC Verified') : t('lawyer.pendingVerification', 'Pending Verification')}
+              {lawyerProfile.isVerified ? t('lawyer.sbcVerified', 'SBC Verified') : t('lawyer.pendingVerification', 'Pending Verification')}
             </Text>
           </View>
         </View>

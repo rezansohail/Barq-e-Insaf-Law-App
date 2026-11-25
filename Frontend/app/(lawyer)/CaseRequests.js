@@ -30,6 +30,9 @@ import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTheme } from '../../context/ThemeContext';
 import { useAppTranslation } from '../../utils/translationHelper';
+import FingerSignaturePad from '../../components/FingerSignaturePad';
+import Svg, { Path, Rect } from 'react-native-svg';
+import { downloadConsultationCertificate } from '../../utils/certificateGenerator';
 
 const QUICK_REASONS = [
   'Schedule is currently full for new consultations.',
@@ -66,7 +69,8 @@ export default function CaseRequests() {
   const [slot1, setSlot1] = useState(DEFAULT_TIME_SLOTS[0]);
   const [slot2, setSlot2] = useState(DEFAULT_TIME_SLOTS[1]);
   const [slot3, setSlot3] = useState(DEFAULT_TIME_SLOTS[2]);
-  const [lawyerSig, setLawyerSig] = useState(lawyerProfile.name ? `${lawyerProfile.name} (Advocate SBC)` : 'Advocate Signed (SBC)');
+  const [lawyerDrawnPaths, setLawyerDrawnPaths] = useState([]);
+  const [downloadingCertId, setDownloadingCertId] = useState(null);
 
   // Full Screen Image Preview
   const [previewImageUri, setPreviewImageUri] = useState(null);
@@ -83,7 +87,7 @@ export default function CaseRequests() {
   // Open the Digital Representation Agreement Modal
   const openAcceptAgreementModal = (req) => {
     setAgreementTargetReq(req);
-    setLawyerSig(lawyerProfile.name ? `${lawyerProfile.name} (Advocate SBC)` : 'Advocate Signed (SBC)');
+    setLawyerDrawnPaths([]);
     setSlot1(DEFAULT_TIME_SLOTS[0]);
     setSlot2(DEFAULT_TIME_SLOTS[1]);
     setSlot3(DEFAULT_TIME_SLOTS[2]);
@@ -97,8 +101,8 @@ export default function CaseRequests() {
       Alert.alert('Time Slots Required', 'Please provide at least one consultation time slot for the client.');
       return;
     }
-    if (!lawyerSig.trim()) {
-      Alert.alert('Signature Required', 'Please enter your advocate digital signature.');
+    if (!lawyerDrawnPaths || lawyerDrawnPaths.length === 0) {
+      Alert.alert('Signature Required', 'Please draw your advocate digital signature on the pad using your finger.');
       return;
     }
 
@@ -109,15 +113,17 @@ export default function CaseRequests() {
         {
           agreementTerms: agreementTerms.trim(),
           timeSlots: slots,
-          lawyerSignature: lawyerSig.trim(),
+          lawyerSignature: lawyerProfile.name || 'Advocate Signed (SBC)',
+          lawyerSignatureSvg: lawyerDrawnPaths,
+          signedAt: new Date().toISOString(),
         },
         currentLawyerId
       );
       setAgreementModalVisible(false);
       setAgreementTargetReq(null);
       Alert.alert(
-        'Agreement Sent 📜',
-        'Your Digital Legal Representation Agreement and proposed time slots have been sent to the client. Once the client signs, your mutual contact details will be unlocked and booked!'
+        'Agreement Sent',
+        'Your Digital Legal Representation Agreement, proposed consultation timings, and finger-drawn signature have been sent to the client. Once the client confirms and signs, consultation booking will be completed.'
       );
     } catch (e) {
       Alert.alert('Error', e.response?.data?.message || e.message || 'Could not send agreement');
@@ -161,6 +167,31 @@ export default function CaseRequests() {
     });
   };
 
+  const handleDownloadCertificate = async (r) => {
+    try {
+      setDownloadingCertId(r.id);
+      await downloadConsultationCertificate({
+        caseData: {
+          id: r.caseId || r.id,
+          title: r.caseTitle || r.problemStatement || 'Legal Representation Matter',
+          district: r.district || lawyerProfile.district || 'Karachi',
+          court: r.court || 'District & Sessions Court',
+          citizenName: r.citizenName || r.name,
+        },
+        consultation: r,
+        lawyer: lawyerProfile,
+        citizen: {
+          name: r.citizenName || r.name,
+          phone: r.contact || r.citizenPhone,
+        },
+      });
+    } catch (err) {
+      // Handled in utility
+    } finally {
+      setDownloadingCertId(null);
+    }
+  };
+
   const dynamicStyles = {
     safe: {
       flex: 1,
@@ -188,13 +219,24 @@ export default function CaseRequests() {
     },
   };
 
+  const uniqueRequests = React.useMemo(() => {
+    const map = new Map();
+    (caseRequests || []).forEach((r, idx) => {
+      const key = r?.id ? String(r.id) : `req-${idx}`;
+      if (!map.has(key)) {
+        map.set(key, r);
+      }
+    });
+    return Array.from(map.values());
+  }, [caseRequests]);
+
   return (
     <SafeAreaView style={dynamicStyles.safe}>
       <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={isDark ? '#060201' : '#FAF7F2'} />
 
       {/* Top Header */}
       <AppHeader
-        title={`Requests (${caseRequests.length})`}
+        title={`Requests (${uniqueRequests.length})`}
         showBack={true}
         homeRoute="/(lawyer)/LawyerHome"
         role="lawyer"
@@ -205,8 +247,8 @@ export default function CaseRequests() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: 110 }]}
         showsVerticalScrollIndicator={false}
       >
-        {caseRequests.length > 0 ? (
-          caseRequests.map((r) => {
+        {uniqueRequests.length > 0 ? (
+          uniqueRequests.map((r) => {
             const evidence = Array.isArray(r.evidence) ? r.evidence : (Array.isArray(r.sharedEvidence) ? r.sharedEvidence : []);
             const isBooked = r.status === 'booked';
             const isAgreementSent = r.status === 'agreement_sent';
@@ -225,7 +267,7 @@ export default function CaseRequests() {
                       isAgreementSent && { backgroundColor: 'rgba(245,158,11,0.2)', borderColor: '#F59E0B', color: '#FBBF24' },
                     ]}
                   >
-                    {isBooked ? '✓ Booked' : isAgreementSent ? 'Agreement Sent' : 'Pending Review'}
+                    {isBooked ? 'Booked' : isAgreementSent ? 'Agreement Sent' : 'Pending Review'}
                   </Text>
                 </View>
 
@@ -241,49 +283,99 @@ export default function CaseRequests() {
                   </Text>
                 </View>
 
-                {/* Attached Evidence Photos / PDFs */}
-                {evidence.length > 0 && (
-                  <View style={styles.evidenceContainer}>
-                    <Text style={styles.evidenceLabel}>
-                      Attached Evidence Dossier ({evidence.length} {evidence.length === 1 ? 'item' : 'items'}):
+                {/* ── EVIDENCE VAULT PRIVACY & ENCRYPTION CONTROL ── */}
+                {!isBooked ? (
+                  // STATE A: REQUEST SENT / PENDING / AGREEMENT SENT -> EVIDENCE IS 100% HIDDEN FROM LAWYER
+                  <View style={styles.vaultEncryptedNoticeBox}>
+                    <View style={styles.vaultEncryptedHeader}>
+                      <View style={styles.vaultLockIconBadge}>
+                        <Svg width={13} height={13} viewBox="0 0 24 24" fill="none">
+                          <Rect x={3} y={11} width={18} height={11} rx={2} stroke="#FF9500" strokeWidth={2} />
+                          <Path d="M7 11V7a5 5 0 0110 0v4" stroke="#FF9500" strokeWidth={2} strokeLinecap="round" />
+                        </Svg>
+                      </View>
+                      <Text style={styles.vaultEncryptedTitle}>
+                        Evidence Vault Protected (Citizen Privacy)
+                      </Text>
+                    </View>
+                    <Text style={styles.vaultEncryptedDesc}>
+                      Evidence files remain encrypted in the citizen's vault. Only the grievance and person's name are visible during initial intake. Evidence access is unlocked only after the consultation agreement is signed and the citizen grants vault authorization.
                     </Text>
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.evidenceThumbRow}>
-                      {evidence.map((ev, idx) => {
-                        const fileUri = ev.uri || ev.fileUri;
-                        const isPhoto = ev.fileType === 'Photo' || ev.type === 'Photo' || (fileUri && !fileUri.toLowerCase().endsWith('.pdf'));
+                  </View>
+                ) : r.vaultAccessGranted ? (
+                  // STATE B: BOOKED & CITIZEN GRANTED VAULT PERMISSION -> DISPLAY DECRYPTED EVIDENCE
+                  evidence.length > 0 ? (
+                    <View style={styles.evidenceContainer}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                        <Text style={styles.evidenceLabel}>
+                          Client-Authorized Evidence Vault ({evidence.length} {evidence.length === 1 ? 'item' : 'items'}):
+                        </Text>
+                        <View style={{ backgroundColor: 'rgba(34, 197, 94, 0.18)', borderWidth: 1, borderColor: '#22C55E', borderRadius: 6, paddingHorizontal: 6, paddingVertical: 1.5 }}>
+                          <Text style={{ color: '#4ADE80', fontSize: 9, fontWeight: '800' }}>Decrypted</Text>
+                        </View>
+                      </View>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.evidenceThumbRow}>
+                        {evidence.map((ev, idx) => {
+                          const fileUri = ev.uri || ev.fileUri;
+                          const isPhoto = ev.fileType === 'Photo' || ev.type === 'Photo' || (fileUri && !fileUri.toLowerCase().endsWith('.pdf'));
 
-                        return (
-                          <TouchableOpacity
-                            key={ev.id || idx}
-                            style={styles.evidenceThumbCard}
-                            onPress={() => {
-                              if (isPhoto && fileUri) {
-                                setPreviewImageUri(fileUri);
-                              } else if (fileUri) {
-                                Linking.openURL(fileUri).catch(() => {
+                          return (
+                            <TouchableOpacity
+                              key={ev.id || idx}
+                              style={styles.evidenceThumbCard}
+                              onPress={() => {
+                                if (isPhoto && fileUri) {
+                                  setPreviewImageUri(fileUri);
+                                } else if (fileUri) {
+                                  Linking.openURL(fileUri).catch(() => {
+                                    Alert.alert('Evidence File', ev.title || 'Document');
+                                  });
+                                } else {
                                   Alert.alert('Evidence File', ev.title || 'Document');
-                                });
-                              } else {
-                                Alert.alert('Evidence File', ev.title || 'Document');
-                              }
-                            }}
-                          >
-                            {isPhoto && fileUri ? (
-                              <Image source={{ uri: fileUri }} style={styles.evidenceThumbImg} resizeMode="cover" />
-                            ) : (
-                              <View style={{ alignItems: 'center' }}>
-                                <View style={styles.evidencePdfBadge}>
-                                  <Text style={styles.evidencePdfText}>PDF</Text>
+                                }
+                              }}
+                            >
+                              {isPhoto && fileUri ? (
+                                <Image source={{ uri: fileUri }} style={styles.evidenceThumbImg} resizeMode="cover" />
+                              ) : (
+                                <View style={{ alignItems: 'center' }}>
+                                  <View style={styles.evidencePdfBadge}>
+                                    <Text style={styles.evidencePdfText}>PDF</Text>
+                                  </View>
+                                  <Text style={styles.evidenceThumbTitle} numberOfLines={1}>
+                                    {ev.title || 'Doc'}
+                                  </Text>
                                 </View>
-                                <Text style={styles.evidenceThumbTitle} numberOfLines={1}>
-                                  {ev.title || 'Doc'}
-                                </Text>
-                              </View>
-                            )}
-                          </TouchableOpacity>
-                        );
-                      })}
-                    </ScrollView>
+                              )}
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                    </View>
+                  ) : (
+                    <View style={styles.vaultEncryptedNoticeBox}>
+                      <Text style={styles.vaultEncryptedDesc}>
+                        No evidence files attached by client for this case.
+                      </Text>
+                    </View>
+                  )
+                ) : (
+                  // STATE C: BOOKED BUT CITIZEN HAS NOT GRANTED VAULT PERMISSION YET
+                  <View style={[styles.vaultEncryptedNoticeBox, { borderColor: 'rgba(245, 158, 11, 0.35)' }]}>
+                    <View style={styles.vaultEncryptedHeader}>
+                      <View style={styles.vaultLockIconBadge}>
+                        <Svg width={13} height={13} viewBox="0 0 24 24" fill="none">
+                          <Rect x={3} y={11} width={18} height={11} rx={2} stroke="#FFA726" strokeWidth={2} />
+                          <Path d="M7 11V7a5 5 0 0110 0v4" stroke="#FFA726" strokeWidth={2} strokeLinecap="round" />
+                        </Svg>
+                      </View>
+                      <Text style={styles.vaultEncryptedTitle}>
+                        Evidence Vault Awaiting Client Permission
+                      </Text>
+                    </View>
+                    <Text style={styles.vaultEncryptedDesc}>
+                      Consultation retainer confirmed. Evidence files remain encrypted in the client's vault until authorized by the citizen from their dashboard.
+                    </Text>
                   </View>
                 )}
 
@@ -292,7 +384,7 @@ export default function CaseRequests() {
                   <View style={styles.confirmedClientCard}>
                     <View style={styles.confirmedClientHeader}>
                       <View style={styles.confirmedClientBadge}>
-                        <Text style={styles.confirmedClientBadgeText}>✓ Consultation Confirmed</Text>
+                        <Text style={styles.confirmedClientBadgeText}>Consultation Confirmed</Text>
                       </View>
                       <Text style={{ fontSize: 11, color: '#4ADE80', fontWeight: '700' }}>
                         Retainer Signed & Sealed
@@ -301,8 +393,72 @@ export default function CaseRequests() {
 
                     <Text style={styles.confirmedClientName}>Client: {r.citizenName || r.name}</Text>
                     <Text style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.7)' }}>
-                      🗓️ Consultation Slot: {r.appointmentTime || '10:30 AM'}
+                      Consultation Slot: {r.appointmentTime || '10:30 AM'}
                     </Text>
+
+                    {/* Bilateral Finger Signatures Display */}
+                    <View style={{ marginTop: 10, paddingTop: 8, borderTopWidth: 1, borderTopColor: 'rgba(34, 197, 94, 0.25)' }}>
+                      <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#4ADE80', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
+                        Confirmed Digital Signatures
+                      </Text>
+                      <View style={{ flexDirection: 'row', gap: 8 }}>
+                        {/* Advocate Signature */}
+                        <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.45)', borderRadius: 8, padding: 6, borderWidth: 1, borderColor: 'rgba(255, 167, 38, 0.35)' }}>
+                          <Text style={{ fontSize: 9, fontWeight: '700', color: '#FFA726', marginBottom: 2 }}>
+                            Counsel Signature
+                          </Text>
+                          {Array.isArray(r.lawyerSignatureSvg) && r.lawyerSignatureSvg.length > 0 ? (
+                            <View style={{ height: 35, width: '100%', justifyContent: 'center' }}>
+                              <Svg width="100%" height={32}>
+                                {r.lawyerSignatureSvg.map((p, idx) => (
+                                  <Path
+                                    key={`lawyer-sig-${idx}`}
+                                    d={p}
+                                    stroke="#FFA726"
+                                    strokeWidth={2}
+                                    fill="none"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                ))}
+                              </Svg>
+                            </View>
+                          ) : (
+                            <Text style={{ fontSize: 11, fontStyle: 'italic', color: '#FFA726', marginVertical: 4 }}>
+                              {r.lawyerSignature || lawyerProfile.name || 'Advocate Signed'}
+                            </Text>
+                          )}
+                        </View>
+
+                        {/* Citizen Signature */}
+                        <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.45)', borderRadius: 8, padding: 6, borderWidth: 1, borderColor: 'rgba(74, 222, 128, 0.35)' }}>
+                          <Text style={{ fontSize: 9, fontWeight: '700', color: '#4ADE80', marginBottom: 2 }}>
+                            Citizen Signature
+                          </Text>
+                          {Array.isArray(r.citizenSignatureSvg) && r.citizenSignatureSvg.length > 0 ? (
+                            <View style={{ height: 35, width: '100%', justifyContent: 'center' }}>
+                              <Svg width="100%" height={32}>
+                                {r.citizenSignatureSvg.map((p, idx) => (
+                                  <Path
+                                    key={`citizen-sig-${idx}`}
+                                    d={p}
+                                    stroke="#4ADE80"
+                                    strokeWidth={2}
+                                    fill="none"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                  />
+                                ))}
+                              </Svg>
+                            </View>
+                          ) : (
+                            <Text style={{ fontSize: 11, fontStyle: 'italic', color: '#4ADE80', marginVertical: 4 }}>
+                              {r.citizenSignature || r.citizenName || 'Citizen Signed'}
+                            </Text>
+                          )}
+                        </View>
+                      </View>
+                    </View>
 
                     <View style={styles.confirmedClientPhoneRow}>
                       <View>
@@ -317,14 +473,30 @@ export default function CaseRequests() {
                         style={styles.callClientBtn}
                         onPress={() => handleCallClient(r.contact || r.citizenPhone)}
                       >
-                        <Text style={styles.callClientBtnText}>📞 Call Client</Text>
+                        <Text style={styles.callClientBtnText}>Call Client</Text>
                       </TouchableOpacity>
                     </View>
+
+                    {/* Download Formal Legal Certificate Button */}
+                    <TouchableOpacity
+                      style={styles.downloadCertBtn}
+                      onPress={() => handleDownloadCertificate(r)}
+                      disabled={downloadingCertId === r.id}
+                      activeOpacity={0.85}
+                    >
+                      {downloadingCertId === r.id ? (
+                        <ActivityIndicator size="small" color="#0A0502" />
+                      ) : (
+                        <Text style={styles.downloadCertBtnText}>
+                          Download Legal Certificate (PDF)
+                        </Text>
+                      )}
+                    </TouchableOpacity>
                   </View>
                 ) : isAgreementSent ? (
                   /* ── STATE 2: AGREEMENT SENT BANNER ── */
                   <View style={styles.agreementSentBanner}>
-                    <Text style={styles.agreementSentTitle}>📜 Digital Agreement Sent to Client</Text>
+                    <Text style={styles.agreementSentTitle}>Digital Agreement Sent to Client</Text>
                     <Text style={styles.agreementSentText}>
                       You have proposed {r.timeSlots && r.timeSlots.length > 0 ? r.timeSlots.join(', ') : 'consultation slots'}. Awaiting client digital signature to confirm booking and unlock direct phone line.
                     </Text>
@@ -344,7 +516,7 @@ export default function CaseRequests() {
                         onPress={() => openAcceptAgreementModal(r)}
                         disabled={actionInProgress}
                       >
-                        <Text style={styles.acceptText}>Accept & Propose Agreement ⚖️</Text>
+                        <Text style={styles.acceptText}>Accept & Propose Agreement</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={[styles.declineBtn, actionInProgress && { opacity: 0.6 }]}
@@ -420,12 +592,15 @@ export default function CaseRequests() {
               placeholder="Slot 3 (e.g. Next Working Day 11:00 AM)"
             />
 
-            <Text style={modalStyles.sectionLabel}>Advocate Digital Signature *</Text>
-            <TextInput
-              style={[modalStyles.input, { minHeight: 38, marginBottom: 16 }]}
-              value={lawyerSig}
-              onChangeText={setLawyerSig}
-              placeholder="e.g. Advocate Tariq Hassan (SBC Verified)"
+            <Text style={modalStyles.sectionLabel}>Advocate Digital Finger Signature *</Text>
+            <Text style={{ fontSize: 11, color: 'rgba(255,235,215,0.7)', marginBottom: 4 }}>
+              Sign with your finger below to seal this representation proposal:
+            </Text>
+            <FingerSignaturePad
+              signerRole="Advocate"
+              signerName={lawyerProfile.name || 'Advocate'}
+              onSignatureChange={setLawyerDrawnPaths}
+              height={130}
             />
 
             <View style={modalStyles.btnRow}>
@@ -443,10 +618,10 @@ export default function CaseRequests() {
                 disabled={actionInProgress}
               >
                 {actionInProgress ? (
-                  <ActivityIndicator color="#fff" size="small" />
+                  <ActivityIndicator color="#0A0502" size="small" />
                 ) : (
                   <Text style={[modalStyles.confirmDeclineText, { color: '#0A0502' }]}>
-                    Sign & Send Agreement ✍️
+                    Sign & Send Agreement
                   </Text>
                 )}
               </TouchableOpacity>
@@ -537,7 +712,7 @@ export default function CaseRequests() {
             style={styles.fullImageCloseBtn}
             onPress={() => setPreviewImageUri(null)}
           >
-            <Text style={styles.fullImageCloseText}>✕ Close</Text>
+            <Text style={styles.fullImageCloseText}>Close</Text>
           </TouchableOpacity>
           {previewImageUri && (
             <Image source={{ uri: previewImageUri }} style={styles.fullImage} />

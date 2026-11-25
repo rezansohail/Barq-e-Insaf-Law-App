@@ -2,6 +2,7 @@ const RegisterMediaDTO = require('../dto/RegisterMediaDTO');
 const LoginMediaDTO = require('../dto/LoginMediaDTO');
 const CreateMediaStoryDTO = require('../dto/CreateMediaStoryDTO');
 const mediaService = require('../services/mediaServiceImpl');
+const { triggerTranslate } = require('../utils/triggerTranslate');
 
 /**
  * Controller for Media Partner Endpoints
@@ -13,6 +14,8 @@ const registerMedia = async (req, res) => {
   try {
     const dto = new RegisterMediaDTO(req.body);
     const result = await mediaService.registerMedia(dto);
+    // Auto-trigger translation for new Media account
+    triggerTranslate(req.body);
     return res.status(201).json({
       success: true,
       ...result,

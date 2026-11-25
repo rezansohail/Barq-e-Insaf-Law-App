@@ -106,11 +106,17 @@ export default function MediaExportReports() {
     }, 1200);
   };
 
-  const safeBg = isDarkMode ? '#13131A' : '#FAF8F5';
+  const { isDark } = useAppTheme();
+  const safeBg = isDark ? '#080402' : '#FAF7F2';
+  const cardBg = isDark ? 'rgba(34, 16, 12, 0.95)' : '#FFFFFF';
+  const cardBorder = isDark ? 'rgba(245, 158, 11, 0.40)' : 'rgba(255, 149, 0, 0.20)';
+  const textPrimary = isDark ? '#FFF5E8' : '#1A0F07';
+  const textSecondary = isDark ? 'rgba(255, 235, 215, 0.75)' : '#664530';
+  const optionBg = isDark ? 'rgba(26, 12, 5, 0.85)' : '#F2ECE4';
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: safeBg }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={safeBg} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor={safeBg} />
 
       <AppHeader
         title="Export Press Briefs"
@@ -124,29 +130,29 @@ export default function MediaExportReports() {
           <View style={{ backgroundColor: 'rgba(16, 185, 129, 0.14)', borderColor: '#10B981', borderWidth: 1.2, borderRadius: 14, padding: 14, marginBottom: 14 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <Text style={{ color: '#10B981', fontSize: 13, fontWeight: '800' }}>
-                ✓ {downloadSuccess.format} Downloaded Directly
+                {downloadSuccess.format} Downloaded Directly
               </Text>
               <Text style={{ color: '#6EE7B7', fontSize: 10, fontWeight: '700' }}>
                 {downloadSuccess.timestamp} PKT
               </Text>
             </View>
-            <Text style={{ color: '#FFFFFF', fontSize: 11.5, fontWeight: '700', marginTop: 6 }}>
+            <Text style={{ color: textPrimary, fontSize: 11.5, fontWeight: '700', marginTop: 6 }}>
               {downloadSuccess.reportId}
             </Text>
-            <Text style={{ color: 'rgba(255, 235, 215, 0.7)', fontSize: 10.5, marginTop: 2 }}>
+            <Text style={{ color: textSecondary, fontSize: 10.5, marginTop: 2 }}>
               1-Page Official Judicial Press Packet saved directly to your device.
             </Text>
             <TouchableOpacity
               style={{ marginTop: 8, alignSelf: 'flex-start', paddingVertical: 4, paddingHorizontal: 8, backgroundColor: 'rgba(16, 185, 129, 0.25)', borderRadius: 6 }}
               onPress={handleDirectDownload}
             >
-              <Text style={{ color: '#10B981', fontSize: 10.5, fontWeight: '800' }}>⬇ Re-Download File</Text>
+              <Text style={{ color: '#10B981', fontSize: 10.5, fontWeight: '800' }}>Re-Download File</Text>
             </TouchableOpacity>
           </View>
         )}
-        <View style={[styles.card, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.94)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
-          <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Select Output Format</Text>
-          <Text style={[styles.cardSub, { color: isDarkMode ? 'rgba(255, 235, 215, 0.7)' : '#664530' }]}>
+        <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+          <Text style={[styles.cardTitle, { color: textPrimary }]}>Select Output Format</Text>
+          <Text style={[styles.cardSub, { color: textSecondary }]}>
             Choose compilation standard for news dissemination
           </Text>
 
@@ -155,7 +161,7 @@ export default function MediaExportReports() {
               key={fmt.id}
               style={[
                 styles.formatOption,
-                { backgroundColor: isDarkMode ? 'rgba(16, 8, 4, 0.92)' : '#F5F1E9' },
+                { backgroundColor: optionBg },
                 selectedFormat === fmt.id && styles.formatOptionActive,
               ]}
               onPress={() => setSelectedFormat(fmt.id)}
@@ -164,16 +170,16 @@ export default function MediaExportReports() {
                 <Text style={styles.formatIconText}>{fmt.icon}</Text>
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={[styles.formatLabel, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>{fmt.label}</Text>
-                <Text style={[styles.formatDesc, { color: isDarkMode ? 'rgba(255, 235, 215, 0.65)' : '#664530' }]}>{fmt.desc}</Text>
+                <Text style={[styles.formatLabel, { color: textPrimary }]}>{fmt.label}</Text>
+                <Text style={[styles.formatDesc, { color: textSecondary }]}>{fmt.desc}</Text>
               </View>
             </TouchableOpacity>
           ))}
         </View>
 
         {/* Verification Checkboxes */}
-        <View style={[styles.card, { backgroundColor: isDarkMode ? 'rgba(28, 14, 6, 0.94)' : '#FFFFFF', borderColor: isDarkMode ? 'rgba(255, 160, 40, 0.35)' : 'rgba(234, 88, 12, 0.25)' }]}>
-          <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>Editorial Compliance</Text>
+        <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+          <Text style={[styles.cardTitle, { color: textPrimary }]}>Editorial Compliance</Text>
 
           <TouchableOpacity
             style={styles.checkRow}
@@ -182,7 +188,7 @@ export default function MediaExportReports() {
             <View style={[styles.checkbox, includeBiometric && styles.checkboxActive]}>
               {includeBiometric && <View style={styles.checkInner} />}
             </View>
-            <Text style={[styles.checkLabel, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+            <Text style={[styles.checkLabel, { color: textPrimary }]}>
               Anonymize All Litigant Personal Identifiers
             </Text>
           </TouchableOpacity>
@@ -194,7 +200,7 @@ export default function MediaExportReports() {
             <View style={[styles.checkbox, includeKTN && styles.checkboxActive]}>
               {includeKTN && <View style={styles.checkInner} />}
             </View>
-            <Text style={[styles.checkLabel, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+            <Text style={[styles.checkLabel, { color: textPrimary }]}>
               Embed KTN News Editorial Verification Seal
             </Text>
           </TouchableOpacity>
@@ -202,9 +208,10 @@ export default function MediaExportReports() {
 
         <View style={styles.actionBox}>
           <LiquidGlassButton
-            title={generating ? t('media.downloadingPdf', 'DOWNLOADING PRESS PACKET...') : t('media.downloadPdfDirectly', '⬇ DOWNLOAD OFFICIAL PDF DIRECTLY')}
+            title={generating ? t('media.downloadingPdf', 'DOWNLOADING PRESS PACKET...') : t('media.downloadPdfDirectly', 'DOWNLOAD OFFICIAL PDF DIRECTLY')}
             onPress={handleDirectDownload}
             disabled={generating}
+            variant="amber"
           />
         </View>
       </ScrollView>

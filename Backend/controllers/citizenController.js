@@ -1,6 +1,7 @@
 const RegisterCitizenDTO = require('../dto/RegisterCitizenDTO');
 const LoginCitizenDTO = require('../dto/LoginCitizenDTO');
 const citizenService = require('../services/citizenServiceImpl');
+const { triggerTranslate } = require('../utils/triggerTranslate');
 
 /**
  * Controller for Citizen Endpoints
@@ -12,6 +13,8 @@ const registerCitizen = async (req, res) => {
   try {
     const dto = new RegisterCitizenDTO(req.body);
     const result = await citizenService.registerCitizen(dto);
+    // Auto-trigger translation for the newly created citizen account
+    triggerTranslate(req.body);
     return res.status(201).json({
       success: true,
       ...result,
@@ -112,6 +115,8 @@ const getCitizenCases = async (req, res) => {
 const createCitizenCase = async (req, res) => {
   try {
     const result = await citizenService.createCitizenCase(req.params.id, req.body);
+    // Auto-trigger translation for new case record
+    triggerTranslate(req.body);
     return res.status(201).json({
       success: true,
       ...result,

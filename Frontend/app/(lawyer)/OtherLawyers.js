@@ -38,14 +38,14 @@ export default function OtherLawyers() {
   const dynamicStyles = {
     safe: {
       flex: 1,
-      backgroundColor: isDark ? '#060201' : '#FAF7F2',
+      backgroundColor: theme.bg,
     },
     lawyerCard: {
-      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
-      borderColor: isDark ? 'rgba(255, 149, 0, 0.28)' : 'rgba(255, 149, 0, 0.20)',
+      backgroundColor: theme.card,
+      borderColor: theme.cardBorder,
     },
     lawyerName: {
-      color: isDark ? '#FFFFFF' : '#1A0F07',
+      color: theme.textPrimary,
     },
     casesText: {
       fontSize: 12,
@@ -54,33 +54,33 @@ export default function OtherLawyers() {
       marginTop: 3,
     },
     statusText: {
-      color: isDark ? 'rgba(255, 235, 215, 0.7)' : '#665544',
+      color: theme.textMuted,
     },
     modalContent: {
-      backgroundColor: isDark ? '#140A04' : '#FFFFFF',
-      borderColor: isDark ? 'rgba(255, 160, 40, 0.35)' : 'rgba(255, 149, 0, 0.25)',
+      backgroundColor: theme.headerBg,
+      borderColor: theme.cardBorder,
     },
     modalName: {
-      color: isDark ? '#FFFFFF' : '#1A0F07',
+      color: theme.textPrimary,
     },
     detailCard: {
-      backgroundColor: isDark ? 'rgba(28, 14, 6, 0.85)' : '#F5EBE1',
-      borderColor: isDark ? 'rgba(255, 149, 0, 0.25)' : 'rgba(255, 149, 0, 0.15)',
+      backgroundColor: theme.surface,
+      borderColor: theme.surfaceBorder,
     },
     detailLabel: {
-      color: isDark ? '#FF9500' : '#D97706',
+      color: '#FF9500',
     },
     detailValue: {
-      color: isDark ? '#FFFFFF' : '#1A0F07',
+      color: theme.textPrimary,
     },
     aboutText: {
-      color: isDark ? 'rgba(255, 235, 215, 0.85)' : '#332211',
+      color: theme.textSecondary,
     },
   };
 
   return (
     <SafeAreaView style={dynamicStyles.safe}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} backgroundColor={isDark ? "#060201" : "#FAF7F2"} />
+      <StatusBar barStyle={theme.statusBarStyle} backgroundColor={theme.statusBarBg} />
       
       <AppHeader 
         title="Peer Advocates" 

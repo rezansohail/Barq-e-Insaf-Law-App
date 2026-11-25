@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const { triggerTranslate } = require('../utils/triggerTranslate');
 
 // POST /api/cases
 const createCase = async (req, res) => {
@@ -11,6 +12,9 @@ const createCase = async (req, res) => {
        RETURNING *`,
       [req.user.id, title, type, description, district, court]
     );
+
+    // Auto-trigger translation for new case record
+    triggerTranslate(req.body);
 
     res.status(201).json(rows[0]);
   } catch (error) {

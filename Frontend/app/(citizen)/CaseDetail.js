@@ -19,6 +19,10 @@ import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
 import * as DocumentPicker from 'expo-document-picker';
 import styles from './CaseDetail.styles';
+import Svg, { Path, Rect } from 'react-native-svg';
+import FingerSignaturePad from '../../components/FingerSignaturePad';
+import { downloadConsultationCertificate } from '../../utils/certificateGenerator';
+import safeStorage from '../../services/safeStorage';
 import {
   useMockStore,
   activeCases,
@@ -29,6 +33,7 @@ import {
   consultationRequests,
   requestConsultation,
   signConsultationAgreement,
+  setVaultAccessPermission,
   requestNgoAidForCase,
   requestMediaCoverageForCase,
   userData,
@@ -98,7 +103,44 @@ export default function CaseDetail() {
   const [showAgreementModal, setShowAgreementModal] = useState(false);
   const [selectedTimeSlot, setSelectedTimeSlot] = useState('');
   const [citizenSignature, setCitizenSignature] = useState(userData.name || 'Citizen Signed');
+  const [citizenDrawnPaths, setCitizenDrawnPaths] = useState([]);
   const [isSigningAgreement, setIsSigningAgreement] = useState(false);
+  const [isDownloadingCert, setIsDownloadingCert] = useState(false);
+
+  // Evidence Vault Permission State (Allows lawyer to view decrypted vault files after booking)
+  const [isVaultAccessGranted, setIsVaultAccessGranted] = useState(
+    Boolean(activeConsultation?.vaultAccessGranted || caseData?.vaultAccessGranted)
+  );
+
+  useEffect(() => {
+    let isMounted = true;
+    const consultId = activeConsultation?.id;
+    if (consultId) {
+      safeStorage.getItem(`@barqeinsaf_vault_access_${consultId}`).then((val) => {
+        if (isMounted && val !== null) {
+          setIsVaultAccessGranted(val === 'true');
+        }
+      });
+    } else if (caseId) {
+      safeStorage.getItem(`@barqeinsaf_vault_access_case_${caseId}`).then((val) => {
+        if (isMounted && val !== null) {
+          setIsVaultAccessGranted(val === 'true');
+        }
+      });
+    }
+    return () => { isMounted = false; };
+  }, [activeConsultation?.id, caseId]);
+
+  const handleToggleVaultAccess = async (newValue) => {
+    setIsVaultAccessGranted(newValue);
+    await setVaultAccessPermission(activeConsultation?.id, caseId, newValue);
+    Alert.alert(
+      newValue ? 'Evidence Vault Authorized' : 'Evidence Vault Locked',
+      newValue
+        ? 'Your advocate has been granted authorization to review your case evidence files.'
+        : 'Your evidence files are now encrypted and private. Your advocate cannot view evidence files.'
+    );
+  };
 
   // Advocate Selector Modal states (to request consultation for this case)
   const [showLawyerSelectModal, setShowLawyerSelectModal] = useState(false);
@@ -290,6 +332,7 @@ export default function CaseDetail() {
     const slots = activeConsultation?.timeSlots || ['Tomorrow 10:30 AM', 'Tomorrow 02:30 PM', 'Next Working Day 11:00 AM'];
     setSelectedTimeSlot(slots[0]);
     setCitizenSignature(userData.name || 'Citizen Signed');
+    setCitizenDrawnPaths([]);
     setShowAgreementModal(true);
   };
 
@@ -298,23 +341,45 @@ export default function CaseDetail() {
       Alert.alert('Slot Required', 'Please choose your preferred consultation time slot.');
       return;
     }
-    if (!citizenSignature.trim()) {
-      Alert.alert('Signature Required', 'Please enter your digital signature to confirm booking.');
+    if (!citizenDrawnPaths || citizenDrawnPaths.length === 0) {
+      Alert.alert('Signature Required', 'Please draw your digital signature with your finger on the pad to confirm booking.');
       return;
     }
 
     try {
       setIsSigningAgreement(true);
-      await signConsultationAgreement(activeConsultation.id, selectedTimeSlot, citizenSignature.trim());
+      await signConsultationAgreement(
+        activeConsultation.id,
+        selectedTimeSlot,
+        citizenSignature.trim() || userData.name || 'Citizen Signed',
+        citizenDrawnPaths
+      );
       setShowAgreementModal(false);
       Alert.alert(
-        'Agreement Confirmed & Booked! ⚖️',
-        `Your legal consultation with ${assignedLawyer?.name || 'your Advocate'} is officially booked for ${selectedTimeSlot}. Contact details are now unlocked!`
+        'Agreement Confirmed & Booked',
+        `Your legal consultation with ${assignedLawyer?.name || 'your Advocate'} is officially booked for ${selectedTimeSlot}. Contact details are now unlocked.`
       );
     } catch (e) {
       Alert.alert('Error', 'Could not sign agreement: ' + e.message);
     } finally {
       setIsSigningAgreement(false);
+    }
+  };
+
+  const handleDownloadCertificate = async () => {
+    if (!activeConsultation) return;
+    try {
+      setIsDownloadingCert(true);
+      await downloadConsultationCertificate({
+        caseData,
+        consultation: activeConsultation,
+        lawyer: assignedLawyer || { name: activeConsultation.lawyerName },
+        citizen: userData,
+      });
+    } catch (e) {
+      // Handled in utility
+    } finally {
+      setIsDownloadingCert(false);
     }
   };
 
@@ -471,7 +536,7 @@ export default function CaseDetail() {
           <View style={styles.confirmedAdvocateCard}>
             <View style={styles.confirmedBadgeRow}>
               <View style={styles.verifiedShield}>
-                <Text style={styles.verifiedShieldText}>✓ Official Legal Representation</Text>
+                <Text style={styles.verifiedShieldText}>Official Legal Representation</Text>
               </View>
               <Text style={{ color: '#4ADE80', fontSize: 11, fontWeight: '700' }}>Confirmed & Sealed</Text>
             </View>
@@ -486,8 +551,78 @@ export default function CaseDetail() {
             <View style={styles.confirmedSlotBox}>
               <Text style={styles.confirmedSlotLabel}>Confirmed Consultation Window</Text>
               <Text style={styles.confirmedSlotValue}>
-                🗓️ {activeConsultation.appointmentTime || activeConsultation.appointmentDate || 'Tomorrow 10:30 AM'}
+                {activeConsultation.appointmentTime || activeConsultation.appointmentDate || 'Tomorrow 10:30 AM'}
               </Text>
+            </View>
+
+            {/* Bilateral Digital Finger Signatures Display */}
+            <View style={{ marginVertical: 8, paddingTop: 8, borderTopWidth: 1, borderTopColor: 'rgba(34, 197, 94, 0.25)' }}>
+              <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#4ADE80', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 6 }}>
+                Confirmed Digital Signatures
+              </Text>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                {/* Lawyer Signature Box */}
+                <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.45)', borderRadius: 8, padding: 6, borderWidth: 1, borderColor: 'rgba(255, 167, 38, 0.35)' }}>
+                  <Text style={{ fontSize: 9, fontWeight: '700', color: '#FFA726', marginBottom: 2 }}>
+                    Advocate Signature
+                  </Text>
+                  {Array.isArray(activeConsultation.lawyerSignatureSvg) && activeConsultation.lawyerSignatureSvg.length > 0 ? (
+                    <View style={{ height: 35, width: '100%', justifyContent: 'center' }}>
+                      <Svg width="100%" height={32}>
+                        {activeConsultation.lawyerSignatureSvg.map((p, idx) => (
+                          <Path
+                            key={`citizen-view-lawyer-sig-${idx}`}
+                            d={p}
+                            stroke="#FFA726"
+                            strokeWidth={2}
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        ))}
+                      </Svg>
+                    </View>
+                  ) : (
+                    <Text style={{ fontSize: 11, fontStyle: 'italic', color: '#FFA726', marginVertical: 4 }}>
+                      {activeConsultation.lawyerSignature || assignedLawyer?.name || 'Advocate Signed'}
+                    </Text>
+                  )}
+                  <Text style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+                    {assignedLawyer ? translateLawyerName(assignedLawyer.name) : 'Verified Counsel'}
+                  </Text>
+                </View>
+
+                {/* Citizen Signature Box */}
+                <View style={{ flex: 1, backgroundColor: 'rgba(0, 0, 0, 0.45)', borderRadius: 8, padding: 6, borderWidth: 1, borderColor: 'rgba(74, 222, 128, 0.35)' }}>
+                  <Text style={{ fontSize: 9, fontWeight: '700', color: '#4ADE80', marginBottom: 2 }}>
+                    Citizen Signature
+                  </Text>
+                  {Array.isArray(activeConsultation.citizenSignatureSvg) && activeConsultation.citizenSignatureSvg.length > 0 ? (
+                    <View style={{ height: 35, width: '100%', justifyContent: 'center' }}>
+                      <Svg width="100%" height={32}>
+                        {activeConsultation.citizenSignatureSvg.map((p, idx) => (
+                          <Path
+                            key={`citizen-view-own-sig-${idx}`}
+                            d={p}
+                            stroke="#4ADE80"
+                            strokeWidth={2}
+                            fill="none"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          />
+                        ))}
+                      </Svg>
+                    </View>
+                  ) : (
+                    <Text style={{ fontSize: 11, fontStyle: 'italic', color: '#4ADE80', marginVertical: 4 }}>
+                      {activeConsultation.citizenSignature || userData.name || 'Citizen Signed'}
+                    </Text>
+                  )}
+                  <Text style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.5)', marginTop: 2 }}>
+                    {userData.name || 'Citizen Client'}
+                  </Text>
+                </View>
+              </View>
             </View>
 
             <View style={styles.confirmedPhoneRow}>
@@ -501,21 +636,70 @@ export default function CaseDetail() {
                 style={styles.callBtnSmall}
                 onPress={() => handleCallLawyer(assignedLawyer?.phone || activeConsultation.lawyerPhone || '+923001234567')}
               >
-                <Text style={styles.callBtnSmallText}>📞 Call Advocate</Text>
+                <Text style={styles.callBtnSmallText}>Call Advocate</Text>
               </TouchableOpacity>
             </View>
 
             <View style={{ marginTop: 10, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Text style={{ fontSize: 11, color: 'rgba(255,255,255,0.7)' }}>
-                📍 Chamber: {assignedLawyer?.district || caseData.district || 'Karachi'} Bar Association Chambers
+                Chamber: {assignedLawyer?.district || caseData.district || 'Karachi'} Bar Association Chambers
               </Text>
             </View>
+
+            {/* EVIDENCE VAULT ACCESS PERMISSION CONTROL */}
+            <View style={styles.vaultAccessControlBox}>
+              <View style={styles.vaultAccessControlHeader}>
+                <View style={styles.vaultAccessControlIcon}>
+                  <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                    <Rect x={3} y={11} width={18} height={11} rx={2} stroke={isVaultAccessGranted ? "#4ADE80" : "#FFA726"} strokeWidth={2} />
+                    <Path d={isVaultAccessGranted ? "M7 11V7a5 5 0 0110 0v4" : "M7 11V7a5 5 0 019.9-1"} stroke={isVaultAccessGranted ? "#4ADE80" : "#FFA726"} strokeWidth={2} strokeLinecap="round" />
+                  </Svg>
+                </View>
+                <View style={{ flex: 1, marginLeft: 10 }}>
+                  <Text style={styles.vaultAccessControlTitle}>
+                    Allow Advocate Evidence Vault Access
+                  </Text>
+                  <Text style={styles.vaultAccessControlSub}>
+                    {isVaultAccessGranted
+                      ? 'Authorized: Advocate can inspect your evidence files'
+                      : 'Encrypted & Private: Advocate cannot view your files'}
+                  </Text>
+                </View>
+                <Switch
+                  value={isVaultAccessGranted}
+                  onValueChange={handleToggleVaultAccess}
+                  trackColor={{ false: 'rgba(255,255,255,0.2)', true: 'rgba(34,197,94,0.45)' }}
+                  thumbColor={isVaultAccessGranted ? '#4ADE80' : '#FF9500'}
+                />
+              </View>
+              <Text style={styles.vaultAccessExplain}>
+                {isVaultAccessGranted
+                  ? 'Your advocate is authorized to decrypt and examine the attached evidence files.'
+                  : 'Files remain encrypted in your private vault. Toggle ON to allow your advocate to view evidence.'}
+              </Text>
+            </View>
+
+            {/* Download Formal Legal Certificate Button */}
+            <TouchableOpacity
+              style={styles.downloadCertBtn}
+              onPress={handleDownloadCertificate}
+              disabled={isDownloadingCert}
+              activeOpacity={0.85}
+            >
+              {isDownloadingCert ? (
+                <ActivityIndicator size="small" color="#0A0502" />
+              ) : (
+                <Text style={styles.downloadCertBtnText}>
+                  Download Legal Certificate (PDF)
+                </Text>
+              )}
+            </TouchableOpacity>
           </View>
         ) : activeConsultation?.status === 'agreement_sent' ? (
           // STATE 2: LAWYER SIGNED & SENT AGREEMENT TO CITIZEN -> CITIZEN MUST REVIEW & SIGN
           <View style={styles.agreementNoticeBanner}>
             <Text style={styles.agreementNoticeTitle}>
-              📜 Advocate Has Accepted & Sent Digital Agreement!
+              Advocate Has Accepted & Sent Digital Agreement
             </Text>
             <Text style={styles.agreementNoticeText}>
               {assignedLawyer ? translateLawyerName(assignedLawyer.name) : 'Your selected Advocate'} has reviewed your case dossier, signed the representation retainer, and offered consultation time slots.
@@ -525,34 +709,34 @@ export default function CaseDetail() {
               onPress={handleOpenAgreementModal}
               activeOpacity={0.85}
             >
-              <Text style={styles.reviewAgreementBtnText}>Review & Sign Agreement ✍️</Text>
+              <Text style={styles.reviewAgreementBtnText}>Review & Sign Agreement</Text>
             </TouchableOpacity>
           </View>
         ) : activeConsultation?.status === 'pending' ? (
           // STATE 3: CONSULTATION REQUEST PENDING REVIEW BY LAWYER
           <View style={[styles.consultBanner, { borderColor: 'rgba(255, 149, 0, 0.40)' }]}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-              <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFA726' }}>⏳ Consultation Dossier Under Review</Text>
+              <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFA726' }}>Consultation Dossier Under Review</Text>
             </View>
             <Text style={{ fontSize: 12, color: 'rgba(255,235,215,0.85)', lineHeight: 17 }}>
-              Your case details and evidence have been sent to {assignedLawyer ? translateLawyerName(assignedLawyer.name) : 'the advocate'}. Waiting for counsel to review your evidence and send the digital agreement.
+              Your case summary and grievance have been sent to {assignedLawyer ? translateLawyerName(assignedLawyer.name) : 'the advocate'}. Waiting for counsel to propose consultation timings. Your evidence files remain encrypted and private in your vault.
             </Text>
           </View>
         ) : (
           // STATE 4: NO CONSULTATION REQUESTED YET -> "REQUEST LEGAL CONSULTATION" BUTTON
           <View style={styles.consultBanner}>
             <Text style={{ fontSize: 14.5, fontWeight: '900', color: '#FFFFFF', marginBottom: 4 }}>
-              ⚖️ Request Legal Consultation
+              Request Legal Consultation
             </Text>
             <Text style={{ fontSize: 12, color: 'rgba(255, 235, 215, 0.85)', lineHeight: 17, marginBottom: 12 }}>
-              Send this case dossier and attached evidence to an accredited Sindh Bar Council advocate for official legal representation.
+              Send this case summary to an accredited Sindh Bar Council advocate for legal representation. Your evidence files remain encrypted in your private vault.
             </Text>
             <TouchableOpacity
               style={styles.reviewAgreementBtn}
               onPress={handleOpenLawyerModal}
               activeOpacity={0.85}
             >
-              <Text style={styles.reviewAgreementBtnText}>Select Advocate & Send Dossier →</Text>
+              <Text style={styles.reviewAgreementBtnText}>Select Advocate & Send Request</Text>
             </TouchableOpacity>
           </View>
         )}
@@ -613,7 +797,7 @@ export default function CaseDetail() {
                         style={styles.deleteEvidenceBtn}
                         onPress={() => handleRemoveEvidence(index)}
                       >
-                        <Text style={styles.deleteEvidenceBtnText}>✕</Text>
+                        <Text style={styles.deleteEvidenceBtnText}>X</Text>
                       </TouchableOpacity>
                     )}
 
@@ -699,7 +883,7 @@ export default function CaseDetail() {
             activeOpacity={0.8}
           >
             <Text style={styles.ngoRequestBtnText}>
-              {caseData.ngoRequested ? '✓ NCHD Legal Aid Requested' : '🛡️ Request NCHD Legal Aid'}
+              {caseData.ngoRequested ? 'NCHD Legal Aid Requested' : 'Request NCHD Legal Aid'}
             </Text>
           </TouchableOpacity>
 
@@ -783,7 +967,7 @@ export default function CaseDetail() {
             style={styles.fullImageCloseBtn}
             onPress={() => setPreviewImageUri(null)}
           >
-            <Text style={styles.fullImageCloseText}>✕ Close</Text>
+            <Text style={styles.fullImageCloseText}>Close</Text>
           </TouchableOpacity>
           {previewImageUri && (
             <Image source={{ uri: previewImageUri }} style={styles.fullImage} />
@@ -886,11 +1070,32 @@ export default function CaseDetail() {
               </Text>
             </View>
 
-            <View style={{ backgroundColor: 'rgba(0,0,0,0.3)', padding: 10, borderRadius: 10, marginBottom: 12 }}>
+            <View style={{ backgroundColor: 'rgba(0,0,0,0.35)', padding: 10, borderRadius: 10, marginBottom: 12, borderWidth: 1, borderColor: 'rgba(255, 167, 38, 0.3)' }}>
               <Text style={{ fontSize: 10.5, color: '#FFA726', fontWeight: '800' }}>Advocate Digital Seal:</Text>
-              <Text style={{ fontSize: 13, fontStyle: 'italic', color: '#FFFFFF', marginTop: 2 }}>
-                ✍️ {activeConsultation?.lawyerSignature || assignedLawyer?.name || 'Advocate Signed (SBC)'}
-              </Text>
+              {Array.isArray(activeConsultation?.lawyerSignatureSvg) && activeConsultation.lawyerSignatureSvg.length > 0 ? (
+                <View style={{ height: 50, width: '100%', backgroundColor: 'rgba(0,0,0,0.3)', borderRadius: 8, marginTop: 4, padding: 4, justifyContent: 'center' }}>
+                  <Svg width="100%" height={42}>
+                    {activeConsultation.lawyerSignatureSvg.map((p, idx) => (
+                      <Path
+                        key={`modal-lawyer-sig-${idx}`}
+                        d={p}
+                        stroke="#FFA726"
+                        strokeWidth={2}
+                        fill="none"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    ))}
+                  </Svg>
+                  <Text style={{ fontSize: 8.5, color: 'rgba(255,255,255,0.5)', textAlign: 'right' }}>
+                    Finger-drawn by {assignedLawyer?.name || activeConsultation?.lawyerName || 'Advocate'}
+                  </Text>
+                </View>
+              ) : (
+                <Text style={{ fontSize: 13, fontStyle: 'italic', color: '#FFFFFF', marginTop: 2 }}>
+                  {activeConsultation?.lawyerSignature || assignedLawyer?.name || 'Advocate Signed (SBC)'}
+                </Text>
+              )}
             </View>
 
             <Text style={styles.inputLabel}>Choose Your Preferred Time Slot *</Text>
@@ -911,13 +1116,12 @@ export default function CaseDetail() {
               ))}
             </View>
 
-            <Text style={styles.inputLabel}>Citizen Digital Signature (Full Name) *</Text>
-            <TextInput
-              style={[styles.notesInput, { minHeight: 45 }]}
-              value={citizenSignature}
-              onChangeText={setCitizenSignature}
-              placeholder="Type your full legal name as signature"
-              placeholderTextColor="rgba(255,255,255,0.4)"
+            {/* Citizen Finger Signature Pad */}
+            <FingerSignaturePad
+              signerRole="Citizen Client"
+              signerName={userData.name || 'Citizen'}
+              onSignatureChange={setCitizenDrawnPaths}
+              height={120}
             />
 
             <View style={styles.modalActions}>

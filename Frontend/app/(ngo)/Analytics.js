@@ -16,8 +16,11 @@ import AppHeader from '../../components/AppHeader';
 import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 
+import { useAppTheme } from '../../context/ThemeContext';
+
 export default function NGOAnalytics() {
   const router = useRouter();
+  const { isDark } = useAppTheme();
   const { width, height } = useWindowDimensions();
   const [selectedRange, setSelectedRange] = useState('This Month');
 
@@ -35,56 +38,68 @@ export default function NGOAnalytics() {
   ];
 
   const categoryBreakdown = [
-    { label: 'Property & Land Rights', percentage: 42, color: '#FF9500' },
-    { label: 'Family & Custody',       percentage: 28, color: '#FFA726' },
-    { label: 'Criminal PPC Defense',   percentage: 18, color: '#FF7043' },
-    { label: 'Labor & Civil Disputes', percentage: 12, color: '#FFCA28' },
+    { label: 'Property & Land Rights', percentage: 42, color: '#10B981' },
+    { label: 'Family & Custody',       percentage: 28, color: '#34D399' },
+    { label: 'Criminal PPC Defense',   percentage: 18, color: '#F59E0B' },
+    { label: 'Labor & Civil Disputes', percentage: 12, color: '#06B6D4' },
   ];
 
-  return (
-    <View style={styles.container}>
-      <StatusBar barStyle="light-content" translucent backgroundColor="transparent" />
+  const safeBg = isDark ? '#080402' : '#FAF7F2';
+  const cardBg = isDark ? 'rgba(20, 32, 24, 0.95)' : '#FFFFFF';
+  const cardBorder = isDark ? 'rgba(16, 185, 129, 0.40)' : 'rgba(16, 185, 129, 0.20)';
+  const textPrimary = isDark ? '#FFF5E8' : '#1A0F07';
+  const textSecondary = isDark ? 'rgba(230, 255, 245, 0.75)' : '#1B3B2B';
+  const pillBg = isDark ? 'rgba(20, 32, 24, 0.85)' : '#EBF5EE';
+  const pillBorder = isDark ? 'rgba(16, 185, 129, 0.30)' : 'rgba(16, 185, 129, 0.20)';
 
-      {/* Obsidian Background */}
+  return (
+    <View style={[styles.container, { backgroundColor: safeBg }]}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor="transparent" />
+
+      {/* Background Gradient */}
       <LinearGradient
-        colors={['#0A0402', '#060201', '#020101']}
+        colors={isDark ? ['#0A0402', '#07150E', '#020604'] : ['#FAF7F2', '#F1F7F4', '#E6EFE9']}
         style={StyleSheet.absoluteFill}
         start={{ x: 0.5, y: 0 }}
         end={{ x: 0.5, y: 1 }}
       />
 
       {/* Ambient halos */}
-      <View
-        pointerEvents="none"
-        style={[
-          styles.ambientHalo,
-          {
-            top: -height * 0.05,
-            left: -width * 0.12,
-            width: width * 0.75,
-            height: width * 0.75,
-            backgroundColor: 'rgba(255, 120, 20, 0.08)',
-          },
-        ]}
-      />
-      <View
-        pointerEvents="none"
-        style={[
-          styles.ambientHalo,
-          {
-            bottom: height * 0.1,
-            right: -width * 0.15,
-            width: width * 0.8,
-            height: width * 0.8,
-            backgroundColor: 'rgba(234, 88, 12, 0.06)',
-          },
-        ]}
-      />
+      {isDark && (
+        <>
+          <View
+            pointerEvents="none"
+            style={[
+              styles.ambientHalo,
+              {
+                top: -height * 0.05,
+                left: -width * 0.12,
+                width: width * 0.75,
+                height: width * 0.75,
+                backgroundColor: 'rgba(16, 185, 129, 0.09)',
+              },
+            ]}
+          />
+          <View
+            pointerEvents="none"
+            style={[
+              styles.ambientHalo,
+              {
+                bottom: height * 0.1,
+                right: -width * 0.15,
+                width: width * 0.8,
+                height: width * 0.8,
+                backgroundColor: 'rgba(5, 150, 105, 0.07)',
+              },
+            ]}
+          />
+        </>
+      )}
 
       <SafeAreaView style={styles.safeArea}>
-        {/* Modern '< Legal Trends' Header */}
+        {/* Modern Header */}
         <AppHeader
-          title="Legal Trends"
+          title="Legal Aid Trends"
           showBack={true}
           homeRoute="/(ngo)/NGOHome"
           role="ngo"
@@ -97,10 +112,13 @@ export default function NGOAnalytics() {
             {ranges.map((r) => (
               <TouchableOpacity
                 key={r}
-                style={[styles.rangePill, selectedRange === r && styles.rangePillActive]}
+                style={[
+                  styles.rangePill,
+                  { backgroundColor: selectedRange === r ? '#10B981' : pillBg, borderColor: selectedRange === r ? '#059669' : pillBorder },
+                ]}
                 onPress={() => setSelectedRange(r)}
               >
-                <Text style={[styles.rangeText, selectedRange === r && styles.rangeTextActive]}>
+                <Text style={[styles.rangeText, { color: selectedRange === r ? '#FFFFFF' : textSecondary, fontWeight: selectedRange === r ? '800' : '600' }]}>
                   {r}
                 </Text>
               </TouchableOpacity>
@@ -109,28 +127,28 @@ export default function NGOAnalytics() {
 
           {/* Top Key Performance Cards */}
           <View style={styles.kpiGrid}>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiValue}>412</Text>
-              <Text style={styles.kpiLabel}>Total Cases Reported</Text>
-              <Text style={styles.kpiSub}>+14% vs last period</Text>
+            <View style={[styles.kpiCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+              <Text style={[styles.kpiValue, { color: textPrimary }]}>412</Text>
+              <Text style={[styles.kpiLabel, { color: textSecondary }]}>Total Cases Reported</Text>
+              <Text style={[styles.kpiSub, { color: '#10B981' }]}>+14% vs last period</Text>
             </View>
-            <View style={styles.kpiCard}>
-              <Text style={styles.kpiValue}>78.4%</Text>
-              <Text style={styles.kpiLabel}>Resolution Rate</Text>
-              <Text style={styles.kpiSub}>High Court verified</Text>
+            <View style={[styles.kpiCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+              <Text style={[styles.kpiValue, { color: textPrimary }]}>78.4%</Text>
+              <Text style={[styles.kpiLabel, { color: textSecondary }]}>Resolution Rate</Text>
+              <Text style={[styles.kpiSub, { color: '#34D399' }]}>High Court verified</Text>
             </View>
           </View>
 
           {/* Category Breakdown */}
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionHeader}>Case Categories Across Sindh</Text>
+          <View style={[styles.sectionCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            <Text style={[styles.sectionHeader, { color: textPrimary }]}>Case Categories Across Sindh</Text>
             {categoryBreakdown.map((cat, i) => (
               <View key={i} style={styles.catRow}>
                 <View style={styles.catLabelRow}>
-                  <Text style={styles.catName}>{cat.label}</Text>
-                  <Text style={styles.catPct}>{cat.percentage}%</Text>
+                  <Text style={[styles.catName, { color: textPrimary }]}>{cat.label}</Text>
+                  <Text style={[styles.catPct, { color: '#10B981' }]}>{cat.percentage}%</Text>
                 </View>
-                <View style={styles.catBarTrack}>
+                <View style={[styles.catBarTrack, { backgroundColor: isDark ? 'rgba(16, 185, 129, 0.15)' : 'rgba(16, 185, 129, 0.12)' }]}>
                   <View
                     style={[
                       styles.catBarFill,
@@ -143,21 +161,21 @@ export default function NGOAnalytics() {
           </View>
 
           {/* District Breakdown Table */}
-          <View style={styles.sectionCard}>
-            <Text style={styles.sectionHeader}>District Legal Accessibility</Text>
-            <View style={styles.tableHeaderRow}>
-              <Text style={[styles.tableColHeader, { flex: 2 }]}>District</Text>
-              <Text style={[styles.tableColHeader, { flex: 1, textAlign: 'center' }]}>Reported</Text>
-              <Text style={[styles.tableColHeader, { flex: 1, textAlign: 'center' }]}>Resolved</Text>
-              <Text style={[styles.tableColHeader, { flex: 1, textAlign: 'right' }]}>Rate</Text>
+          <View style={[styles.sectionCard, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            <Text style={[styles.sectionHeader, { color: textPrimary }]}>District Legal Accessibility</Text>
+            <View style={[styles.tableHeaderRow, { borderBottomColor: isDark ? 'rgba(16, 185, 129, 0.20)' : 'rgba(16, 185, 129, 0.15)' }]}>
+              <Text style={[styles.tableColHeader, { flex: 2, color: '#10B981' }]}>District</Text>
+              <Text style={[styles.tableColHeader, { flex: 1, textAlign: 'center', color: '#10B981' }]}>Reported</Text>
+              <Text style={[styles.tableColHeader, { flex: 1, textAlign: 'center', color: '#10B981' }]}>Resolved</Text>
+              <Text style={[styles.tableColHeader, { flex: 1, textAlign: 'right', color: '#10B981' }]}>Rate</Text>
             </View>
 
             {districtMetrics.map((dm, idx) => (
-              <View key={idx} style={styles.tableRow}>
-                <Text style={[styles.tableDistrict, { flex: 2 }]}>{dm.district}</Text>
-                <Text style={[styles.tableVal, { flex: 1, textAlign: 'center' }]}>{dm.reported}</Text>
-                <Text style={[styles.tableVal, { flex: 1, textAlign: 'center', color: '#4ADE80' }]}>{dm.resolved}</Text>
-                <Text style={[styles.tableRate, { flex: 1, textAlign: 'right' }]}>{dm.rate}</Text>
+              <View key={idx} style={[styles.tableRow, { borderBottomColor: isDark ? 'rgba(16, 185, 129, 0.10)' : 'rgba(16, 185, 129, 0.08)' }]}>
+                <Text style={[styles.tableDistrict, { flex: 2, color: textPrimary }]}>{dm.district}</Text>
+                <Text style={[styles.tableVal, { flex: 1, textAlign: 'center', color: textSecondary }]}>{dm.reported}</Text>
+                <Text style={[styles.tableVal, { flex: 1, textAlign: 'center', color: '#10B981', fontWeight: '800' }]}>{dm.resolved}</Text>
+                <Text style={[styles.tableRate, { flex: 1, textAlign: 'right', color: '#10B981' }]}>{dm.rate}</Text>
               </View>
             ))}
           </View>
@@ -167,6 +185,7 @@ export default function NGOAnalytics() {
             <LiquidGlassButton
               title="EXPORT COMPLETE REPORT"
               onPress={() => router.push('/(ngo)/ExportReports')}
+              variant="emerald"
             />
           </View>
         </ScrollView>

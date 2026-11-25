@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -88,11 +88,18 @@ export default function MediaAnalytics() {
     return () => { isMounted = false; };
   }, [selectedRange]);
 
-  const safeBg = isDarkMode ? '#13131A' : '#FAF8F5';
+  const { isDark } = useAppTheme();
+  const safeBg = isDark ? '#080402' : '#FAF7F2';
+  const cardBg = isDark ? 'rgba(34, 16, 12, 0.95)' : '#FFFFFF';
+  const cardBorder = isDark ? 'rgba(245, 158, 11, 0.40)' : 'rgba(255, 149, 0, 0.20)';
+  const textPrimary = isDark ? '#FFF5E8' : '#1A0F07';
+  const textSecondary = isDark ? 'rgba(255, 230, 215, 0.75)' : '#664530';
+  const tabBg = isDark ? 'rgba(26, 12, 5, 0.92)' : '#F0EBE1';
+  const tabBorder = isDark ? 'rgba(245, 158, 11, 0.28)' : 'rgba(245, 158, 11, 0.18)';
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: safeBg }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={safeBg} />
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} translucent backgroundColor={safeBg} />
 
       <AppHeader
         title={t('analytics.title', 'Journalism Beat Analytics')}
@@ -103,7 +110,7 @@ export default function MediaAnalytics() {
 
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {/* Time range selector */}
-        <View style={styles.rangeRow}>
+        <View style={[styles.rangeRow, { backgroundColor: tabBg, borderColor: tabBorder }]}>
           {ranges.map((r) => {
             let label = r;
             if (r === 'This Week') label = t('analytics.thisWeek', 'This Week');
@@ -123,6 +130,7 @@ export default function MediaAnalytics() {
                 <Text
                   style={[
                     styles.rangeText,
+                    { color: selectedRange === r ? '#000000' : textSecondary },
                     selectedRange === r && styles.rangeTextActive,
                   ]}
                 >
@@ -135,21 +143,21 @@ export default function MediaAnalytics() {
 
         {/* Live Summary Strip */}
         <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
-          <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
-            <Text style={{ color: '#FFA726', fontSize: 16, fontWeight: '900' }}>{summary.totalActiveCases}</Text>
-            <Text style={{ color: isDarkMode ? '#9CA3AF' : '#664530', fontSize: 9.5, fontWeight: '700' }}>
+          <View style={[styles.statBox, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+            <Text style={{ color: '#F59E0B', fontSize: 16, fontWeight: '900' }}>{summary.totalActiveCases}</Text>
+            <Text style={{ color: textSecondary, fontSize: 9.5, fontWeight: '700' }}>
               {t('analytics.totalCases', 'TOTAL CASES')}
             </Text>
           </View>
-          <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
+          <View style={[styles.statBox, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             <Text style={{ color: '#38BDF8', fontSize: 16, fontWeight: '900' }}>{summary.districtsCovered}</Text>
-            <Text style={{ color: isDarkMode ? '#9CA3AF' : '#664530', fontSize: 9.5, fontWeight: '700' }}>
+            <Text style={{ color: textSecondary, fontSize: 9.5, fontWeight: '700' }}>
               {t('analytics.districts', 'DISTRICTS')}
             </Text>
           </View>
-          <View style={[styles.statBox, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
+          <View style={[styles.statBox, { backgroundColor: cardBg, borderColor: cardBorder }]}>
             <Text style={{ color: '#4ADE80', fontSize: 16, fontWeight: '900' }}>{summary.verifiedCourtDocketRate || '100%'}</Text>
-            <Text style={{ color: isDarkMode ? '#9CA3AF' : '#664530', fontSize: 9.5, fontWeight: '700' }}>
+            <Text style={{ color: textSecondary, fontSize: 9.5, fontWeight: '700' }}>
               {t('analytics.docketVerified', 'DOCKET VERIFIED')}
             </Text>
           </View>
@@ -157,17 +165,17 @@ export default function MediaAnalytics() {
 
         {loading ? (
           <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-            <ActivityIndicator color="#FF9500" size="large" />
-            <Text style={{ marginTop: 10, color: '#FFA726', fontSize: 12, fontWeight: '700' }}>
+            <ActivityIndicator color="#F59E0B" size="large" />
+            <Text style={{ marginTop: 10, color: '#F59E0B', fontSize: 12, fontWeight: '700' }}>
               Calculating Judicial Trends ({selectedRange})...
             </Text>
           </View>
         ) : (
           <>
             {/* Category Breakdown Card */}
-            <View style={[styles.card, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
+            <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
               <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+                <Text style={[styles.cardTitle, { color: textPrimary }]}>
                   {t('analytics.beatCoverage', 'Sindh Case Beat Coverage')}
                 </Text>
                 <View style={{ backgroundColor: 'rgba(56, 189, 248, 0.15)', borderColor: '#38BDF8', borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6 }}>
@@ -176,14 +184,14 @@ export default function MediaAnalytics() {
                   </Text>
                 </View>
               </View>
-              <Text style={[styles.cardSub, { color: isDarkMode ? '#9CA3AF' : '#664530' }]}>
+              <Text style={[styles.cardSub, { color: textSecondary }]}>
                 {t('analytics.categoryDistDesc', 'Verified distribution by legal category')}
               </Text>
 
               {categoryBreakdown.map((cat) => (
                 <View key={cat.label} style={styles.breakdownRow}>
                   <View style={styles.breakdownMeta}>
-                    <Text style={[styles.catLabel, { color: isDarkMode ? '#E5E7EB' : '#1A0C04' }]}>
+                    <Text style={[styles.catLabel, { color: textPrimary }]}>
                       {translateCategory(cat.label)}
                     </Text>
                     <Text style={[styles.catPercent, { color: cat.color }]}>
@@ -203,11 +211,11 @@ export default function MediaAnalytics() {
             </View>
 
             {/* District Metrics Table */}
-            <View style={[styles.card, { backgroundColor: isDarkMode ? '#1B1C26' : '#FFFFFF', borderColor: isDarkMode ? '#282A3A' : 'rgba(234, 88, 12, 0.25)' }]}>
-              <Text style={[styles.cardTitle, { color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+            <View style={[styles.card, { backgroundColor: cardBg, borderColor: cardBorder }]}>
+              <Text style={[styles.cardTitle, { color: textPrimary }]}>
                 {t('analytics.districtRatios', 'District Resolution Ratios')}
               </Text>
-              <Text style={[styles.cardSub, { color: isDarkMode ? '#9CA3AF' : '#664530' }]}>
+              <Text style={[styles.cardSub, { color: textSecondary }]}>
                 {t('analytics.courtFilingDesc', 'Court case filings vs counsel resolution by jurisdiction')}
               </Text>
 
@@ -220,11 +228,11 @@ export default function MediaAnalytics() {
 
               {districtMetrics.map((dm) => (
                 <View key={dm.district} style={styles.tableRow}>
-                  <Text style={[styles.tableDistrict, { flex: 2, color: isDarkMode ? '#FFFFFF' : '#1A0C04' }]}>
+                  <Text style={[styles.tableDistrict, { flex: 2, color: textPrimary }]}>
                     {translateDistrict(dm.district)}
                   </Text>
-                  <Text style={[styles.tableNum, { flex: 1, textAlign: 'center', color: isDarkMode ? '#D1D5DB' : '#664530' }]}>{dm.reported}</Text>
-                  <Text style={[styles.tableNum, { flex: 1, textAlign: 'center', color: isDarkMode ? '#D1D5DB' : '#664530' }]}>{dm.rate}</Text>
+                  <Text style={[styles.tableNum, { flex: 1, textAlign: 'center', color: textSecondary }]}>{dm.reported}</Text>
+                  <Text style={[styles.tableNum, { flex: 1, textAlign: 'center', color: textSecondary }]}>{dm.rate}</Text>
                   <View style={{ flex: 1, alignItems: 'flex-end' }}>
                     <View style={{ backgroundColor: dm.badge === 'HOTSPOT' ? 'rgba(239, 68, 68, 0.18)' : 'rgba(16, 185, 129, 0.18)', borderColor: dm.badge === 'HOTSPOT' ? '#EF4444' : '#10B981', borderWidth: 1, borderRadius: 5, paddingHorizontal: 5, paddingVertical: 1 }}>
                       <Text style={{ color: dm.badge === 'HOTSPOT' ? '#EF4444' : '#10B981', fontSize: 9, fontWeight: '800' }}>{dm.badge}</Text>
@@ -239,8 +247,9 @@ export default function MediaAnalytics() {
         {/* Export Action */}
         <View style={styles.actionBox}>
           <LiquidGlassButton
-            title={t('analytics.exportBrief', 'EXPORT PRESS BRIEF')}
+            title={t('analytics.exportBtn', 'EXPORT JOURNALISM DOSSIER (PDF)')}
             onPress={() => router.push('/(media)/ExportReports')}
+            variant="amber"
           />
         </View>
       </ScrollView>

@@ -23,6 +23,14 @@ import { useAppTranslation } from '../../utils/translationHelper';
 const TYPE_OPTIONS = ['All Types', 'Property Law', 'Family Law'];
 const DISTRICT_OPTIONS = ['All Districts', 'Karachi', 'Hyderabad', 'Sukkur', 'Larkana', 'Thatta', 'Mirpur Khas'];
 
+const getBriefExperience = (exp) => {
+  if (!exp) return '8+ Years';
+  const match = String(exp).match(/(\d+\+?\s*(?:years?|yrs?))/i);
+  if (match) return `${match[1]} Practice`;
+  if (String(exp).length > 20) return String(exp).slice(0, 18) + '...';
+  return String(exp);
+};
+
 export default function FindLawyer() {
   useMockStore();
   const router = useRouter();
@@ -83,11 +91,11 @@ export default function FindLawyer() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={theme.bg} />
+      <StatusBar barStyle={theme.statusBarStyle} translucent backgroundColor={theme.statusBarBg} />
 
       {/* Top Header matching app standard */}
       <AppHeader
-        title="Find Lawyers"
+        title={t('citizen.findLawyers', 'Find Lawyers')}
         showBack={true}
         homeRoute="/(citizen)/CitizenHome"
         role="citizen"
@@ -102,122 +110,170 @@ export default function FindLawyer() {
         }
       >
         {/* SEARCH BAR */}
-        <View style={styles.searchBar}>
+        <View style={[
+          styles.searchBar,
+          {
+            backgroundColor: theme.inputBg,
+            borderColor: theme.inputBorder,
+          }
+        ]}>
           <TextInput
-            style={styles.searchInput}
-            placeholder="Search by advocate name, specialty, district..."
-            placeholderTextColor="rgba(255, 220, 180, 0.45)"
+            style={[styles.searchInput, { color: theme.textPrimary }]}
+            placeholder={t('citizen.searchLawyersPlaceholder', 'Search by advocate name, specialty, district...')}
+            placeholderTextColor={theme.textMuted}
             value={search}
             onChangeText={setSearch}
           />
         </View>
 
         {/* FILTER 1: CASE TYPE (FAMILY / PROPERTY) */}
-        <View style={styles.filterSection}>
-          <Text style={styles.filterSectionLabel}>Legal Type (Family / Property)</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterRow}
-          >
-            {TYPE_OPTIONS.map((type) => (
-              <TouchableOpacity
-                key={type}
+        <Text style={styles.filterSectionLabel}>Legal Type</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.filterRow}
+        >
+          {TYPE_OPTIONS.map((type) => (
+            <TouchableOpacity
+              key={type}
+              style={[
+                styles.filterChip,
+                { backgroundColor: theme.surface, borderColor: theme.surfaceBorder },
+                selectedType === type && styles.filterChipActive,
+              ]}
+              onPress={() => setSelectedType(type)}
+              activeOpacity={0.75}
+            >
+              <Text
                 style={[
-                  styles.filterChip,
-                  selectedType === type && styles.filterChipActive,
+                  styles.filterText,
+                  { color: theme.textSecondary },
+                  selectedType === type && styles.filterTextActive,
                 ]}
-                onPress={() => setSelectedType(type)}
-                activeOpacity={0.75}
               >
-                <Text
-                  style={[
-                    styles.filterText,
-                    selectedType === type && styles.filterTextActive,
-                  ]}
-                >
-                  {type}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+                {type}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
         {/* FILTER 2: SINDH DISTRICT */}
-        <View style={styles.filterSection}>
-          <Text style={styles.filterSectionLabel}>District (Sindh)</Text>
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.filterRow}
-          >
-            {DISTRICT_OPTIONS.map((dist) => (
-              <TouchableOpacity
-                key={dist}
+        <Text style={styles.filterSectionLabel}>Sindh District</Text>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={[styles.filterRow, { marginBottom: 16 }]}
+        >
+          {DISTRICT_OPTIONS.map((dist) => (
+            <TouchableOpacity
+              key={dist}
+              style={[
+                styles.filterChip,
+                { backgroundColor: theme.surface, borderColor: theme.surfaceBorder },
+                selectedDistrict === dist && styles.filterChipActive,
+              ]}
+              onPress={() => setSelectedDistrict(dist)}
+              activeOpacity={0.75}
+            >
+              <Text
                 style={[
-                  styles.filterChip,
+                  styles.filterText,
+                  { color: theme.textSecondary },
                   selectedDistrict === dist && styles.filterChipActive,
                 ]}
-                onPress={() => setSelectedDistrict(dist)}
-                activeOpacity={0.75}
               >
-                <Text
-                  style={[
-                    styles.filterText,
-                    selectedDistrict === dist && styles.filterTextActive,
-                  ]}
-                >
-                  {dist}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
+                {dist}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </ScrollView>
 
-        {/* ADVOCATE CARDS */}
+        {/* ADVOCATE CARDS (Mirrors MyCases card structure) */}
         {filtered.length === 0 ? (
-          <Text style={styles.emptyText}>No verified advocates match your criteria.</Text>
+          <Text style={[styles.emptyText, { color: theme.textMuted }]}>
+            No verified advocates match your criteria.
+          </Text>
         ) : (
           filtered.map((l, i) => (
-            <View key={l.id || i} style={styles.lawyerCard}>
-              <View style={[styles.lawyerAvatar, { backgroundColor: l.color || 'rgba(255, 149, 0, 0.15)' }]}>
-                <Text style={styles.lawyerAvatarText}>{l.initials || (l.name ? l.name.replace(/^(Adv\.?|Advocate)\s+/i, '').slice(0, 2).toUpperCase() : 'ADV')}</Text>
+            <TouchableOpacity
+              key={l.id || i}
+              style={[
+                styles.caseCard,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.cardBorder,
+                }
+              ]}
+              activeOpacity={0.84}
+              onPress={() => {
+                setSelectedLawyer(l);
+                setShowLawyerProfile(true);
+              }}
+            >
+              <View style={styles.caseCardTop}>
+                <View style={styles.caseType}>
+                  <Text
+                    style={[styles.caseTitle, { color: theme.textPrimary }]}
+                    numberOfLines={1}
+                  >
+                    {translateLawyerName(l.name) || l.name || 'Advocate'}
+                  </Text>
+                  <Text style={[styles.caseMeta, { color: theme.textMuted }]}>
+                    {translateCategory(l.spec) || l.spec || 'Legal Counsel'} · {translateDistrict(l.district || l.location) || l.district || l.location || 'Sindh'}
+                  </Text>
+                </View>
+                <Text style={[
+                  styles.badgeText,
+                  !isDarkMode && { color: '#B45309', backgroundColor: 'rgba(217, 119, 6, 0.12)', borderColor: 'rgba(217, 119, 6, 0.35)' }
+                ]}>
+                  {l.sbc ? `SBC ${l.sbc}` : 'SBC VERIFIED'}
+                </Text>
               </View>
 
-              <View style={styles.lawyerInfo}>
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <Text style={styles.lawyerName}>{translateLawyerName(l.name) || l.name || 'Advocate'}</Text>
-                </View>
-
-                <Text style={styles.lawyerSpec}>{translateCategory(l.spec) || l.spec} · {l.experience || 'Sindh Bar'}</Text>
-
-                <View style={styles.lawyerMeta}>
-                  <Text style={styles.sbcBadge}>{l.sbc ? `SBC ${l.sbc}` : 'SBC VERIFIED'}</Text>
-                  <Text style={styles.courtBadge}>{l.court || 'Sindh High Court'}</Text>
-                </View>
-
-                <View style={styles.actionButtonsRow}>
-                  <TouchableOpacity
-                    style={[styles.actionBtn, styles.profileBtn]}
-                    onPress={() => {
-                      setSelectedLawyer(l);
-                      setShowLawyerProfile(true);
-                    }}
-                    activeOpacity={0.8}
+              <View
+                style={{
+                  flexDirection: 'row',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  marginTop: 10,
+                  borderTopWidth: 1,
+                  borderTopColor: theme.divider,
+                  paddingTop: 8,
+                }}
+              >
+                <TouchableOpacity
+                  onPress={() => {
+                    setSelectedLawyer(l);
+                    setShowLawyerProfile(true);
+                  }}
+                  activeOpacity={0.7}
+                  style={{ flex: 1, marginRight: 8, flexDirection: 'row', alignItems: 'center' }}
+                >
+                  <Text
+                    style={{ fontSize: 11, color: theme.textSecondary }}
+                    numberOfLines={1}
+                    ellipsizeMode="tail"
                   >
-                    <Text style={styles.profileBtnText}>{t('common.profile', 'Profile')}</Text>
-                  </TouchableOpacity>
+                    {getBriefExperience(l.experience)} · <Text style={{ textDecorationLine: 'underline', color: '#FF9500', fontWeight: '700' }}>{t('common.profile', 'View Profile')}</Text>
+                  </Text>
+                </TouchableOpacity>
 
-                  <TouchableOpacity
-                    style={[styles.actionBtn, styles.consultBtn]}
-                    onPress={() => handleBookConsultation(l)}
-                    activeOpacity={0.8}
-                  >
-                    <Text style={styles.consultBtnText}>{t('citizen.requestConsultation', 'Request Consult')}</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  onPress={() => handleBookConsultation(l)}
+                  activeOpacity={0.75}
+                  style={{ flexDirection: 'row', alignItems: 'center', gap: 4, flexShrink: 0 }}
+                >
+                  <Text style={{ fontSize: 11, fontWeight: '800', color: '#FF9500' }}>
+                    {t('citizen.requestConsultation', 'Request Consult')}
+                  </Text>
+                  <Image
+                    source={require('../../assets/images/arrow.png')}
+                    style={{ width: 14, height: 10 }}
+                    resizeMode="contain"
+                  />
+                </TouchableOpacity>
               </View>
-            </View>
+            </TouchableOpacity>
           ))
         )}
       </ScrollView>
@@ -230,40 +286,79 @@ export default function FindLawyer() {
         onRequestClose={() => setShowLawyerProfile(false)}
       >
         <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
+          <View style={[
+            styles.modalContainer,
+            {
+              backgroundColor: theme.headerBg,
+              borderColor: theme.cardBorder,
+            }
+          ]}>
             {selectedLawyer && (
               <>
-                <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Advocate Profile</Text>
+                <View style={[
+                  styles.modalHeader,
+                  { borderBottomColor: theme.divider }
+                ]}>
+                  <Text style={[styles.modalTitle, { color: theme.textPrimary }]}>
+                    {t('lawyer.advocateProfile', 'Advocate Profile')}
+                  </Text>
                   <TouchableOpacity onPress={() => setShowLawyerProfile(false)} style={styles.closeBtn}>
                     <Text style={styles.closeBtnText}>X</Text>
                   </TouchableOpacity>
                 </View>
 
                 <ScrollView style={styles.modalScroll} showsVerticalScrollIndicator={false}>
-                  <View style={styles.profileHero}>
+                  <View style={[
+                    styles.profileHero,
+                    {
+                      backgroundColor: theme.surface,
+                      borderColor: theme.surfaceBorder,
+                    }
+                  ]}>
                     <View style={[styles.lawyerAvatar, { width: 64, height: 64, borderRadius: 32, backgroundColor: selectedLawyer.color || '#FF9500' }]}>
-                      <Text style={[styles.lawyerAvatarText, { fontSize: 22 }]}>{selectedLawyer.initials || 'ADV'}</Text>
+                      <Text style={[styles.lawyerAvatarText, { fontSize: 22 }]}>
+                        {selectedLawyer.initials || (selectedLawyer.name ? selectedLawyer.name.replace(/^(Adv\.?|Advocate)\s+/i, '').slice(0, 2).toUpperCase() : 'ADV')}
+                      </Text>
                     </View>
-                    <Text style={styles.profileModalName}>{selectedLawyer.name}</Text>
-                    <Text style={styles.profileModalSpec}>{selectedLawyer.spec}</Text>
-                    <Text style={styles.profileModalLoc}>Chamber Jurisdiction: {selectedLawyer.location || selectedLawyer.district || 'Sindh'}</Text>
+                    <Text style={[styles.profileModalName, { color: theme.textPrimary }]}>
+                      {translateLawyerName(selectedLawyer.name) || selectedLawyer.name}
+                    </Text>
+                    <Text style={styles.profileModalSpec}>
+                      {translateCategory(selectedLawyer.spec) || selectedLawyer.spec}
+                    </Text>
+                    <Text style={[styles.profileModalLoc, { color: theme.textMuted }]}>
+                      Chamber Jurisdiction: {translateDistrict(selectedLawyer.location || selectedLawyer.district) || selectedLawyer.location || selectedLawyer.district || 'Sindh'}
+                    </Text>
                   </View>
 
-                  <View style={styles.modalSection}>
+                  <View style={[
+                    styles.modalSection,
+                    {
+                      backgroundColor: theme.surface,
+                      borderColor: theme.surfaceBorder,
+                    }
+                  ]}>
                     <Text style={styles.sectionHeading}>Credentials & SBC Status</Text>
-                    <Text style={styles.modalDetailText}>Sindh Bar Council: {selectedLawyer.sbc || 'Verified'}</Text>
-                    <Text style={styles.modalDetailText}>Experience: {selectedLawyer.experience || '8+ Years'}</Text>
-                    <Text style={styles.modalDetailText}>Chamber: {selectedLawyer.chamber || 'High Court of Sindh'}</Text>
+                    <Text style={[styles.modalDetailText, { color: theme.textPrimary }]}>
+                      Sindh Bar Council: {selectedLawyer.sbc || 'Verified'}
+                    </Text>
+                    <Text style={[styles.modalDetailText, { color: theme.textPrimary }]}>
+                      Experience: {selectedLawyer.fullBio || selectedLawyer.experience || '8+ Years'}
+                    </Text>
+                    <Text style={[styles.modalDetailText, { color: theme.textPrimary }]}>
+                      Chamber: {translateCourt(selectedLawyer.chamber || selectedLawyer.court) || selectedLawyer.chamber || selectedLawyer.court || 'High Court of Sindh'}
+                    </Text>
                   </View>
 
                   <TouchableOpacity
-                    style={[styles.actionBtn, styles.consultBtn, { marginTop: 14, paddingVertical: 12 }]}
+                    style={[styles.consultBtn, { marginTop: 14, paddingVertical: 12 }]}
                     onPress={() => handleBookConsultation(selectedLawyer)}
                     activeOpacity={0.85}
                   >
                     <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6 }}>
-                      <Text style={[styles.consultBtnText, { fontSize: 13 }]}>Proceed to Consultation Booking</Text>
+                      <Text style={[styles.consultBtnText, { fontSize: 13 }]}>
+                        {t('citizen.requestConsultation', 'Proceed to Consultation Booking')}
+                      </Text>
                       <Image
                         source={require('../../assets/images/arrow.png')}
                         style={{ width: 16, height: 11 }}

@@ -314,6 +314,25 @@ export default StyleSheet.create({
     fontSize: 11,
     fontWeight: '900',
   },
+  downloadCertBtn: {
+    backgroundColor: '#B8860B',
+    borderRadius: 8,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 10,
+    borderWidth: 1,
+    borderColor: '#D4AF37',
+    gap: 8,
+  },
+  downloadCertBtnText: {
+    color: '#0A0502',
+    fontSize: 11.5,
+    fontWeight: '900',
+    letterSpacing: 0.3,
+  },
 
   // ── AGREEMENT SENT STATUS BANNER ──
   agreementSentBanner: {
@@ -364,5 +383,41 @@ export default StyleSheet.create({
     width: '100%',
     height: '75%',
     resizeMode: 'contain',
+  },
+
+  // ── ENCRYPTED VAULT PRIVACY NOTICE ──
+  vaultEncryptedNoticeBox: {
+    backgroundColor: 'rgba(25, 12, 5, 0.75)',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 6,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 149, 0, 0.22)',
+  },
+  vaultEncryptedHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 7,
+    marginBottom: 4,
+  },
+  vaultLockIconBadge: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(255, 149, 0, 0.18)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  vaultEncryptedTitle: {
+    fontSize: 11,
+    fontWeight: '800',
+    color: '#FFA726',
+    letterSpacing: 0.3,
+  },
+  vaultEncryptedDesc: {
+    fontSize: 10.5,
+    color: 'rgba(255, 230, 205, 0.75)',
+    lineHeight: 15,
   },
 });

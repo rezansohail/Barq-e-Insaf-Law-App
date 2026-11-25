@@ -70,7 +70,7 @@ export default function AppHeader({
   const { i18n, t } = useTranslation();
   const currentLang = i18n?.language || 'en';
 
-  const isAppName = title === 'Barq-e-Insaf' || title === 'Barq-e-Insaf ⚡' || title === 'BARQ-E-INSAF';
+  const isAppName = title === 'Barq-e-Insaf' || title === 'BARQ-E-INSAF';
   let displayTitle = (!showBack && isAppName) ? '' : title;
   if (isAppName) {
     displayTitle = getTranslatedAppName(currentLang);
@@ -91,8 +91,10 @@ export default function AppHeader({
               style={[
                 styles.circularBackBtn,
                 {
-                  backgroundColor: isDarkMode ? 'rgba(25, 10, 3, 0.65)' : 'rgba(245, 240, 235, 0.9)',
-                  borderColor: isDarkMode ? 'rgba(255, 170, 60, 0.35)' : 'rgba(234, 88, 12, 0.35)',
+                  backgroundColor: isDarkMode ? 'rgba(25, 10, 3, 0.75)' : '#FFFFFF',
+                  borderColor: isDarkMode ? 'rgba(255, 170, 60, 0.35)' : 'rgba(217, 119, 6, 0.40)',
+                  alignItems: 'center',
+                  justifyContent: 'center',
                 },
               ]}
               onPress={handleBackPress}
@@ -101,21 +103,19 @@ export default function AppHeader({
               accessibilityRole="button"
               accessibilityLabel="Go back"
             >
-              <BlurView
-                intensity={Platform.OS === 'ios' ? 40 : 60}
-                tint={isDarkMode ? 'dark' : 'light'}
-                style={styles.backBlur}
-              >
-                <Image
-                  source={require('../assets/images/backarrow.png')}
-                  style={styles.backArrowImg}
-                  resizeMode="contain"
+              <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M19 12H5M12 19l-7-7 7-7"
+                  stroke={isDarkMode ? '#FFEED6' : '#1A0C04'}
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 />
-              </BlurView>
+              </Svg>
             </TouchableOpacity>
           ) : (
             <Image
-              source={require('../assets/images/logo.png')}
+              source={require('../assets/images/logo1.png')}
               style={styles.headerLogoImg}
               resizeMode="contain"
             />
@@ -141,8 +141,8 @@ export default function AppHeader({
         {/* Right Section: Name (on home) + admin bell + custom right element + standard TopHeaderMenu */}
         <View style={styles.rightSection}>
           {!showBack && userName ? (
-            <Text style={[styles.hiGreetingText, { color: isDarkMode ? '#FFEED6' : '#1A0C04' }]}>
-              {t('common.greetingHi', 'hi,')} {userName}
+            <Text style={[styles.hiGreetingText, { color: theme.textSecondary }]}>
+              {userName}
             </Text>
           ) : null}
           {role === 'admin' && (
@@ -150,8 +150,8 @@ export default function AppHeader({
               style={[
                 styles.adminBellBtn,
                 {
-                  backgroundColor: isDarkMode ? 'rgba(25, 10, 3, 0.65)' : 'rgba(245, 240, 235, 0.9)',
-                  borderColor: isDarkMode ? 'rgba(255, 170, 60, 0.35)' : 'rgba(234, 88, 12, 0.35)',
+                  backgroundColor: theme.surface,
+                  borderColor: theme.surfaceBorder,
                 },
               ]}
               onPress={() => router.push('/(Admin)/Notifications')}
@@ -162,7 +162,7 @@ export default function AppHeader({
               <Svg width={18} height={18} viewBox="0 0 24 24" fill="none">
                 <Path
                   d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 01-3.46 0"
-                  stroke={isDarkMode ? '#FFE4C4' : '#1A0F07'}
+                  stroke={theme.textPrimary}
                   strokeWidth={1.8}
                   strokeLinecap="round"
                   strokeLinejoin="round"

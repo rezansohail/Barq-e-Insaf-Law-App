@@ -77,6 +77,13 @@ export default function CaseDetail() {
   };
 
   const handleViewEvidence = () => {
+    if (!caseData?.vaultAccessGranted) {
+      Alert.alert(
+        'Vault Access Locked',
+        'Evidence files remain encrypted in the citizen\'s private vault. The client must authorize vault access from their dashboard.'
+      );
+      return;
+    }
     if (caseData.evidence) {
       const evList = Array.isArray(caseData.evidence)
         ? caseData.evidence.map((e) => (typeof e === 'string' ? e : e.name)).join('\n')
@@ -218,14 +225,14 @@ export default function CaseDetail() {
         {/* Evidence Card */}
         <View style={styles.card}>
           <Text style={styles.cardHeader}>Case Evidence Documents</Text>
-          {caseData?.evidence ? (
+          {caseData?.vaultAccessGranted && caseData?.evidence ? (
             <TouchableOpacity style={styles.evidenceBtn} onPress={handleViewEvidence} activeOpacity={0.84}>
-              <Text style={styles.evidenceBtnText}>View Attached Evidence Documents</Text>
+              <Text style={styles.evidenceBtnText}>View Decrypted Evidence Documents</Text>
             </TouchableOpacity>
           ) : (
             <View style={styles.securedNotice}>
               <Text style={styles.securedNoticeText}>
-                Evidence documents are hidden until request acceptance.
+                Evidence documents remain encrypted in the citizen's vault. Access requires a signed consultation agreement and explicit client vault authorization.
               </Text>
             </View>
           )}

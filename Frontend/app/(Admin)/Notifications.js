@@ -50,7 +50,7 @@ function formatRelativeTime(dateStr) {
 
 export default function AdminNotifications() {
   const router = useRouter();
-  const { isDark } = useAppTheme();
+  const { theme, isDark } = useAppTheme();
   const [sections, setSections] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -125,20 +125,20 @@ export default function AdminNotifications() {
     router.replace('/(Admin)');
   };
 
-  const bg = isDark ? '#090302' : '#FFFFFF';
-  const textPrimary = isDark ? '#FFEED6' : '#1A0F07';
-  const textSecondary = isDark ? 'rgba(255, 235, 215, 0.70)' : '#4A3B32';
-  const textMuted = isDark ? 'rgba(255, 200, 150, 0.50)' : '#8C7B70';
-  const dividerColor = isDark ? 'rgba(255, 149, 0, 0.12)' : 'rgba(0, 0, 0, 0.06)';
+  const bg = theme.bg;
+  const textPrimary = theme.textPrimary;
+  const textSecondary = theme.textSecondary;
+  const textMuted = theme.textMuted;
+  const dividerColor = theme.divider;
   const sectionHeaderColor = isDark ? '#FFA726' : '#1A0F07';
-  const headerBg = isDark ? '#140704' : '#FFFFFF';
+  const headerBg = theme.headerBg;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: bg }]}>
       <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
+        barStyle={theme.statusBarStyle}
         translucent
-        backgroundColor={isDark ? '#0A0402' : '#FFFFFF'}
+        backgroundColor={theme.statusBarBg}
       />
 
       {/* Modern Top Header matching user's exact mockup */}

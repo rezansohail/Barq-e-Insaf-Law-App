@@ -1,6 +1,7 @@
 const RegisterLawyerDTO = require('../dto/RegisterLawyerDTO');
 const LoginLawyerDTO = require('../dto/LoginLawyerDTO');
 const lawyerService = require('../services/lawyerServiceImpl');
+const { triggerTranslate } = require('../utils/triggerTranslate');
 
 /**
  * Controller for Lawyer Endpoints
@@ -12,6 +13,8 @@ const registerLawyer = async (req, res) => {
   try {
     const dto = new RegisterLawyerDTO(req.body);
     const result = await lawyerService.registerLawyer(dto);
+    // Auto-trigger translation for new lawyer account
+    triggerTranslate(req.body);
     return res.status(201).json({
       success: true,
       ...result,

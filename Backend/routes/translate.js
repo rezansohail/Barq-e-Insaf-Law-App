@@ -155,4 +155,16 @@ router.post('/', async (req, res) => {
   }
 });
 
+// POST /api/translate/trigger
+// Triggers 'cd frontend npm run translate' when a new account or record is created
+const { triggerTranslate } = require('../utils/triggerTranslate');
+router.post('/trigger', (req, res) => {
+  try {
+    triggerTranslate(req.body);
+    return res.json({ success: true, message: 'Translation triggered successfully.' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
+  }
+});
+
 module.exports = router;

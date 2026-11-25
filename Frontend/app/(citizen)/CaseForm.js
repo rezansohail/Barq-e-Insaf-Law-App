@@ -9,6 +9,7 @@ import {
   Alert,
   ActivityIndicator,
   Image,
+  Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams } from 'expo-router';
@@ -22,6 +23,7 @@ import BottomNavBar from '../../components/BottomNavBar';
 import { useAppNavigation } from '../../hooks/useAppNavigation';
 import { useAppTranslation } from '../../utils/translationHelper';
 import { useAppTheme } from '../../context/ThemeContext';
+import api from '../../constants/api';
 
 // Comprehensive Sindh Cities & Divisions Mapping
 const SINDH_CITIES_DATA = {
@@ -104,6 +106,7 @@ export default function CaseForm() {
   const [showDistrictDropdown, setShowDistrictDropdown] = useState(false);
 
   const [evidenceList, setEvidenceList] = useState([]);
+  const [showVaultModal, setShowVaultModal] = useState(false);
   const [pickingLoading, setPickingLoading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
@@ -318,6 +321,16 @@ export default function CaseForm() {
         district: `${selectedCity} - ${selectedDistrict}`,
         evidence: evidenceList,
       });
+
+      // Automatically trigger translation for the new case record
+      try {
+        api.post('/translate/trigger', {
+          caseTitle: formData.title.trim(),
+          title: formData.title.trim(),
+          district: `${selectedCity} - ${selectedDistrict}`,
+          category: 'Legal Case',
+        }).catch(() => {});
+      } catch (_) {}
 
       Alert.alert(
         t('common.success', 'Case Created Successfully'),
@@ -582,138 +595,253 @@ export default function CaseForm() {
           </View>
         </View>
 
-        {/* Evidence Section */}
-        <View style={styles.evidenceSection}>
-          <View style={styles.evidenceHeader}>
-            <View>
-              <Text style={styles.evidenceTitle}>
-                {t('case.secureEvidence', 'Secure Evidence Collection')}
-              </Text>
-              <Text style={styles.evidenceHint}>
-                {t('case.evidenceHint', 'Attach documents or photos directly from your phone.')}
-              </Text>
-            </View>
-          </View>
-
-          {/* Direct Phone Attachment Buttons */}
-          <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14 }}>
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: '#5C1A1A',
-                paddingVertical: 10,
-                paddingHorizontal: 8,
-                borderRadius: 8,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onPress={handlePickDocument}
-              disabled={pickingLoading}
-            >
-              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
-                {t('case.phonePdf', 'Phone File (PDF)')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: '#0F2744',
-                paddingVertical: 10,
-                paddingHorizontal: 8,
-                borderRadius: 8,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onPress={handlePickImage}
-              disabled={pickingLoading}
-            >
-              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
-                {t('case.galleryPhoto', 'Gallery Photo')}
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={{
-                flex: 1,
-                backgroundColor: '#1B4332',
-                paddingVertical: 10,
-                paddingHorizontal: 8,
-                borderRadius: 8,
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onPress={handleCaptureCamera}
-              disabled={pickingLoading}
-            >
-              <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
-                {t('case.snapCamera', 'Snap Camera')}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {pickingLoading && (
-            <View style={{ paddingVertical: 10, alignItems: 'center' }}>
-              <ActivityIndicator color="#FF9500" />
-              <Text style={{ fontSize: 11, color: 'rgba(255, 220, 180, 0.6)', marginTop: 4 }}>
-                {t('common.loading', 'Accessing phone file system...')}
+        {/* Evidence Vault Trigger Button (Hiding raw upload inputs behind vault button) */}
+        <View style={styles.formGroup}>
+          <Text style={styles.formLabel}>
+            {t('case.evidenceVaultLabel', 'CASE EVIDENCE VAULT')}
+          </Text>
+          <TouchableOpacity
+            style={{
+              backgroundColor: 'rgba(25, 12, 5, 0.75)',
+              borderRadius: 12,
+              padding: 14,
+              borderWidth: 1.2,
+              borderColor: evidenceList.length > 0 ? '#22C55E' : 'rgba(255, 160, 40, 0.35)',
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+            onPress={() => setShowVaultModal(true)}
+            activeOpacity={0.82}
+          >
+            <View style={{ flex: 1, paddingRight: 10 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <Text style={{ fontSize: 14, fontWeight: '800', color: '#FFF5E8' }}>
+                  {t('case.evidenceVaultTitle', 'Evidence Vault')}
+                </Text>
+                {evidenceList.length > 0 && (
+                  <View style={{ backgroundColor: 'rgba(34, 197, 94, 0.2)', paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, borderWidth: 1, borderColor: '#22C55E' }}>
+                    <Text style={{ fontSize: 9.5, fontWeight: '800', color: '#4ADE80' }}>
+                      {evidenceList.length} SECURED
+                    </Text>
+                  </View>
+                )}
+              </View>
+              <Text style={{ fontSize: 11, color: 'rgba(255, 220, 180, 0.65)' }}>
+                {evidenceList.length > 0
+                  ? `${evidenceList.length} file(s) attached in vault. Tap to view or add more.`
+                  : t('case.vaultPlaceholder', 'Tap to open vault and upload documents/photos')}
               </Text>
             </View>
-          )}
-
-          {evidenceList.length === 0 && !pickingLoading && (
             <View
               style={{
-                paddingVertical: 14,
-                alignItems: 'center',
-                backgroundColor: 'rgba(25, 12, 5, 0.65)',
+                backgroundColor: '#FF9500',
+                paddingHorizontal: 12,
+                paddingVertical: 8,
                 borderRadius: 8,
-                borderWidth: 1,
-                borderColor: 'rgba(255, 149, 0, 0.25)',
-                borderStyle: 'dashed',
               }}
             >
-              <Text style={{ fontSize: 12, color: 'rgba(255, 220, 180, 0.55)', fontWeight: '500', textAlign: 'center' }}>
-                {t('case.noEvidence', 'No evidence attached yet. Tap a button above to add files.')}
+              <Text style={{ color: '#0A0502', fontSize: 11, fontWeight: '800' }}>
+                Open Vault
               </Text>
             </View>
-          )}
+          </TouchableOpacity>
+        </View>
 
-          {evidenceList.map((item, index) => (
-            <View key={item.id || index} style={styles.evidenceItem}>
-              <View
+        {/* ── DEDICATED EVIDENCE VAULT MODAL SCREEN ── */}
+        <Modal
+          visible={showVaultModal}
+          animationType="slide"
+          presentationStyle="pageSheet"
+          onRequestClose={() => setShowVaultModal(false)}
+        >
+          <SafeAreaView style={{ flex: 1, backgroundColor: '#0C0502' }}>
+            {/* Vault Top Bar */}
+            <View
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                paddingHorizontal: 16,
+                paddingVertical: 14,
+                borderBottomWidth: 1,
+                borderBottomColor: 'rgba(255, 170, 60, 0.2)',
+                backgroundColor: 'rgba(25, 12, 5, 0.95)',
+              }}
+            >
+              <View>
+                <Text style={{ fontSize: 18, fontWeight: '900', color: '#FFF5E8' }}>
+                  Evidence Vault
+                </Text>
+                <Text style={{ fontSize: 11, color: '#FF9500', fontWeight: '600' }}>
+                  Secure Dossier Storage &middot; {evidenceList.length} Files Attached
+                </Text>
+              </View>
+              <TouchableOpacity
+                onPress={() => setShowVaultModal(false)}
                 style={{
-                  width: 34,
-                  height: 34,
+                  backgroundColor: '#FF9500',
+                  paddingHorizontal: 14,
+                  paddingVertical: 7,
                   borderRadius: 8,
-                  backgroundColor: 'rgba(255, 149, 0, 0.15)',
-                  borderWidth: 1,
-                  borderColor: 'rgba(255, 160, 40, 0.3)',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginRight: 10,
                 }}
               >
-                <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFB74D' }}>
-                  {item.type === 'Photo' ? 'IMG' : 'DOC'}
+                <Text style={{ color: '#0A0502', fontSize: 12, fontWeight: '800' }}>
+                  Done
                 </Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ flex: 1, padding: 16 }}>
+              <View style={styles.evidenceHeader}>
+                <View>
+                  <Text style={styles.evidenceTitle}>
+                    {t('case.secureEvidence', 'Secure Evidence Collection')}
+                  </Text>
+                  <Text style={styles.evidenceHint}>
+                    {t('case.evidenceHint', 'Attach documents or photos directly from your phone into the vault.')}
+                  </Text>
+                </View>
               </View>
-              <View style={styles.evidenceInfo}>
-                <Text style={styles.evidenceName} numberOfLines={1}>
-                  {item.name}
-                </Text>
-                <Text style={styles.evidenceMeta}>
-                  {item.type} • {item.size || 'Attached'} {item.date ? `• ${item.date}` : ''}
-                </Text>
-              </View>
-              <View style={styles.evidenceActions}>
-                <TouchableOpacity onPress={() => handleDeleteEvidence(item.id)} style={styles.deleteBtn}>
-                  <Text style={styles.deleteBtnText}>{t('case.remove', 'Remove')}</Text>
+
+              {/* Direct Phone Attachment Buttons */}
+              <View style={{ flexDirection: 'row', gap: 8, marginBottom: 14, marginTop: 10 }}>
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#5C1A1A',
+                    paddingVertical: 10,
+                    paddingHorizontal: 8,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  onPress={handlePickDocument}
+                  disabled={pickingLoading}
+                >
+                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
+                    {t('case.phonePdf', 'Phone File (PDF)')}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#0F2744',
+                    paddingVertical: 10,
+                    paddingHorizontal: 8,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  onPress={handlePickImage}
+                  disabled={pickingLoading}
+                >
+                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
+                    {t('case.galleryPhoto', 'Gallery Photo')}
+                  </Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={{
+                    flex: 1,
+                    backgroundColor: '#1B4332',
+                    paddingVertical: 10,
+                    paddingHorizontal: 8,
+                    borderRadius: 8,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                  onPress={handleCaptureCamera}
+                  disabled={pickingLoading}
+                >
+                  <Text style={{ color: '#fff', fontSize: 11, fontWeight: '700' }}>
+                    {t('case.snapCamera', 'Snap Camera')}
+                  </Text>
                 </TouchableOpacity>
               </View>
-            </View>
-          ))}
-        </View>
+
+              {pickingLoading && (
+                <View style={{ paddingVertical: 10, alignItems: 'center' }}>
+                  <ActivityIndicator color="#FF9500" />
+                  <Text style={{ fontSize: 11, color: 'rgba(255, 220, 180, 0.6)', marginTop: 4 }}>
+                    {t('common.loading', 'Accessing phone file system...')}
+                  </Text>
+                </View>
+              )}
+
+              {evidenceList.length === 0 && !pickingLoading && (
+                <View
+                  style={{
+                    paddingVertical: 20,
+                    alignItems: 'center',
+                    backgroundColor: 'rgba(25, 12, 5, 0.65)',
+                    borderRadius: 8,
+                    borderWidth: 1,
+                    borderColor: 'rgba(255, 149, 0, 0.25)',
+                    borderStyle: 'dashed',
+                    marginVertical: 10,
+                  }}
+                >
+                  <Text style={{ fontSize: 12, color: 'rgba(255, 220, 180, 0.55)', fontWeight: '500', textAlign: 'center' }}>
+                    {t('case.noEvidence', 'No evidence attached yet. Tap a button above to add files to the vault.')}
+                  </Text>
+                </View>
+              )}
+
+              {evidenceList.map((item, index) => (
+                <View key={item.id || index} style={styles.evidenceItem}>
+                  <View
+                    style={{
+                      width: 34,
+                      height: 34,
+                      borderRadius: 8,
+                      backgroundColor: 'rgba(255, 149, 0, 0.15)',
+                      borderWidth: 1,
+                      borderColor: 'rgba(255, 160, 40, 0.3)',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      marginRight: 10,
+                    }}
+                  >
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#FFB74D' }}>
+                      {item.type === 'Photo' ? 'IMG' : 'DOC'}
+                    </Text>
+                  </View>
+                  <View style={styles.evidenceInfo}>
+                    <Text style={styles.evidenceName} numberOfLines={1}>
+                      {item.name}
+                    </Text>
+                    <Text style={styles.evidenceMeta}>
+                      {item.type} • {item.size || 'Attached'} {item.date ? `• ${item.date}` : ''}
+                    </Text>
+                  </View>
+                  <View style={styles.evidenceActions}>
+                    <TouchableOpacity onPress={() => handleDeleteEvidence(item.id)} style={styles.deleteBtn}>
+                      <Text style={styles.deleteBtnText}>{t('case.remove', 'Remove')}</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ))}
+
+              <View style={{ marginTop: 24, marginBottom: 30 }}>
+                <TouchableOpacity
+                  onPress={() => setShowVaultModal(false)}
+                  style={{
+                    backgroundColor: '#FF9500',
+                    paddingVertical: 12,
+                    borderRadius: 10,
+                    alignItems: 'center',
+                  }}
+                >
+                  <Text style={{ color: '#0A0502', fontSize: 13, fontWeight: '800' }}>
+                    Save & Return to Case
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            </ScrollView>
+          </SafeAreaView>
+        </Modal>
 
         {/* Clean Submit Button: "SUBMIT" */}
         <View style={{ marginVertical: 18 }}>

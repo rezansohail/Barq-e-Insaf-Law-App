@@ -1,4 +1,4 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -25,7 +25,8 @@ const STATUSES = ['All', 'Active', 'Suspended'];
 
 export default function MediaManagement() {
   const router = useRouter();
-  const { isDark } = useAppTheme();
+  const { theme, isDark } = useAppTheme();
+  const { bg, cardBg, cardBorder, textPrimary, textSecondary, inputBg, inputBorder } = theme;
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -139,20 +140,12 @@ export default function MediaManagement() {
     );
   };
 
-  const bg = isDark ? '#090302' : '#FAF7F2';
-  const cardBg = isDark ? 'rgba(26, 12, 5, 0.82)' : '#FFFFFF';
-  const cardBorder = isDark ? 'rgba(255, 160, 40, 0.22)' : 'rgba(255, 149, 0, 0.20)';
-  const textPrimary = isDark ? '#FFEED6' : '#1A0F07';
-  const textSecondary = isDark ? 'rgba(255, 235, 215, 0.65)' : '#665544';
-  const inputBg = isDark ? 'rgba(25, 12, 5, 0.75)' : '#FFFFFF';
-  const inputBorder = isDark ? 'rgba(255, 160, 40, 0.25)' : 'rgba(255, 149, 0, 0.25)';
-
   return (
     <SafeAreaView style={[s.safe, { backgroundColor: bg }]}>
       <StatusBar
-        barStyle={isDark ? 'light-content' : 'dark-content'}
+        barStyle={theme.statusBarStyle}
         translucent
-        backgroundColor={isDark ? '#0A0402' : '#FAF7F2'}
+        backgroundColor={theme.statusBarBg}
       />
 
       <AppHeader

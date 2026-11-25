@@ -96,50 +96,50 @@ export default function AdminHome() {
   const dynamicStyles = {
     safe: {
       flex: 1,
-      backgroundColor: isDark ? '#090302' : '#FAF7F2',
+      backgroundColor: theme.bg,
     },
     header: {
-      backgroundColor: isDark ? '#140704' : '#FFFFFF',
-      borderBottomColor: isDark ? 'rgba(255, 149, 0, 0.15)' : 'rgba(255, 149, 0, 0.2)',
+      backgroundColor: theme.headerBg,
+      borderBottomColor: theme.cardBorder,
     },
     headerSub: {
-      color: isDark ? 'rgba(255, 180, 80, 0.65)' : '#886644',
+      color: theme.textMuted,
     },
     secTitle: {
-      color: isDark ? '#FFEED6' : '#1A0F07',
+      color: theme.textPrimary,
     },
     statCard: {
-      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
-      borderColor: isDark ? 'rgba(255, 149, 0, 0.22)' : 'rgba(255, 149, 0, 0.20)',
+      backgroundColor: theme.card,
+      borderColor: theme.cardBorder,
     },
     statValue: {
-      color: isDark ? '#FFEED6' : '#1A0F07',
+      color: theme.textPrimary,
     },
     statLabel: {
-      color: isDark ? 'rgba(255, 235, 215, 0.75)' : '#554433',
+      color: theme.textSecondary,
     },
     quickCard: {
-      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
-      borderColor: isDark ? 'rgba(255, 149, 0, 0.22)' : 'rgba(255, 149, 0, 0.20)',
+      backgroundColor: theme.card,
+      borderColor: theme.cardBorder,
     },
     quickLabel: {
-      color: isDark ? '#FFEED6' : '#1A0F07',
+      color: theme.textPrimary,
     },
     quickSub: {
-      color: isDark ? 'rgba(255, 235, 215, 0.65)' : '#665544',
+      color: theme.textMuted,
     },
     section: {
-      backgroundColor: isDark ? 'rgba(38, 20, 10, 0.94)' : '#FFFFFF',
-      borderColor: isDark ? 'rgba(255, 149, 0, 0.22)' : 'rgba(255, 149, 0, 0.20)',
+      backgroundColor: theme.card,
+      borderColor: theme.cardBorder,
     },
     sectionTitle: {
-      color: isDark ? '#FFEED6' : '#1A0F07',
+      color: theme.textPrimary,
     },
     activityTitle: {
-      color: isDark ? '#FFEED6' : '#1A0F07',
+      color: theme.textPrimary,
     },
     activitySub: {
-      color: isDark ? 'rgba(255, 235, 215, 0.65)' : '#665544',
+      color: theme.textMuted,
     },
   };
 
@@ -152,7 +152,7 @@ export default function AdminHome() {
 
   return (
     <SafeAreaView style={dynamicStyles.safe}>
-      <StatusBar barStyle={isDark ? "light-content" : "dark-content"} translucent backgroundColor={isDark ? "#0A0402" : "#FAF7F2"} />
+      <StatusBar barStyle={theme.statusBarStyle} translucent backgroundColor={theme.statusBarBg} />
 
       {/* HEADER WITH LOGO AND HI, ADMIN */}
       <View style={[s.header, dynamicStyles.header]}>
@@ -163,13 +163,14 @@ export default function AdminHome() {
             resizeMode="contain"
           />
           <View>
-            <Text style={dynamicStyles.secTitle}>{t('admin.controlPanel', 'Admin Control Panel')}</Text>
-            <Text style={[s.headerSub, dynamicStyles.headerSub]}>{t('admin.governance', 'Sindh Bar Council Governance')}</Text>
+            <Text style={[s.adminNavTitle, { color: isDark ? '#FFF5E8' : '#1A0F07' }]}>
+              {t('admin.controlPanel', 'Admin Control Panel')}
+            </Text>
           </View>
         </View>
         <View style={s.headerRight}>
           <Text style={{ fontSize: 13, fontWeight: '700', color: isDark ? '#FFF2DF' : '#1A0F07' }}>
-            {t('common.greetingHi', 'hi,')} {adminName}
+            {adminName}
           </Text>
           <TouchableOpacity
             style={[
@@ -249,32 +250,6 @@ export default function AdminHome() {
           ))}
         </View>
 
-        {/* ── REAL SYSTEM & SECURITY AUDIT LOGS FROM DATABASE ── */}
-        <View style={[s.section, dynamicStyles.section, { marginBottom: 100 }]}>
-          <Text style={[s.sectionTitle, dynamicStyles.sectionTitle]}>{t('admin.auditLog', 'System & Security Audit Log')}</Text>
-          {stats.recentAuditLogs.length === 0 ? (
-            <Text style={{ color: dynamicStyles.activitySub.color, paddingVertical: 10, fontSize: 13 }}>
-              No recent audit logs found. System healthy.
-            </Text>
-          ) : (
-            stats.recentAuditLogs.map((item, i) => {
-              const dotColor = item.severity === 'critical' ? '#ef4444' : item.severity === 'warning' ? '#f59e0b' : '#4ade80';
-              const timeFormatted = item.created_at ? new Date(item.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '';
-              return (
-                <View key={item.id || i} style={s.activityItem}>
-                  <View style={[s.activityDot, { backgroundColor: dotColor }]} />
-                  <View style={{ flex: 1 }}>
-                    <Text style={[s.activityTitle, dynamicStyles.activityTitle]}>
-                      {item.entity_name || item.action} {timeFormatted ? `· ${timeFormatted}` : ''}
-                    </Text>
-                    <Text style={[s.activitySub, dynamicStyles.activitySub]}>{item.description}</Text>
-                  </View>
-                </View>
-              );
-            })
-          )}
-        </View>
-
         {/* ── TERMS & CONDITIONS LINK ── */}
         <TouchableOpacity
           style={s.termsBtn}
@@ -304,6 +279,11 @@ export default function AdminHome() {
 }
 
 const s = StyleSheet.create({
+  adminNavTitle: {
+    fontSize: 18,
+    fontWeight: '900',
+    letterSpacing: -0.3,
+  },
   header: {
     paddingHorizontal: 16,
     paddingVertical: 12,

@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -94,9 +94,27 @@ const validateCNIC = (val) => {
   return null;
 };
 
+const formatPhone = (val) => {
+  if (!val) return '';
+  let digits = val.replace(/\D/g, '');
+  if (digits.length >= 1 && digits[0] !== '0') {
+    digits = '03' + digits;
+  } else if (digits.length >= 2 && digits.slice(0, 2) !== '03') {
+    digits = '03' + digits.slice(2);
+  }
+  if (digits.length > 11) digits = digits.slice(0, 11);
+  if (digits.length > 4) {
+    return `${digits.slice(0, 4)} ${digits.slice(4)}`;
+  }
+  return digits;
+};
+
 const validatePhone = (val) => {
   if (!val) return 'Phone number is required';
-  if (!/^\d{11}$/.test(val)) return 'Phone number must be 11 digits';
+  const digits = val.replace(/\D/g, '');
+  if (!/^03\d{9}$/.test(digits) || digits.length !== 11) {
+    return 'Invalid phone number format';
+  }
   return null;
 };
 
@@ -250,6 +268,10 @@ export default function LoginScreen() {
   const [cnic,        setCnic]        = useState('');
   const [sbcNumber,   setSbcNumber]   = useState('');
   const [specialty,   setSpecialty]   = useState('');
+  const [selectedOfficeHours, setSelectedOfficeHours] = useState([
+    '10:00 AM - 01:00 PM',
+    '05:00 PM - 08:00 PM',
+  ]);
   const [loading,     setLoading]     = useState(false);
   const [errors,      setErrors]      = useState({});
   const [rememberMe,  setRememberMe]  = useState(true);
@@ -289,8 +311,15 @@ export default function LoginScreen() {
     clearErrors();
     const currentRole = selectedRole || role || 'citizen';
     const newErrors = {};
+    const trimmedInput = email.trim();
+    const isPhoneNumber = /^03\d/.test(trimmedInput.replace(/\s|-/g, '')) || /^\d+$/.test(trimmedInput.replace(/\s|-/g, ''));
 
-    if (!email.trim()) newErrors.email = 'Email address is required.';
+    if (!trimmedInput) {
+      newErrors.email = 'Email address or phone number is required.';
+    } else if (isPhoneNumber) {
+      const phoneErr = validatePhone(trimmedInput);
+      if (phoneErr) newErrors.email = phoneErr;
+    }
     if (!password) newErrors.password = 'Password is required.';
 
     if (Object.keys(newErrors).length > 0) {
@@ -321,11 +350,14 @@ export default function LoginScreen() {
         targetRoute = '/(media)/MediaHome';
       }
 
+      const rawDigits = trimmedInput.replace(/\D/g, '');
       const cleanEmail = email.trim().toLowerCase();
       const cleanPassword = password.trim();
-      console.log(`[AUTH] Logging in to ${endpoint} with ${cleanEmail}`);
+      console.log(`[AUTH] Logging in to ${endpoint} with ${trimmedInput}`);
       const response = await api.post(endpoint, {
-        email: cleanEmail,
+        email: isPhoneNumber ? (rawDigits + '@barqeinsaf.pk') : cleanEmail,
+        phone: isPhoneNumber ? rawDigits : undefined,
+        identifier: trimmedInput,
         password: cleanPassword,
       });
 
@@ -430,6 +462,7 @@ export default function LoginScreen() {
           district: district.trim(),
           sbcNumber: sbcNumber.trim(),
           specialty: specialty.trim() || 'General Law',
+          officeHours: selectedOfficeHours,
           email: email.trim(),
           password: password,
           confirmPassword: retypePass,
@@ -477,6 +510,16 @@ export default function LoginScreen() {
           });
           if (currentRole === 'lawyer' && userObj) setLawyerProfileFromUser(userObj);
           if (currentRole === 'citizen' && userObj) setCitizenProfileFromUser(userObj);
+        } catch (_) {}
+
+        // Automatically trigger translation for newly created account data
+        try {
+          api.post('/translate/trigger', {
+            name: name.trim(),
+            fullName: name.trim(),
+            district: district.trim(),
+            role: currentRole,
+          }).catch(() => {});
         } catch (_) {}
 
         const successMsg = response.data.message || 'Registration successful! Welcome to Barq-e-Insaf.';
@@ -607,8 +650,8 @@ export default function LoginScreen() {
             </View>
 
             <Text style={styles.appName}>{appName.toUpperCase()}</Text>
-            <View style={styles.portalBadge}>
-              <Text style={[styles.portalName, { color: config.color }]}>
+            <View style={[styles.portalBadge, selectedRole === 'ngo' && { alignSelf: 'center', alignItems: 'center', justifyContent: 'center' }]}>
+              <Text style={[styles.portalName, { color: '#FFFFFF' }, selectedRole === 'ngo' && { textAlign: 'center' }]}>
                 {t(config.label).toUpperCase()}
               </Text>
             </View>
@@ -721,10 +764,9 @@ export default function LoginScreen() {
                         placeholderTextColor="rgba(255, 238, 220, 0.65)"
                         value={phone}
                         onChangeText={(v) => {
-                          if (/^\d*$/.test(v) && v.length <= 11) setPhone(v);
+                          setPhone(formatPhone(v));
                         }}
                         keyboardType="number-pad"
-                        maxLength={11}
                       />
                       {errors.phone && <Text style={styles.errorText}>{errors.phone}</Text>}
 
@@ -785,6 +827,57 @@ export default function LoginScreen() {
                           {errors.specialty && (
                             <Text style={styles.errorText}>{errors.specialty}</Text>
                           )}
+
+                          <Text style={[styles.inputLabel, { marginTop: 12 }]}>
+                            {t('auth.officeHours', 'Available Office Timings')}
+                          </Text>
+                          <Text style={{ fontSize: 11, color: 'rgba(255, 230, 200, 0.6)', marginBottom: 8 }}>
+                            {t('auth.officeHoursDesc', 'Tick the consultation slots when you will be available for citizens')}
+                          </Text>
+                          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 12 }}>
+                            {[
+                              '09:00 AM - 12:00 PM',
+                              '10:00 AM - 01:00 PM',
+                              '02:00 PM - 05:00 PM',
+                              '05:00 PM - 08:00 PM',
+                              '07:00 PM - 09:00 PM',
+                            ].map((slot) => {
+                              const isSelected = selectedOfficeHours.includes(slot);
+                              return (
+                                <TouchableOpacity
+                                  key={slot}
+                                  style={{
+                                    paddingHorizontal: 10,
+                                    paddingVertical: 7,
+                                    borderRadius: 8,
+                                    borderWidth: 1.2,
+                                    borderColor: isSelected ? '#FF9500' : 'rgba(255, 180, 80, 0.25)',
+                                    backgroundColor: isSelected ? 'rgba(255, 149, 0, 0.22)' : 'rgba(255, 255, 255, 0.04)',
+                                  }}
+                                  onPress={() => {
+                                    if (isSelected) {
+                                      if (selectedOfficeHours.length > 1) {
+                                        setSelectedOfficeHours(selectedOfficeHours.filter((s) => s !== slot));
+                                      }
+                                    } else {
+                                      setSelectedOfficeHours([...selectedOfficeHours, slot]);
+                                    }
+                                  }}
+                                  activeOpacity={0.8}
+                                >
+                                  <Text
+                                    style={{
+                                      fontSize: 10.5,
+                                      color: isSelected ? '#FFFFFF' : 'rgba(255, 255, 255, 0.7)',
+                                      fontWeight: isSelected ? '700' : '500',
+                                    }}
+                                  >
+                                    {slot}
+                                  </Text>
+                                </TouchableOpacity>
+                              );
+                            })}
+                          </View>
                         </>
                       )}
                     </>
@@ -814,7 +907,7 @@ export default function LoginScreen() {
                     >
                       <View>
                         <Text style={{ color: '#F59E0B', fontSize: 11.5, fontWeight: '800' }}>
-                          {t('auth.quickFillKtn', '⚡ Quick-Fill KTN News Credentials')}
+                          {t('auth.quickFillKtn', 'Quick-Fill KTN News Credentials')}
                         </Text>
                         <Text style={{ color: 'rgba(255, 238, 220, 0.7)', fontSize: 10 }}>
                           contact@ktnnews.tv · Ktn@12345
@@ -847,7 +940,7 @@ export default function LoginScreen() {
                     >
                       <View>
                         <Text style={{ color: '#10B981', fontSize: 11.5, fontWeight: '800' }}>
-                          {t('auth.quickFillNchd', '⚡ Quick-Fill NCHD Credentials')}
+                          {t('auth.quickFillNchd', 'Quick-Fill NCHD Credentials')}
                         </Text>
                         <Text style={{ color: 'rgba(255, 238, 220, 0.7)', fontSize: 10 }}>
                           contact@nchd.org.pk · Nchd@12345
@@ -864,7 +957,13 @@ export default function LoginScreen() {
                     placeholder={t('auth.emailPlaceholder', 'user@barqeinsaf.pk')}
                     placeholderTextColor="rgba(255, 238, 220, 0.65)"
                     value={email}
-                    onChangeText={setEmail}
+                    onChangeText={(val) => {
+                      if (/^03\d*/.test(val) || (/^\d+$/.test(val) && val.startsWith('0'))) {
+                        setEmail(formatPhone(val));
+                      } else {
+                        setEmail(val);
+                      }
+                    }}
                     keyboardType="email-address"
                     autoCapitalize="none"
                   />
@@ -916,7 +1015,7 @@ export default function LoginScreen() {
                             { color: req.pass ? '#22c55e' : 'rgba(255, 230, 205, 0.45)' },
                           ]}
                         >
-                          {req.pass ? '✓' : '○'} {req.label}
+                          {req.pass ? '[x]' : '[-]'} {req.label}
                         </Text>
                       ))}
                     </View>
@@ -943,7 +1042,7 @@ export default function LoginScreen() {
                             color: password === retypePass ? '#22c55e' : '#ef4444',
                           }}
                         >
-                          {password === retypePass ? t('auth.passwordsMatch', '✓ Passwords match') : t('auth.passwordsDoNotMatch', '✗ Passwords do not match')}
+                          {password === retypePass ? t('auth.passwordsMatch', 'Passwords match') : t('auth.passwordsDoNotMatch', 'Passwords do not match')}
                         </Text>
                       )}
                       {errors.retypePass && (
@@ -972,7 +1071,7 @@ export default function LoginScreen() {
                           ]}
                         >
                           {rememberMe && (
-                            <Text style={[styles.checkIcon, { color: config.color }]}>✓</Text>
+                            <View style={{ width: 8, height: 8, borderRadius: 2, backgroundColor: config.color }} />
                           )}
                         </View>
                         <Text style={styles.rememberLabel}>{t('auth.rememberMe', 'Remember Me')}</Text>
@@ -1058,7 +1157,7 @@ export default function LoginScreen() {
               <View style={styles.forgotModalHeader}>
                 <Text style={styles.forgotModalTitle}>{t('auth.resetPassword', 'Reset Password')}</Text>
                 <TouchableOpacity onPress={closeForgotModal} style={styles.forgotCloseBtn}>
-                  <Text style={styles.forgotCloseText}>✕</Text>
+                  <Text style={styles.forgotCloseText}>X</Text>
                 </TouchableOpacity>
               </View>
 
@@ -1104,7 +1203,7 @@ export default function LoginScreen() {
               ) : (
                 <View style={{ alignItems: 'center', paddingVertical: 14 }}>
                   <View style={styles.forgotSuccessOrb}>
-                    <Text style={{ fontSize: 24, color: '#4ade80' }}>✓</Text>
+                    <View style={{ width: 14, height: 14, borderRadius: 3, backgroundColor: '#4ade80' }} />
                   </View>
                   <Text style={styles.forgotSuccessTitle}>Reset Link Sent</Text>
                   <Text style={styles.forgotSuccessSubtitle}>

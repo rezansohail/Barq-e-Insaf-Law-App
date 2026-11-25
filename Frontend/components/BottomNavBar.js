@@ -205,8 +205,8 @@ export default function BottomNavBar({ role = 'citizen', activeTab = 'home' }) {
     router.replace(tab.route);
   };
 
-  const navBg = isDarkMode ? '#080402' : '#FFFFFF';
-  const navBorder = isDarkMode ? 'rgba(255, 150, 40, 0.22)' : 'rgba(234, 88, 12, 0.18)';
+  const navBg = theme.bottomNavBg;
+  const navBorder = theme.navBorder;
   const bottomPadding = Math.max(insets.bottom, Platform.OS === 'ios' ? 24 : 12);
 
   return (

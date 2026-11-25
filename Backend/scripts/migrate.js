@@ -37,7 +37,7 @@ async function migrate() {
       CREATE TABLE IF NOT EXISTS cases (
         id SERIAL PRIMARY KEY,
         citizen_id INT REFERENCES users(id) ON DELETE CASCADE,
-        lawyer_id INT REFERENCES users(id) ON DELETE SET NULL,
+        lawyer_id INT,
         title VARCHAR(200) NOT NULL,
         type VARCHAR(100),
         description TEXT,

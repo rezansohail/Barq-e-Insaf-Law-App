@@ -22,6 +22,8 @@ export default function LiquidGlassButton({
   const gradientColors =
     variant === 'crimson'
       ? ['rgba(255, 255, 255, 0.22)', 'rgba(239, 68, 68, 0.25)', 'rgba(30, 8, 8, 0.75)']
+      : variant === 'emerald'
+      ? ['rgba(255, 255, 255, 0.22)', 'rgba(16, 185, 129, 0.35)', 'rgba(6, 44, 28, 0.85)']
       : variant === 'glass'
       ? ['rgba(255, 255, 255, 0.20)', 'rgba(255, 255, 255, 0.05)', 'rgba(18, 9, 4, 0.65)']
       : ['rgba(255, 255, 255, 0.26)', 'rgba(255, 170, 50, 0.18)', 'rgba(22, 10, 3, 0.60)'];
@@ -29,11 +31,15 @@ export default function LiquidGlassButton({
   const borderColor =
     variant === 'crimson'
       ? 'rgba(255, 120, 120, 0.45)'
+      : variant === 'emerald'
+      ? 'rgba(52, 211, 153, 0.55)'
       : 'rgba(255, 215, 140, 0.45)';
 
   const shadowColor =
     variant === 'crimson'
       ? '#EF4444'
+      : variant === 'emerald'
+      ? '#10B981'
       : '#FF7A00';
 
   return (

@@ -48,7 +48,7 @@ export default function MyCases() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.bg }]}>
-      <StatusBar barStyle={isDarkMode ? 'light-content' : 'dark-content'} translucent backgroundColor={theme.bg} />
+      <StatusBar barStyle={theme.statusBarStyle} translucent backgroundColor={theme.statusBarBg} />
 
       {/* Top Header matching app standard with '<' Chevron */}
       <AppHeader
@@ -74,6 +74,7 @@ export default function MyCases() {
               key={f}
               style={[
                 styles.filterChip,
+                { backgroundColor: theme.surface, borderColor: theme.surfaceBorder },
                 activeFilter === f && styles.filterChipActive,
               ]}
               onPress={() => setActiveFilter(f)}
@@ -82,6 +83,7 @@ export default function MyCases() {
               <Text
                 style={[
                   styles.filterText,
+                  { color: theme.textSecondary },
                   activeFilter === f && styles.filterTextActive,
                 ]}
               >
@@ -93,25 +95,33 @@ export default function MyCases() {
 
         {/* CASE CARDS */}
         {filtered.length === 0 ? (
-          <Text style={styles.emptyText}>No cases found in this category.</Text>
+          <Text style={[styles.emptyText, { color: theme.textMuted }]}>
+            No cases found in this category.
+          </Text>
         ) : (
           filtered.map((c, i) => (
             <TouchableOpacity
               key={c.id || i}
-              style={styles.caseCard}
+              style={[
+                styles.caseCard,
+                {
+                  backgroundColor: theme.card,
+                  borderColor: theme.cardBorder,
+                }
+              ]}
               activeOpacity={0.84}
               onPress={() => handleCasePress(c)}
             >
               <View style={styles.caseCardTop}>
                 <View style={styles.caseType}>
-                  <Text style={styles.caseTitle} numberOfLines={1}>{c.title}</Text>
-                  <Text style={styles.caseMeta}>{c.type || 'Legal Matter'} · {c.district || userData.district || 'Sindh'}</Text>
+                  <Text style={[styles.caseTitle, { color: theme.textPrimary }]} numberOfLines={1}>{c.title}</Text>
+                  <Text style={[styles.caseMeta, { color: theme.textMuted }]}>{c.type || 'Legal Matter'} · {c.district || userData.district || 'Sindh'}</Text>
                 </View>
                 <Text style={styles.badgeText}>{c.status || 'Active'}</Text>
               </View>
 
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.08)', paddingTop: 8 }}>
-                <Text style={{ fontSize: 11, color: 'rgba(255, 220, 180, 0.6)' }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginTop: 10, borderTopWidth: 1, borderTopColor: theme.divider, paddingTop: 8 }}>
+                <Text style={{ fontSize: 11, color: theme.textSecondary }}>
                   Filed: {c.filingDate || c.date || 'Recent'}
                 </Text>
                 <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
