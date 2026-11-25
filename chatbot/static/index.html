@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Barq-e-Insaf | AI Legal Chatbot Dashboard</title>
+    <title>Barq-e-Insaf | AI Legal Chatbot & Law Viewer</title>
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -14,7 +14,7 @@
 </head>
 <body>
     <div class="app-container">
-        <!-- Sidebar Navigation (Glassmorphic) -->
+        <!-- Sidebar Navigation -->
         <aside class="sidebar">
             <div class="logo-area">
                 <div class="logo-icon">⚖️</div>
@@ -29,17 +29,16 @@
                 <div class="form-group admin-only" style="display: none;">
                     <label for="model-select"><i data-lucide="cpu"></i> AI Model</label>
                     <select id="model-select">
-                        <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B (Recommended)</option>
-                        <option value="llama-3.1-8b-instant">Llama 3.1 8B (Fast)</option>
-                        <option value="mixtral-8x7b-32768">Mixtral 8x7B</option>
-                        <option value="gemma2-9b-it">Gemma 2 9B</option>
+                        <option value="qwen/qwen3.8-27b" selected>Llama 3.3 70B (Fast & High Accuracy)</option>
+                        <option value="llama-3.1-8b-instant">Llama 3.1 8B (Instant)</option>
                     </select>
                 </div>
 
                 <div class="form-group">
-                    <label for="lang-select"><i data-lucide="languages"></i> Preferred Language</label>
+                    <label for="lang-select"><i data-lucide="languages"></i> Response Language</label>
                     <select id="lang-select">
-                        <option value="Auto-Detect" selected>Auto-Detect</option>
+                        <option value="Auto-Detect" selected>Auto-Detect (Matches query)</option>
+                        <option value="Roman Urdu">Roman Urdu (Aasan Roman Urdu)</option>
                         <option value="English">English</option>
                         <option value="Urdu">Urdu (اردو)</option>
                         <option value="Sindhi">Sindhi (سنڌي)</option>
@@ -58,7 +57,7 @@
 
             <div class="sidebar-section files-section admin-only" style="display: none;">
                 <div class="section-header">
-                    <h3><i data-lucide="folder-open"></i> Legal Documents</h3>
+                    <h3><i data-lucide="folder-open"></i> Pakistan Law Books</h3>
                     <button id="reingest-btn" class="icon-btn" title="Re-Ingest PDFs">
                         <i data-lucide="refresh-cw"></i>
                     </button>
@@ -67,26 +66,26 @@
                     <span class="badge"><span class="indicator green"></span> <span id="chunk-count">0</span> law chunks indexed</span>
                 </div>
                 <ul id="file-list" class="file-list">
-                    <li class="loading-files">Loading files...</li>
+                    <li class="loading-files">Loading legal books...</li>
                 </ul>
             </div>
             
             <div class="sidebar-footer">
                 <div class="connection-status">
                     <span class="dot connected"></span>
-                    <span>Sindh Law Database V1.0</span>
+                    <span>Pakistan & Sindh Law Database</span>
                 </div>
             </div>
         </aside>
 
-        <!-- Main Workspace (Chat and Source Viewer Split) -->
+        <!-- Main Workspace -->
         <main class="workspace">
             <!-- Chat Container (Left Pane) -->
             <section class="chat-pane">
                 <header class="chat-header">
                     <div class="header-title">
-                        <h2>Sindh Legal Information Chatbot</h2>
-                        <p>Providing guidance on Sindh family, property, and civil laws.</p>
+                        <h2>Barq-e-Insaf Legal Information System</h2>
+                        <p>Specialized in Family, Civil (CPC), Property, Land Revenue, and Contract Laws</p>
                     </div>
                 </header>
 
@@ -96,24 +95,24 @@
                         <div class="msg-icon">⚖️</div>
                         <div class="msg-content">
                             <h3>Assalam-o-Alaikum! Welcome to Barq-e-Insaf.</h3>
-                            <p>I am your AI legal assistant. I can guide you on property disputes, family matters (divorce/khula, custody, inheritance), and civil rights under Sindh and Pakistan laws.</p>
+                            <p>I am your AI legal assistant. You can ask me questions in <strong>English, Urdu, Sindhi, or Roman Urdu</strong> regarding family disputes (Khula, Talaq, Custody, Maintenance), property transfer, inheritance, land revenue, and civil court procedures.</p>
                             <div class="disclaimer">
-                                <strong>Disclaimer:</strong> This chatbot provides general legal information based on official statutes. It is NOT a substitute for consulting a licensed advocate of the Sindh Bar Council.
+                                <strong>Disclaimer:</strong> This system provides legal information based on official statutes of Pakistan. For formal court representation, always consult a licensed advocate.
                             </div>
                             <div class="quick-prompts">
-                                <h4>Common Legal Questions in Sindh:</h4>
+                                <h4>Common Legal Questions (Click to Ask):</h4>
                                 <div class="prompts-grid">
-                                    <button class="prompt-chip" data-question="What is the legal procedure for Khula in Sindh family court?">
-                                        ⚖️ Procedure for Khula
+                                    <button class="prompt-chip" data-question="Khula lene ka sahi qanooni tareeqa kya hai aur haq mehr wapis karna hota hai?">
+                                        ⚖️ Khula & Haq Mehr (Roman Urdu)
                                     </button>
-                                    <button class="prompt-chip" data-question="Under Muslim Family Laws Ordinance 1961, what is the notice period for Talaq?">
-                                        📜 Notice period for Talaq
+                                    <button class="prompt-chip" data-question="Under Muslim Family Laws Ordinance 1961, what is the mandatory notice period for Talaq?">
+                                        📜 Talaq Notice Period (English)
                                     </button>
-                                    <button class="prompt-chip" data-question="How is property inherited by daughters and sons under Pakistan law?">
-                                        🏡 Daughter's share in inheritance
+                                    <button class="prompt-chip" data-question="والد کی جائیداد میں بیٹی اور بیٹے کا شرعی اور قانونی حصہ کتنا ہوتا ہے؟">
+                                        🕌 وراثت کا شرعی حصہ (Urdu)
                                     </button>
-                                    <button class="prompt-chip" data-question="What is the legal age of marriage for girls in Sindh?">
-                                        👧 Child Marriage Restraint Act (Sindh)
+                                    <button class="prompt-chip" data-question="ڪوڙي قبضي خلاف ڪورٽ مان اسٽي آرڊر ڪيئن ورتو ويندو آهي؟">
+                                        🏛️ اسٽي آرڊر جو طريقو (Sindhi)
                                     </button>
                                 </div>
                             </div>
@@ -124,7 +123,7 @@
                 <div class="chat-input-area">
                     <form id="chat-form">
                         <div class="input-wrapper">
-                            <textarea id="chat-input" placeholder="Type your legal question here... (e.g. Ask in English, Urdu, or Roman Urdu)" rows="1" required></textarea>
+                            <textarea id="chat-input" placeholder="Apna sawal likhein (English, Urdu, Sindhi, ya Roman Urdu mein)..." rows="1" required></textarea>
                             <button type="submit" id="send-btn" class="send-btn" title="Send Message">
                                 <i data-lucide="send"></i>
                             </button>
@@ -133,16 +132,35 @@
                 </div>
             </section>
 
-            <!-- Source Viewer / Inspector (Right Pane) -->
+            <!-- Source Viewer & Live PDF Inspector (Right Pane) -->
             <section class="inspector-pane" id="inspector-pane">
                 <div class="inspector-header">
-                    <h3><i data-lucide="search-code"></i> Reference Inspector</h3>
-                    <button class="close-inspector" id="close-inspector-btn"><i data-lucide="x"></i></button>
+                    <div class="inspector-title-area">
+                        <h3 id="inspector-doc-title"><i data-lucide="book-open"></i> Legal Citation Viewer</h3>
+                        <span id="inspector-page-pill" class="inspector-badge">Select a reference</span>
+                    </div>
+                    <div class="inspector-actions">
+                        <a id="open-pdf-external-btn" href="#" target="_blank" class="inspector-action-btn" title="Open Full PDF in New Tab" style="display: none;">
+                            <i data-lucide="external-link"></i>
+                        </a>
+                        <button class="close-inspector" id="close-inspector-btn" title="Close Panel"><i data-lucide="x"></i></button>
+                    </div>
                 </div>
+
+                <!-- Inspector Mode Switcher Tabs -->
+                <div class="inspector-tabs" id="inspector-tabs" style="display: none;">
+                    <button type="button" class="tab-btn active" id="tab-excerpt-btn" onclick="switchInspectorTab('excerpt')">
+                        <i data-lucide="highlighter"></i> Highlighted Clause
+                    </button>
+                    <button type="button" class="tab-btn" id="tab-pdf-btn" onclick="switchInspectorTab('pdf')">
+                        <i data-lucide="file-text"></i> Live PDF Page
+                    </button>
+                </div>
+
                 <div class="inspector-body" id="inspector-body">
                     <div class="empty-inspector-state">
                         <i data-lucide="book-open"></i>
-                        <p>Click on any reference citation in the chat response to inspect the exact legal section, text context, and page numbers of the Sindh Law books.</p>
+                        <p>Ask a legal question in the chat. When answers cite specific laws, click on any reference pill to inspect the exact section and view the highlighted PDF book page.</p>
                     </div>
                 </div>
             </section>
@@ -152,12 +170,6 @@
     <!-- Notification Toast -->
     <div id="toast" class="toast"></div>
 
-    <script>
-        // Trigger lucide icon replacement
-        document.addEventListener("DOMContentLoaded", function() {
-            lucide.createIcons();
-        });
-    </script>
     <script src="script.js"></script>
 </body>
 </html>

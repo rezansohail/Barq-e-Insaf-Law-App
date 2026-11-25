@@ -6,10 +6,8 @@ echo.
 
 cd /d "%~dp0"
 
-:: Check virtualenv
 if not exist venv\Scripts\activate.bat (
     echo Error: Virtual environment 'venv' not found in this directory.
-    echo Please create one or make sure you are running this from the right folder.
     pause
     exit /b
 )
@@ -17,15 +15,17 @@ if not exist venv\Scripts\activate.bat (
 echo Activating virtual environment...
 call venv\Scripts\activate.bat
 
-echo Checking and installing required packages...
-python -m pip install flask pypdf sentence-transformers chromadb groq python-dotenv
+if not exist chroma_db (
+    echo.
+    echo First-time setup: Pakistan Law Database not detected.
+    echo Automatically indexing statutory PDFs with OCR... Please wait a couple minutes.
+    echo.
+    python ingest.py
+)
 
 echo.
-echo Starting Flask App on http://127.0.0.1:5000
-echo Open http://127.0.0.1:5000 in your browser to interact with the chatbot dashboard!
+echo Starting Barq-e-Insaf AI Backend on http://127.0.0.1:5001 ...
+echo Web Dashboard and PDF Viewer: http://127.0.0.1:5001
 echo.
-echo Press Ctrl+C to stop the server.
-echo.
-
 python main.py
 pause
