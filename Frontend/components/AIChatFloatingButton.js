@@ -20,10 +20,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { LinearGradient } from 'expo-linear-gradient';
 import { usePathname } from 'expo-router';
 import Svg, { Path } from 'react-native-svg';
-import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 import { subscribeToChat, closeAIChat } from '../constants/chatBotStore';
-import { getDevHost } from '../constants/api';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 
@@ -347,82 +344,6 @@ export default function AIChatFloatingButton() {
 
           </SafeAreaView>
         </KeyboardAvoidingView>
-      </Modal>
-
-      {/* CITATION & PDF INSPECTOR MODAL */}
-      <Modal
-        visible={docModalVisible}
-        animationType="fade"
-        transparent
-        onRequestClose={() => setDocModalVisible(false)}
-      >
-        <View style={styles.docModalBackdrop}>
-          <View style={styles.docModalCard}>
-            {/* Modal Header */}
-            <View style={styles.docModalHeader}>
-              <View style={{ flex: 1, paddingRight: 10 }}>
-                <View style={styles.docBadgeRow}>
-                  <Text style={styles.docModalBadge}>STATUTE CITATION</Text>
-                  {selectedSource?.page && selectedSource.page !== 'N/A' && (
-                    <Text style={styles.docPageBadge}>Page {selectedSource.page}</Text>
-                  )}
-                </View>
-                <Text style={styles.docModalTitle} numberOfLines={2}>
-                  {selectedSource?.source}
-                </Text>
-              </View>
-              <TouchableOpacity
-                style={styles.docModalCloseBtn}
-                onPress={() => setDocModalVisible(false)}
-              >
-                <Text style={styles.docModalCloseText}>X</Text>
-              </TouchableOpacity>
-            </View>
-
-            {/* Modal Content: Highlighted Statutory Text */}
-            <ScrollView style={styles.docModalScroll} showsVerticalScrollIndicator={true}>
-              <Text style={styles.docSectionSub}>Cited Statutory Clause & Section:</Text>
-              <View style={styles.docExcerptBox}>
-                <Text style={styles.docExcerptText}>
-                  {selectedSource?.text || selectedSource?.snippet || 'Legal statute excerpt loaded from Pakistan Law Database.'}
-                </Text>
-              </View>
-
-              <Text style={styles.docNoticeText}>
-                Verified clause from the official statute books of Pakistan. Tap below to view or download the complete PDF document.
-              </Text>
-            </ScrollView>
-
-            {/* Modal Actions */}
-            <View style={styles.docModalActions}>
-              <TouchableOpacity
-                style={styles.openPdfBtn}
-                activeOpacity={0.85}
-                onPress={() => {
-                  if (selectedSource) openPdf(selectedSource);
-                }}
-              >
-                <LinearGradient
-                  colors={['#2563EB', '#1D4ED8']}
-                  style={styles.openPdfGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 0 }}
-                >
-                  <Text style={styles.openPdfBtnText}>
-                    Open Full PDF {selectedSource?.page && selectedSource.page !== 'N/A' ? `(Page ${selectedSource.page})` : ''}
-                  </Text>
-                </LinearGradient>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.closeDocBtn}
-                onPress={() => setDocModalVisible(false)}
-              >
-                <Text style={styles.closeDocBtnText}>Close</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </View>
       </Modal>
     </>
   );
